@@ -85,7 +85,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
-
+        
     processcasefile();
         
     #add proxy support if it is set in config.xml
@@ -439,7 +439,7 @@ qq|
 <br><hr><br>
 <b>
 Start Time: $currentdatetime <br>
-Total Run Time: $totalruntime  seconds <br>
+Total Run Time: $totalruntime seconds <br>
 <br>
 Test Cases Run: $totalruncount <br>
 Test Cases Passed: $casepassedcount <br>
@@ -447,9 +447,9 @@ Test Cases Failed: $casefailedcount <br>
 Verifications Passed: $passedcount <br>
 Verifications Failed: $failedcount <br>
 <br>
-Average Response Time: $avgresponse  seconds <br>
-Max Response Time: $maxresponse  seconds <br>
-Min Response Time: $minresponse  seconds <br>
+Average Response Time: $avgresponse seconds <br>
+Max Response Time: $maxresponse seconds <br>
+Min Response Time: $minresponse seconds <br>
 </b>
 <br>
 
@@ -463,7 +463,7 @@ sub writefinalstdout {  #write summary and closing tags for STDOUT
     print STDOUT
 qq|    
 Start Time: $currentdatetime
-Total Run Time: $totalruntime  seconds
+Total Run Time: $totalruntime seconds
 
 Test Cases Run: $totalruncount
 Test Cases Passed: $casepassedcount
