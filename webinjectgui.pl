@@ -27,7 +27,7 @@ $| = 1; #don't buffer output to STDOUT
 
 
 $mw = MainWindow->new(
-        -title            => 'WebInject - HTTP Test Tool    (version 1.30)',
+        -title            => 'WebInject - HTTP Test Tool    (version 1.31)',
         -bg               => '#666699',
         -takefocus        => '1',  #start on top
         );
@@ -344,7 +344,7 @@ sub gui_processing_msg {
 }
 #------------------------------------------------------------------
 sub gui_statusbar {
-    $percentcomplete = ($totalruncount/$casecount)*100; 
+    $percentcomplete = ($runcount/$casecount)*100; 
     $progressbar->set($percentcomplete);  #update progressbar with current status
 }
 #------------------------------------------------------------------
