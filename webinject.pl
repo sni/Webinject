@@ -1105,11 +1105,11 @@ plot \"plot.log\" using 1:7 title \"Response Times" w $graphtype
 #------------------------------------------------------------------
 sub finaltasks {  #do ending tasks
         
-    if ($gui == 1){gui_stop();}
+    if ($gui == 1){ gui_stop(); }
         
     writefinalhtml();  #write summary and closing tags for results file
         
-    unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
+    unless ($xnode or $reporttype) { #skip regular STDOUT output if using an XPath or $reporttype is set ("standard" does not set this) 
         writefinalstdout();  #write summary and closing tags for STDOUT
     }
         
@@ -1149,7 +1149,7 @@ sub finaltasks {  #do ending tasks
             }
         }
         else {
-            print STDERR "\nError, only 'nagios', and 'standard' are supported for reporttype values.\n\n";
+            print STDERR "\nError: only 'nagios', and 'standard' are supported for reporttype values\n\n";
         }
     }
 	
