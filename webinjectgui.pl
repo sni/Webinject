@@ -212,20 +212,21 @@ $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for
 
 
 
-$monitorenabledchkbx = 'monitor_off';  #give it a default value
-$mw->Label(-text  => 'Enable Monitor',
+$monitorenabledchkbx = 'monitor_on';  #give it a default value
+$mw->Label(-text  => 'Disable Monitor',
            -bg    => '#666699',
            -fg    => 'white',
           )->place(qw/-x 189 -y 242/); $mw->update();
 $monitor_enabledchkbx = $mw->Checkbutton(-text                   => '',  #using a text widget instead 
-                                         -onvalue                => 'monitor_on',
-                                         -offvalue               => 'monitor_off',
+                                         -onvalue                => 'monitor_off',
+                                         -offvalue               => 'monitor_on',
                                          -variable               => \$monitorenabledchkbx,
                                          -background             => '#666699',
                                          -activebackground       => '#666699',
                                          -highlightbackground    => '#666699',
                                          -command                => sub{monitor_enable_disable();},
                                         )->place(qw/-x 160 -y 240/); $mw->update();
+monitor_enable_disable();
 
 
 
