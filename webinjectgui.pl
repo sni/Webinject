@@ -33,7 +33,7 @@ $| = 1; #don't buffer output to STDOUT
 
 
  
-$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool    (version .92)',
+$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool    (version .93)',
                       -width  => '650', 
                       -height => '650', 
                       -bg     => '#666699',
