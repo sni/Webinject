@@ -11,7 +11,7 @@ Version 1.30 - Jan 07, 2005
     - HTTP Basic Authentication support
     - No longer forced to have test cases in strict incremental numbered order
     - Source code compiles with the "use strict" pragma
-    - Ability to run engine from a different directory using the config.xml in that directory
+    - Ability to run engine from a different directory using alternate test case and config files
     - Comments allowed in config file using <commment></comment> tags
     - Other config.xml options are still used when you pass a test case filename as a command line argument
     - New config option to change response delay timeout <timeout></timeout>
