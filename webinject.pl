@@ -868,7 +868,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             #print "\ntimeout : $timeout \n\n";
         }
             
-        if (/<globaltimeout>/) {   
+        if (/<globaltimeout>/) {  #used in plugin integration
             $_ =~ /<globaltimeout>(.*)<\/globaltimeout>/;
             $globaltimeout = $1;
             #print "\nglobaltimeout : $globaltimeout \n\n";
