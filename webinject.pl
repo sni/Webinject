@@ -251,7 +251,7 @@ sub httpget {  #send http request and read response
 sub httppost {  #send http request and read response
     
     $request = new HTTP::Request('POST',"$url");
-    $request->content_type('application/x-www-form-urlencoded\n\n');
+    $request->content_type('application/x-www-form-urlencoded');
     $request->content($postbody);
     #print $request->as_string; print "\n\n";
     $cookie_jar->add_cookie_header($request);
