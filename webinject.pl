@@ -57,6 +57,7 @@ sub engine
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
+    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy) }; #add proxy support if its set in config.xml
 
 
     $totalruncount = 0;
@@ -404,7 +405,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
     
     #print "testcase file list: @casefilelist\n\n";
     
-    #grab value for constant: baseurl
+    #grab value for constants: baseurl, proxy
     foreach (@configfile)
     {
         if (/<baseurl>/)
@@ -413,6 +414,14 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $firstparse =~ /<\/baseurl>/;
             $baseurl = $`;  #string between tags will be in $baseurl
             #print "$baseurl \n\n";
+        }
+        
+        if (/<proxy>/)
+        {   
+            $firstparse = $';  #print "$' \n\n";
+            $firstparse =~ /<\/proxy>/;
+            $proxy = $`;  #string between tags will be in $proxy
+            #print "$proxy \n\n";
         }
     }  
     
