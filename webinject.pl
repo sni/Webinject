@@ -80,10 +80,15 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     }
         
         
-    if ($gui == 1){$curgraphtype = $graphtype;}  #set the initial value so we know if the user changes the graph setting
-    gnuplotcfg(); #create the gnuplot config file
-    
-    
+    if ($gui != 1){$graphtype = 'lines';} #default to line graph if not in GUI
+        
+    if ($gui == 1){$curgraphtype = $graphtype;}  #set the initial value so we know if the user changes the graph setting from the gui
+        
+    unless (($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) {  #don't do this if monitor is disabled in gui
+        gnuplotcfg(); #create the gnuplot config file
+    }
+        
+        
     $totalruncount = 0;
     $casepassedcount = 0;
     $casefailedcount = 0;
@@ -125,16 +130,18 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 if ($xnode) {  #if an XPath Node is defined, only process the single Node 
                     $testnum = $xnode; 
                 }
-                    
+                 
                 $isfailure = 0;
                     
                     
                 if ($gui == 1){
                     gui_statusbar();  #update the statusbar
-                    
-                    if ("$curgraphtype" ne "$graphtype") {  #check to see if the user changed the graph setting
-                        gnuplotcfg(); #create the gnuplot config file setting changed
-                        $curgraphtype = $graphtype;
+                        
+                    unless ($monitorenabledchkbx eq 'monitor_off') {  #don't do this if monitor is disabled in gui
+                        if ("$curgraphtype" ne "$graphtype") {  #check to see if the user changed the graph setting
+                            gnuplotcfg();  #create the gnuplot config file since graphsetting changed
+                            $curgraphtype = $graphtype;
+                        }
                     }
                 }
                     
@@ -237,7 +244,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 }
                     
                     
-                if($method) {
+                if ($method) {
                     if ($method eq "get") {httpget();}
                     elsif ($method eq "post") {httppost();}
                     else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
@@ -254,10 +261,12 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     
                 plotlog($latency);  #send perf data to log file for plotting
                     
-                unless ($graphtype eq 'nograph') {
-                    `wgnupl32.exe plot.plt`;  #plot it with gnuplot
+                unless (($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) {  #do this unless monitor is disabled in gui
+                    unless ($graphtype eq 'nograph') {  #do this unless its being called from the gui with No Graph set
+                        `wgnupl32.exe plot.plt`;  #plot it with gnuplot
+                    }
                 }
-                    
+                 
                 if ($gui == 1) {gui_updatemontab();}  #update monitor with the newly rendered plot graph 
                     
                     
@@ -901,7 +910,7 @@ sub httplog {  #write requests and responses to http.log file
 }
 #------------------------------------------------------------------
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
-               
+       
     %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
                "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
         
@@ -925,12 +934,9 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
 }
 #------------------------------------------------------------------
 sub gnuplotcfg {  #create gnuplot config file
-    
-    if ($gui != 1){$graphtype = 'lines';} #default to line graph if not in GUI
-
+        
     open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
-    print GNUPLOTPLT 
-    qq|
+    print GNUPLOTPLT qq|
 set term gif 
 set output \"plot.gif\"
 set size 1.1,0.5
