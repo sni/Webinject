@@ -410,25 +410,27 @@ sub gui_updatemontab {
 }    
 #------------------------------------------------------------------
 sub gui_updatemonstats {  #update timers and counts in monitor tab
-        
-    $mintime_text->delete('0.0','end');    
-    $mintime_text->insert("end", "Min: $minresponse sec");
     
-    $maxtime_text->delete('0.0','end');    
-    $maxtime_text->insert("end", "Max: $maxresponse sec");
+    if ($monitorenabledchkbx ne 'monitor_off') {  #don't try to update if monitor is disabled in gui
     
-    $avgtime_text->delete('0.0','end');    
-    $avgtime_text->insert("end", "Avg: $avgresponse sec");
+        $mintime_text->delete('0.0','end');    
+        $mintime_text->insert("end", "Min: $minresponse sec");
     
-    $runcounttotal_text->delete('0.0','end');    
-    $runcounttotal_text->insert("end", "Total: $totalruncount");
+        $maxtime_text->delete('0.0','end');    
+        $maxtime_text->insert("end", "Max: $maxresponse sec");
     
-    $runcountcasespassed_text->delete('0.0','end');    
-    $runcountcasespassed_text->insert("end", "Passed: $casepassedcount");
+        $avgtime_text->delete('0.0','end');    
+        $avgtime_text->insert("end", "Avg: $avgresponse sec");
     
-    $runcountcasespfailed_text->delete('0.0','end');    
-    $runcountcasespfailed_text->insert("end", "Failed: $casefailedcount");
-
+        $runcounttotal_text->delete('0.0','end');    
+        $runcounttotal_text->insert("end", "Total: $totalruncount");
+    
+        $runcountcasespassed_text->delete('0.0','end');    
+        $runcountcasespassed_text->insert("end", "Passed: $casepassedcount");
+    
+        $runcountcasespfailed_text->delete('0.0','end');    
+        $runcountcasespfailed_text->insert("end", "Failed: $casefailedcount");
+    }
 }
 #------------------------------------------------------------------
 sub gui_stop {  #flip button and do cleanup when user clicks Stop
