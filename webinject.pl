@@ -174,6 +174,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 $parseresponse5 = $xmltestcases->{case}->{$testnum}->{parseresponse5}; if ($parseresponse5) {$parseresponse5 =~ s/{AMPERSAND}/&/g; $parseresponse5 =~ s/{TIMESTAMP}/$timestamp/g;} 
                 $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
                 $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $sleep = $xmltestcases->{case}->{$testnum}->{sleep}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}
                     
                     
                 print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
@@ -336,6 +337,10 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     $stop = 'no';
                     return "";
                 }
+                    
+                if ($sleep) {  #if a sleep parameter is set in the case, sleep that amount
+                    sleep($sleep)
+                }                    
                     
             }
                 
