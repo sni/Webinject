@@ -741,7 +741,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $firstparse = $';  #print "$' \n\n";
             $firstparse =~ /<\/globalhttplog>/;
             $globalhttplog = $`;  #string between tags will be in $globalhttplog
-            print "\n$globalhttplog \n\n";
+            #print "\n$globalhttplog \n\n";
         }
     }  
         
