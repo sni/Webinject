@@ -264,7 +264,12 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     
                 unless (($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) {  #do this unless monitor is disabled in gui
                     unless ($graphtype eq 'nograph') {  #do this unless its being called from the gui with No Graph set
-                        `wgnupl32.exe plot.plt`;  #plot it with gnuplot
+                        if ($gnuplot) {  #if gnuplot is specified in config.xml, use it
+                            system "$gnuplot", "plot.plt";  #plot it with gnuplot
+                        }
+                        elsif (($^O eq 'MSWin32') and (-e './wgnupl32.exe')) {  #check for Win32 
+                            system "wgnupl32.exe", "plot.plt";  #plot it with gnuplot
+                        }
                     }
                 }
                  
@@ -760,33 +765,36 @@ sub processcasefile {  #get test case files to run (from command line or config 
     foreach (@configfile) {
             
         if (/<baseurl>/) {   
-            $firstparse = $';  #print "$' \n\n";
-            $firstparse =~ /<\/baseurl>/;
-            $baseurl = $`;  #string between tags will be in $baseurl
+            $_ =~ /<baseurl>(.*)<\/baseurl>/;
+            $baseurl = $1;
             #print "\n$baseurl \n\n";
         }
             
         if (/<proxy>/) {   
-            $firstparse = $';  #print "$' \n\n";
-            $firstparse =~ /<\/proxy>/;
-            $proxy = $`;  #string between tags will be in $proxy
+            $_ =~ /<proxy>(.*)<\/proxy>/;
+            $proxy = $1;
             #print "\n$proxy \n\n";
         }
             
         if (/<useragent>/) {   
-            $firstparse = $';  #print "$' \n\n";
-            $firstparse =~ /<\/useragent>/;
-            $setuseragent = $`;  #string between tags will be in $setuseragent
+            $_ =~ /<useragent>(.*)<\/useragent>/;
+            $setuseragent = $1;
             if ($setuseragent) { $useragent->agent($setuseragent); }  #http useragent that will show up in webserver logs
             #print "\n$setuseragent \n\n";
         }
          
         if (/<globalhttplog>/) {   
-            $firstparse = $';  #print "$' \n\n";
-            $firstparse =~ /<\/globalhttplog>/;
-            $globalhttplog = $`;  #string between tags will be in $globalhttplog
+            $_ =~ /<globalhttplog>(.*)<\/globalhttplog>/;
+            $globalhttplog = $1;
             #print "\n$globalhttplog \n\n";
         }
+        
+        if (/<gnuplot>/) {        
+            $_ =~ /<gnuplot>(.*)<\/gnuplot>/;
+            $gnuplot = $1;
+            #print "\n$gnuplot \n\n";
+        }
+            
     }  
         
     close(CONFIG);
