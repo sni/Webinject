@@ -7,6 +7,11 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 1.33 - Jan 26, 2005
+    - Nagios plugin compatibility
+    - Support for multipart/form-data encoded POSTs (file uploads)
+    - Updated results.html output so it is valid xhtml
+  
 Version 1.32 - Jan 14, 2005
     - Bugfix for erroneous dummy test case printing in GUI status
     - Bugfix for warning that appeared when running GUI with Perl in -w mode
@@ -25,7 +30,7 @@ Version 1.30 - Jan 07, 2005
     - New test case parameter to add a custom error message
     - Added separators to http.log for readability
     - Enhanced command line options/switches
-    - Nagios plugin compatibility
+    - Nagios plugin compatibility (beta)
     - More verbose error handling when running from command line
     - Ability to handle reserved XML character "<" within test cases by escaping it with a backslash "<"
     - Changed output when using XPath notation from command line
