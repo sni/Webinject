@@ -105,7 +105,7 @@ $| = 1; #don't buffer output to STDOUT
             verify();  #verify result from http response
             
             print RESULTS "Response Time = $latency s<br>\n";
-            print RESULTS "<br>\n--------------------------------------<br>\n\n";
+            print RESULTS "<br>\n-------------------------------------------------------<br>\n\n";
             
             $testnum++;
             $totalruncount++;
@@ -148,7 +148,7 @@ $| = 1; #don't buffer output to STDOUT
             verify();  #verify result from http response
             
             print RESULTS "Response Time = $latency s<br>\n";
-            print RESULTS "<br>\n--------------------------------------<br>\n\n";
+            print RESULTS "<br>\n-------------------------------------------------------<br>\n\n";
             
             $testnum++;
             $totalruncount++;
@@ -191,7 +191,7 @@ qq(
 </head>
 <body>
 <hr>
---------------------------------------<br>
+-------------------------------------------------------<br>
 ); 
 
 }
