@@ -291,7 +291,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
                     print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
                     if ($xnode) { #only print this way if using XPath
-                        print STDOUT qq|pass|;
+                        print STDOUT qq|fail|;
                     }                
                     unless ($xnode) { #if using XPath, skip regular STDOUT output 
                         print STDOUT qq|TEST CASE FAILED \n|;
@@ -303,7 +303,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 else {
                     print RESULTS qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
                     if ($xnode) { #only print this way if using XPath
-                        print STDOUT qq|fail|;
+                        print STDOUT qq|pass|;
                     }  
                     unless ($xnode) { #if using XPath, skip regular STDOUT output 
                         print STDOUT qq|TEST CASE PASSED \n|;
@@ -357,7 +357,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     return "";  #break from sub
                 }
                     
-                if ($sleep) {  #if a sleep parameter is set in the case, sleep that amount
+                if ($sleep) {  #if a sleep value is set in the case, sleep that amount
                     sleep($sleep)
                 }                    
                     
@@ -734,16 +734,18 @@ sub processcasefile {  #get test case files to run (from command line or config 
     my $xpath;
     my $setuseragent;
         
-    undef @casefilelist; #empty the array
+    undef @casefilelist; #empty the array of test case filenames
         
-    if ($#ARGV < 0) {  #if testcase filename is not passed on the command line, use config.xml
-            
+    if (-e "config.xml") {  #if config.xml exists, read it
         open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
-        @configfile = <CONFIG>;  #read the file into an array
-            
+            @configfile = <CONFIG>;  #read the file into an array
+    }           
+        
+    if (($#ARGV + 1) < 1) { #no command line args were passed  
+        #if testcase filename is not passed on the command line, use files in config.xml  
         #parse test case file names from config.xml and build array
         foreach (@configfile) {
-            
+                
             if (/<testcasefile>/) {   
                 $firstparse = $';  #print "$' \n\n";
                 $firstparse =~ /<\/testcasefile>/;
@@ -753,29 +755,43 @@ sub processcasefile {  #get test case files to run (from command line or config 
             }
         }    
             
-        if ($casefilelist[0]) {}
-        else {
-            push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
+        unless ($casefilelist[0]) {
+            if (-e "testcases.xml") {
+                push @casefilelist, "testcases.xml";  #if no files are specified in config.xml, default to testcases.xml
+            }
+            else {
+                die "\nERROR: I can't find the default test case file\nYou must either use a config.xml or pass a filename on the command line\n\n";
+            }
         }
     }
-    else {  #use testcase filename passed on command line (config.xml is not used at all, even for other things)
+        
+    elsif (($#ARGV + 1) == 1) { #one command line arg was passed
+        #use testcase filename passed on command line (config.xml is only used for other options)
+        push @casefilelist, $ARGV[0];  #first commandline argument is the test case file, put this on the array for processing
+    }
+        
+    elsif (($#ARGV + 1) == 2) { #two command line args were passed
             
         undef $xnode; #reset xnode
         undef $xpath; #reset xpath
             
         $xpath = $ARGV[1];
             
-        if ($xpath =~ /\/(.*)\[/) {    #if the parameter contains a "/" and "[", it is really an XPath  
+        if ($xpath =~ /\/(.*)\[/) {    #if the argument contains a "/" and "[", it is really an XPath  
             $xpath =~ /(.*)\/(.*)\[(.*?)\]/;  #if it contains XPath info, just grab the file name
             $xnode = $3;  #grab the XPath Node value.. (from inside the "[]")
-            #print "\nxpath node is: $xnode \n";
+            print "\nXPath node is: $xnode \n";
         }
         else {
-            print STDERR "\nSorry, $xpath is not in the XPath format I was excpecting, I'm ingoring it...\n"; 
+            print STDERR "\nSorry, $xpath is not in the XPath format I was excpecting, I'm ignoring it...\n"; 
         }
             
-            
-        push @casefilelist, $ARGV[0];  #first commandline parameter is the test case file, put this on the array for processing
+        #use testcase filename passed on command line (config.xml is only used for other options)        
+        push @casefilelist, $ARGV[0];  #first commandline argument is the test case file, put this on the array for processing
+    }
+        
+    elsif (($#ARGV + 1) > 2) { #too many command line args were passed
+        die "\nERROR: Too many arguments\n\n";
     }
         
     #print "\ntestcase file list: @casefilelist\n\n";
