@@ -1255,9 +1255,12 @@ sub finaltasks {  #do ending tasks
         close(RESULTSXML);
     }    
         
-    #Nagios plugin compatibility for WebInject
+        
+    #plugin modes
     if ($reporttype) {  #return value is set which corresponds to a monitoring program
-    	if ($reporttype eq 'nagios') { #report test result to Nagios 
+            
+        #Nagios plugin compatibility
+        if ($reporttype eq 'nagios') { #report results in Nagios format 
             #predefined exit codes for Nagios
             %exit_codes  = ('UNKNOWN' ,-1,
                             'OK'      , 0,
@@ -1276,9 +1279,23 @@ sub finaltasks {  #do ending tasks
                 exit $exit_codes{'OK'};
             }
         }
-        else {
-            print STDERR "\nError: only 'nagios', and 'standard' are supported for reporttype values\n\n";
+            
+        #MRTG plugin compatibility
+        elsif ($reporttype eq 'mrtg') { #report results in MRTG format 
+            if ($casefailedcount > 0) {
+                print "$totalruntime\n$totalruntime\n\nWebInject CRITICAL - $returnmessage \n";
+                exit(0);
+            }
+            else { 
+                print "$totalruntime\n$totalruntime\n\nWebInject OK - All tests passed successfully in $totalruntime seconds \n";
+                exit(0);
+            }
         }
+            
+        else {
+            print STDERR "\nError: only 'nagios', 'mrtg', or 'standard' are supported reporttype values\n\n";
+        }
+            
     }
 	
 }
