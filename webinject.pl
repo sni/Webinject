@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.30";
+our $version="1.31";
 
 use strict;
 use LWP;
@@ -38,7 +38,7 @@ our ($useragent, $request, $response);
 our ($gui, $monitorenabledchkbx, $latency);
 our ($cookie_jar, $proxy, $timeout, @httpauth);
 our ($xnode, $graphtype, $plotclear, $stop, $nooutput);
-our ($totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
+our ($runcount, $totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
 our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
 our (@casefilelist, $currentcasefile, $casecount, $isfailure);
 our ($verifypositive, $verifylater, $verifynegative, $verifylaterneg);
@@ -172,6 +172,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         foreach (1 .. $repeat) {
                 
+            $runcount = 0;
+            
             foreach (sort {$a<=>$b} keys %{$xmltestcases->{case}}) {  #process cases in sorted order
                     
                 $testnum = $_;
@@ -375,6 +377,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $endruntimer = time();
                 $totalruntime = (int(1000 * ($endruntimer - $startruntimer)) / 1000);  #elapsed time rounded to thousandths 
                     
+                $runcount++;    
                 $totalruncount++;
                     
                 if ($gui == 1) { 
