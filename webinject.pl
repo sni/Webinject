@@ -1380,18 +1380,18 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
 #------------------------------------------------------------------
 sub convertbackxml() {  #converts replaced xml with substitutions
         
-    $_[0] =~ s/{AMPERSAND}/&/g;
-    $_[0] =~ s/{LESSTHAN}/</g;
-    $_[0] =~ s/{TIMESTAMP}/$timestamp/g;
-    $_[0] =~ s/{BASEURL}/$baseurl/g;
-    $_[0] =~ s/{BASEURL1}/$baseurl1/g;
-    $_[0] =~ s/{BASEURL2}/$baseurl2/g;
-    $_[0] =~ s/{PARSEDRESULT}/$parsedresult/g; 
-    $_[0] =~ s/{PARSEDRESULT1}/$parsedresult1/g; 
-    $_[0] =~ s/{PARSEDRESULT2}/$parsedresult2/g; 
-    $_[0] =~ s/{PARSEDRESULT3}/$parsedresult3/g; 
-    $_[0] =~ s/{PARSEDRESULT4}/$parsedresult4/g; 
-    $_[0] =~ s/{PARSEDRESULT5}/$parsedresult5/g;
+    $_[0] =~ s~{AMPERSAND}~&~g;
+    $_[0] =~ s~{LESSTHAN}~<~g;
+    $_[0] =~ s~{TIMESTAMP}~$timestamp~g;
+    $_[0] =~ s~{BASEURL}~$baseurl~g;
+    $_[0] =~ s~{BASEURL1}~$baseurl1~g;
+    $_[0] =~ s~{BASEURL2}~$baseurl2~g;
+    $_[0] =~ s~{PARSEDRESULT}~$parsedresult~g; 
+    $_[0] =~ s~{PARSEDRESULT1}~$parsedresult1~g; 
+    $_[0] =~ s~{PARSEDRESULT2}~$parsedresult2~g; 
+    $_[0] =~ s~{PARSEDRESULT3}~$parsedresult3~g; 
+    $_[0] =~ s~{PARSEDRESULT4}~$parsedresult4~g; 
+    $_[0] =~ s~{PARSEDRESULT5}~$parsedresult5~g;
 }
 #------------------------------------------------------------------
 sub url_escape {  #escapes difficult characters with %hexvalue
