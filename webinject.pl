@@ -335,11 +335,12 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 if ($latency > $maxresponse) {$maxresponse = $latency;}  #set max response time
                 if ($latency < $minresponse) {$minresponse = $latency;}  #set min response time
                 $totalresponse = ($totalresponse + $latency);  #keep total of response times for calculating avg 
-                $avgresponse = (int(100 * ($totalresponse / $totalruncount)) / 100);  #avg response rounded to hundreths
-                   
+                $avgresponse = (int(1000 * ($totalresponse / $totalruncount)) / 1000);  #avg response rounded to thousandths
+                    
+                if ($gui == 1) {gui_update_timers();}  ##update timers in monitor tab   
                     
                 #break from sub if user presses stop button in gui    
-                if ($stop eq 'yes'){
+                if ($stop eq 'yes') {
                     finaltasks();
                     $stop = 'no';
                     return "";  #break from sub

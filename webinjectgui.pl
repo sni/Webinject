@@ -226,7 +226,7 @@ $monitor_enabledchkbx = $mw->Checkbutton(-text                   => '',  #using 
                                          -highlightbackground    => '#666699',
                                          -command                => sub{monitor_enable_disable();},
                                         )->place(qw/-x 160 -y 240/); $mw->update();
-monitor_enable_disable();
+monitor_enable_disable();  #call sub to enable and create monitor
 
 
 
@@ -316,7 +316,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $totalruntime = '';
     $stop = 'no';
     $plotclear = 'no';
-
+    
 
     $out_window->delete('0.0','end');  #clear window before starting
     
@@ -325,7 +325,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $status_ind->configure(-background  => '#FF9900');  #change status color amber while running
 
 
-    $rtc_button->placeForget;  #remove the run botton
+    $rtc_button->placeForget;  #remove the run button
     $stop_button->place(qw/-x 110 -y 65/);  #place the stop button
     
     $monitor_enabledchkbx->configure(-state  => 'disabled');  #disable button while running
@@ -400,8 +400,6 @@ sub gui_updatemontab {
         
     if ($monitorenabledchkbx ne 'monitor_off') {  #don't try to update if monitor is disabled in gui
             
-        $montab_plotcanvas->place(qw/-x 0 -y 0/); $mw->update();  #replace the canvas (to place graph into)
-            
         if ((-e "plot.gif") and (($graphtype ne 'nograph') or ($plotclear ne 'yes'))) {  #if plot graphic exists, put it in canvas
             
             $montab_plotcanvas->Photo('plotgraph', -file => "plot.gif");    
@@ -427,14 +425,13 @@ sub gui_cleargraph {  #remove graph
         
     if (-e "plot.gif") { unlink "plot.gif"; }  #delete a plot file if it exists so an old one is never rendered 
         
-    $montab_plotcanvas->placeForget;  #remove it from view
         
     $montab_plotcanvas->destroy;   #destroy the canvas
                 
     $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
                                                 -height       => '240',
                                                 -background   => '#EFEFEF',
-                                               )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph)
+                                               )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to place graph into
 }
 #------------------------------------------------------------------
 sub gui_cleargraph_button {  #remove graph then set value to truncate log
@@ -507,7 +504,7 @@ sub viewconfig {
 #------------------------------------------------------------------
 sub monitor_enable_disable {
         
-    if ($monitorenabledchkbx eq 'monitor_on') {
+    if ($monitorenabledchkbx eq 'monitor_on') {  #create the monitor tab and all it's widgets
         
         $mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();  #add the notebook tab
         
@@ -519,7 +516,7 @@ sub monitor_enable_disable {
         $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
                                                     -height       => '240',
                                                     -background   => '#EFEFEF',
-                                                   )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph)
+                                                   )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to place graph into
                    
         $clear_graph = $mon_tab->Button->Compound;
         $clear_graph->Text(-text => "Clear Graph");
@@ -574,15 +571,80 @@ sub monitor_enable_disable {
                                           -highlightbackground    => '#666699',
                                           -command                => sub{gui_cleargraph();}  #remove graph from view
                                          )->place(qw/-x 320 -y 2/); $mw->update();
-    }
         
         
         
-    if ($monitorenabledchkbx eq 'monitor_off') { #delete the tab
+        
+        $resptime_label = $montab_canvas->ROText(-width       => '20',
+                                                 -height      => '1',
+                                                 -background  => '#EFEFEF',
+                                                 -foreground  => 'black',
+                                                 -relief      => 'flat',
+                                                )->place(qw/-x 12 -y 245/); $mw->update();                    
+        $resptime_label->insert("end", 'Response Times:');
+       
+       
+        $minresponse = 'N/A';  #set initial value for timer display
+        $mintime_text = $montab_canvas->ROText(-width       => '20',
+                                               -height      => '1',
+                                               -background  => '#EFEFEF',
+                                               -foreground  => 'black',
+                                               -relief      => 'flat',
+                                              )->place(qw/-x 12 -y 265/); $mw->update();                    
+        $mintime_text->insert("end", "Min: $minresponse s");
+        
+        
+        $maxresponse = 'N/A';  #set initial value for timer display
+        $maxtime_text = $montab_canvas->ROText(-width       => '20',
+                                               -height      => '1',
+                                               -background  => '#EFEFEF',
+                                               -foreground  => 'black',
+                                               -relief      => 'flat',
+                                              )->place(qw/-x 12 -y 280/); $mw->update();                    
+        $maxtime_text->insert("end", "Max: $maxresponse s");
+        
+        
+        $avgresponse = 'N/A';  #set initial value for timer display
+        $avgtime_text = $montab_canvas->ROText(-width       => '20',
+                                               -height      => '1',
+                                               -background  => '#EFEFEF',
+                                               -foreground  => 'black',
+                                               -relief      => 'flat',
+                                              )->place(qw/-x 12 -y 295/); $mw->update();                    
+        $avgtime_text->insert("end", "Avg: $avgresponse s");
+                  
+        
+
+
+                                         
+    }  #end monitor create
+    
+
+
+
+
+
+
+
+
+
+    if ($monitorenabledchkbx eq 'monitor_off') { #delete the tab when disabled
         
         $mon_tab = $tabs->delete('montab', -label => 'Monitor'); $mw->update();
-        
     }
+
+}
+#------------------------------------------------------------------
+sub gui_update_timers {  #update timers in monitor tab
+        
+    $mintime_text->delete('0.0','end');    
+    $mintime_text->insert("end", "Min: $minresponse s");
+    
+    $maxtime_text->delete('0.0','end');    
+    $maxtime_text->insert("end", "Max: $maxresponse s");
+    
+    $avgtime_text->delete('0.0','end');    
+    $avgtime_text->insert("end", "Avg: $avgresponse s");
 
 }
 #------------------------------------------------------------------
