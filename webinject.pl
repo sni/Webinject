@@ -52,6 +52,13 @@ sub engine
     open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
     open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";   
         
+    #contsruct objects
+    $useragent = LWP::UserAgent->new;
+    $cookie_jar = HTTP::Cookies->new;
+    $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
+    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy)}; #add proxy support if it is set in config.xml
+        
+        
     processcasefile();
         
     print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
@@ -62,12 +69,6 @@ sub engine
         writeinitialstdout();  #write opening tags for STDOUT. 
     }
         
-        
-    #contsruct objects
-    $useragent = LWP::UserAgent->new;
-    $cookie_jar = HTTP::Cookies->new;
-    $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
-    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy)}; #add proxy support if it is set in config.xml
         
         
     $totalruncount = 0;
@@ -738,6 +739,14 @@ sub processcasefile {  #get test case files to run (from command line or config 
             #print "\n$proxy \n\n";
         }
             
+        if (/<useragent>/) {   
+            $firstparse = $';  #print "$' \n\n";
+            $firstparse =~ /<\/useragent>/;
+            $setuseragent = $`;  #string between tags will be in $setuseragent
+            if ($setuseragent) { $useragent->agent($setuseragent); }  #http useragent that will show up in webserver logs
+            #print "\n$setuseragent \n\n";
+        }
+         
         if (/<globalhttplog>/) {   
             $firstparse = $';  #print "$' \n\n";
             $firstparse =~ /<\/globalhttplog>/;
