@@ -961,9 +961,14 @@ sub httplog {  #write requests and responses to http.log file
         print HTTPLOGFILE $request->as_string, "\n\n";
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
-
-    print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
-
+        
+    if (($logrequest && ($logrequest =~ /yes/i)) or
+        ($logresponse && ($logresponse =~ /yes/i)) or
+        ($globalhttplog && ($globalhttplog =~ /yes/i)) or
+        (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0))
+       ) {     
+        print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
+    }    
 }
 #------------------------------------------------------------------
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
