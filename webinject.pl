@@ -24,7 +24,7 @@ use HTTP::Cookies;
 use Crypt::SSLeay;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
-use Data::Dumper;  #to dump hashes for debugging   
+#use Data::Dumper;  #to dump hashes for debugging   
 
 
 $| = 1; #don't buffer output to STDOUT
