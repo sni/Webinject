@@ -118,7 +118,8 @@ $| = 1; #don't buffer output to STDOUT
         {  
             print " .";
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
-            if ($verifynext) {$verifylater = $verifynext;}  #grab $verifynext string from previous test case (if it exists)
+            if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
+            if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
             
             #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
             $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;}  
@@ -128,17 +129,19 @@ $| = 1; #don't buffer output to STDOUT
             $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) {$verifypositivenext =~ s/{AMPERSAND}/&/g; $verifypositivenext =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $verifynegativenext = $xmltestcases->{case}->{$testnum}->{verifynegativenext}; if ($verifynegativenext) {$verifynegativenext =~ s/{AMPERSAND}/&/g; $verifynegativenext =~ s/{TIMESTAMP}/$timestamp/g;}  
             $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
             $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $verifynext = $xmltestcases->{case}->{$testnum}->{verifynext}; if ($verifynext) {$verifynext =~ s/{AMPERSAND}/&/g; $verifynext =~ s/{TIMESTAMP}/$timestamp/g;}  
-                        
+                         
             print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             if ($description1) {print RESULTS "$description1 <br>\n";}
             if ($description2) {print RESULTS "$description2 <br>\n";}
             print RESULTS "<br>\n";
             if ($verifypositive) {print RESULTS "Verify: \"$verifypositive\" <br> \n";}
             if ($verifynegative) {print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";}
-            if ($verifynext) {print RESULTS "Verify On Next Case: \"$verifynext\" <br> \n";}
+            if ($verifypositivenext) {print RESULTS "Verify On Next Case: \"$verifypositivenext\" <br> \n";}
+            if ($verifynegativenext) {print RESULTS "Verify Negative On Next Case: \"$verifynegativenext\" <br> \n";}
             
             if($method)
             {
@@ -309,8 +312,27 @@ sub verify {  #do verification of http response
         
         $verifylater = '';  #set to null after verification
     }
+    
+    
+    
+    if ($verifylaterneg)
+    {
+        if ($response->as_string() =~ /$verifylaterneg/i)  #verify existence of string in response
+        {
+            print RESULTS "<b><font color=red>FAILED</font></b> (negative verification set in previous test case)<br>\n"; 
+            $failedcount++;  
+        }
+        else
+        {
+            print RESULTS "<b><font color=green>PASSED</font></b> (negative verification set in previous test case)<br>\n";
+            $passedcount++;                   
+        }
         
-        
+        $verifylaterneg = '';  #set to null after verification
+    }
+
+
+
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i)  #verify existance of string in response
     {
