@@ -7,6 +7,14 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 1.10 - June 23, 2004
+    -Added XML formatted output (results.xml is created each run)
+    -Added new config.xml parameter (<globalhttplog>) for HTTP logging (always or on failure)
+    -Added more detailed pass/fail status to HTML report
+    -Redefined criteria for test case pass/pail
+    -Added results summary and additional formatting to STDOUT (for standalone mode)
+    -Minor code refactoring
+    
 Version 0.95 - May 17, 2004
     -Added Restart button to GUI
     -Added 5 additional parsing parameters/variables to use in test cases
@@ -30,7 +38,7 @@ Version 0.91 - Feb 23, 2004
     -Decoupled GUI (webinjectgui) from Test Engine (webinject) so engine can run standalone
     -Testcase name can be passed on command line as well as via config.xml
     -Code cleanup
-    -Output sent to STDOUT as well as reports
+    -Output sent to STDOUT as well as reports (for standalone mode)
     
 Version 0.90 - Feb 19, 2004
     -Initial public beta release
