@@ -14,7 +14,6 @@ Version 1.20 - ???, 2004
     - Added new testcase parameter 'sleep', to throttle execution
     - Added timer summary to HTML report
     - Removed HTML tags from STDOUT display and cleaned up formatting
-    - Added new config.xml parameter to define a path for the gnuplot executable
     - GUI enhancements
     - Code refactoring
     
