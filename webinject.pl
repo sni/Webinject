@@ -1159,14 +1159,14 @@ sub finaltasks {  #do ending tasks
             else {
                 if ($globaltimeout) { 
                     if ($totalruntime > $globaltimeout) {
-                        print "WebInject WARNING - All test passed successfully but global timeout ($globaltimeout seconds) has been reached. \n";
+                        print "WebInject WARNING - All tests passed successfully but global timeout ($globaltimeout seconds) has been reached \n";
                         exit $exit_codes{'WARNING'};
                     }
                     else { 
                         undef $globaltimeout; 
                     }
                     unless ($globaltimeout) {
-                        print "WebInject OK - All test passed successfully in $totalruntime seconds. \n";
+                        print "WebInject OK - All tests passed successfully in $totalruntime seconds \n";
                         exit $exit_codes{'OK'};
                     }
                 }
