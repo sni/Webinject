@@ -150,11 +150,13 @@ sub engine
     #contsruct objects
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
+    $useragent->agent('WebInject');  #set http useragent that will show up in webserver logs
+
 
     $totalruncount = 0;
     $passedcount = 0;
     $failedcount = 0;
-    
+   
     
     foreach (@casefilelist) #process test case files named in config.xml
     {
