@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.34";
+our $version="1.35";
 
 use strict;
 use LWP;
@@ -42,6 +42,7 @@ our ($xnode, $graphtype, $plotclear, $stop, $nooutput);
 our ($runcount, $totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
 our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
 our (@casefilelist, $currentcasefile, $casecount, $isfailure);
+our ($verifyresponsecode);
 our ($verifypositive, $verifylater, $verifynegative, $verifylaterneg);
 our ($url, $baseurl, $postbody, $posttype);
 our ($gnuplot, $standaloneplot, $globalhttplog);
@@ -215,6 +216,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) { convertbackxml($verifynegative); }  
                 $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) { convertbackxml($verifypositivenext); }  
                 $verifynegativenext = $xmltestcases->{case}->{$testnum}->{verifynegativenext}; if ($verifynegativenext) { convertbackxml($verifynegativenext); }  
+                $verifyresponsecode = $xmltestcases->{case}->{$testnum}->{verifyresponsecode}; if ($verifyresponsecode) { convertbackxml($verifyresponsecode); }  
                 $parseresponse = $xmltestcases->{case}->{$testnum}->{parseresponse}; if ($parseresponse) { convertbackxml($parseresponse); }  
                 $parseresponse1 = $xmltestcases->{case}->{$testnum}->{parseresponse1}; if ($parseresponse1) { convertbackxml($parseresponse1); }
                 $parseresponse2 = $xmltestcases->{case}->{$testnum}->{parseresponse2}; if ($parseresponse2) { convertbackxml($parseresponse2); } 
@@ -312,6 +314,16 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                             print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" \n|;
                         }
                         print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|;
+                    }
+                }
+                    
+                if ($verifyresponsecode) {
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+                        print RESULTS qq|Verify Response Code: "$verifyresponsecode" <br />\n|;
+                        unless ($nooutput) { #skip regular STDOUT output 
+                            print STDOUT qq|Verify Response Code: "$verifyresponsecode" \n|;
+                        }
+                        print RESULTSXML qq|            <verifyresponsecode>$verifyresponsecode</verifyresponsecode>\n|;
                     }
                 }
                     
@@ -453,7 +465,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         }
     }
         
-    finaltasks();  #do ending tasks
+    finaltasks();  #do return/cleanup tasks
         
 } #end engine subroutine
 
@@ -705,41 +717,62 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         $verifylaterneg = '';  #set to null after verification
     }
         
-        
-        
-    #verify http response code is in the 100-399 range    
-    if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
-        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
-            print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|; 
-        }
-        unless ($nooutput) { #skip regular STDOUT output 
-            print STDOUT "Passed HTTP Response Code Verification (not in error range) \n"; 
-        }
-        #succesful response codes (100-399)
-        $passedcount++;         
-    }
-    else {
-        $response->as_string() =~ /(HTTP\/1.)(.*)/i;
-        if ($1) {  #this is true if an HTTP response returned 
+     
+     
+    if ($verifyresponsecode) {
+        if ($verifyresponsecode == $response->code()) { #verify returned HTTP response code matches verifyresponsecode set in test case
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
-                print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification ($1$2)</span><br />\n|; #($1$2) is http response code
+                print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification </span><br />\n|; 
             }
             unless ($nooutput) { #skip regular STDOUT output 
-                print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is http response code   
+                print STDOUT qq|Passed HTTP Response Code Verification \n|; 
             }
-        }
-        else {  #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
+            $passedcount++;         
+            }
+        else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
-                print RESULTS qq|<span class="fail">Failed - No Response</span><br />\n|; #($1$2) is http response code
+                print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification (received | . $response->code() .  qq|, expecting $verifyresponsecode)</span><br />\n|;
             }
-            unless ($nooutput) { #skip regular STDOUT output  
-                print STDOUT "Failed - No Response \n"; #($1$2) is http response code   
+            unless ($nooutput) { #skip regular STDOUT output 
+                print STDOUT qq|Failed HTTP Response Code Verification (received | . $response->code() .  qq|, expecting $verifyresponsecode) \n|;
             }
+            $failedcount++;
+            $isfailure++;
         }
-        $failedcount++;
-        $isfailure++;
     }
-        
+    else { #verify http response code is in the 100-399 range
+        if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|; 
+            }
+            unless ($nooutput) { #skip regular STDOUT output 
+                print STDOUT qq|Passed HTTP Response Code Verification (not in error range) \n|; 
+            }
+            #succesful response codes: 100-399
+            $passedcount++;         
+        }
+        else {
+            $response->as_string() =~ /(HTTP\/1.)(.*)/i;
+            if ($1) {  #this is true if an HTTP response returned 
+                unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                    print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification ($1$2)</span><br />\n|; #($1$2) is HTTP response code
+                }
+                unless ($nooutput) { #skip regular STDOUT output 
+                    print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is HTTP response code   
+                }
+            }
+            else {  #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
+                unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                    print RESULTS qq|<span class="fail">Failed - No Response</span><br />\n|; #($1$2) is HTTP response code
+                }
+                unless ($nooutput) { #skip regular STDOUT output  
+                    print STDOUT "Failed - No Response \n"; #($1$2) is HTTP response code   
+                }
+            }
+            $failedcount++;
+            $isfailure++;
+        }
+    }        
 }
 #------------------------------------------------------------------
 sub parseresponse {  #parse values from responses for use in future request (for session id's, dynamic URL rewriting, etc)
