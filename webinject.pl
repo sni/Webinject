@@ -175,11 +175,13 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         fixsinglecase();
             
-        $xmltestcases = XMLin("$dirname"."/$currentcasefile"); #slurp test case file to parse
+        $xmltestcases = XMLin("$dirname"."$currentcasefile".".tmp"); #slurp test case file to parse
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #for debug, print keys from dereferenced hash
             
-        cleancases();
+        #delete the temp file as soon as we are done reading it    
+        if (-e "$dirname"."$currentcasefile".".tmp") { unlink "$dirname"."$currentcasefile".".tmp"; }        
+            
             
         $repeat = $xmltestcases->{repeat};  #grab the number of times to iterate test case file
         unless ($repeat) { $repeat = 1; }  #set to 1 in case it is not defined in test case file               
@@ -188,7 +190,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         foreach (1 .. $repeat) {
                 
             $runcount = 0;
-            
+                
             foreach (sort {$a<=>$b} keys %{$xmltestcases->{case}}) {  #process cases in sorted order
                     
                 $testnum = $_;
@@ -1319,28 +1321,9 @@ sub processcasefile {  #get test case files to run (from command line or config 
     close(CONFIG);
 }
 #------------------------------------------------------------------
-sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
-                   #add a dummy testcase to fix this situation
-        
-    my @xmltoconvert;
-        
-    if ($casecount == 1) {
-            
-        open(XMLTOCONVERT, "$dirname"."$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
-        @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
-            
-        for(@xmltoconvert) { 
-            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/g;  #add dummy test case to end of file   
-        }       
-        close(XMLTOCONVERT);
-            
-        open(XMLTOCONVERT, ">$dirname"."$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
-        print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
-        close(XMLTOCONVERT);
-    }
-}
-#------------------------------------------------------------------
-sub convtestcases {  #convert ampersands and certain escaped chars so xml parser doesn't puke
+sub convtestcases {  
+    #here we do some pre-processing of the test case file and write it out to a temp file.
+    #we convert certain chars so xml parser doesn't puke.
         
     my @xmltoconvert;        
         
@@ -1364,32 +1347,30 @@ sub convtestcases {  #convert ampersands and certain escaped chars so xml parser
         
     close(XMLTOCONVERT);   
         
-    open(XMLTOCONVERT, ">$dirname"."$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle to temp file  
     print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
-sub cleancases {  #cleanup conversions made to file for converted characters and single testcase instance
-                  #this should leave the test case file exatly like it started
+sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
+                   #add a dummy testcase to fix this situation
         
     my @xmltoconvert;
         
-    open(XMLTOCONVERT, "$dirname"."$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
-    @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
-        
-    foreach (@xmltoconvert) { 
+    if ($casecount == 1) {
             
-        s/{AMPERSAND}/&/g;
-        s/{LESSTHAN}/\\</g; 
+        open(XMLTOCONVERT, "$dirname"."$currentcasefile".".tmp") or die "\nError: Failed to open temp file\n\n";  #open file handle   
+        @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
             
-        s/<case id="2" description1="dummy test case"\/><\/testcases>/<\/testcases>/g;  #add dummy test case to end of file
-    }  
-        
-    close(XMLTOCONVERT);   
-        
-    open(XMLTOCONVERT, ">$dirname"."$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
-    print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
-    close(XMLTOCONVERT);
+        for(@xmltoconvert) { 
+            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/g;  #add dummy test case to end of file   
+        }       
+        close(XMLTOCONVERT);
+            
+        open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle   
+        print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
+        close(XMLTOCONVERT);
+    }
 }
 #------------------------------------------------------------------
 sub convertbackxml() {  #converts replaced xml with substitutions
@@ -1573,12 +1554,13 @@ sub finaltasks {  #do ending tasks
 #------------------------------------------------------------------
 sub whackoldfiles {  #delete any files leftover from previous run if they exist
         
-    if (-e "plot.log") { unlink "plot.log"; } 
-    if (-e "plot.plt") { unlink "plot.plt"; } 
-    if (-e "plot.png") { unlink "plot.png"; }
+    if (-e "$dirname"."plot.log") { unlink "$dirname"."plot.log"; } 
+    if (-e "$dirname"."plot.plt") { unlink "$dirname"."plot.plt"; } 
+    if (-e "$dirname"."plot.png") { unlink "$dirname"."plot.png"; }
+    if (glob("$dirname"."*.xml.tmp")) { unlink glob("$dirname"."*.xml.tmp"); }
         
     #verify files are deleted, if not give the filesystem time to delete them before continuing    
-    while ((-e "plot.log") or (-e "plot.plt") or (-e "plot.png")) {
+    while ((-e "plot.log") or (-e "plot.plt") or (-e "plot.png") or (glob('*.xml.tmp'))) {
         sleep .5; 
     }
 }
