@@ -90,6 +90,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     $passedcount = 0;
     $failedcount = 0;
     $stop = 'no';
+    $plotclear = 'no';
         
         
         
@@ -126,8 +127,8 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 }
                     
                 $isfailure = 0;
-                
-                
+                    
+                    
                 if ($gui == 1){
                     gui_statusbar();  #update the statusbar
                     
@@ -249,11 +250,13 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 verify();  #verify result from http response
                     
                 httplog();  #write to http.log file
-                
+                    
+                    
                 plotlog($latency);  #send perf data to log file for plotting
                 `wgnupl32.exe plot.plt`;  #plot it with gnuplot
-                if ($gui == 1) {gui_updatemontab();}                
-                
+                if ($gui == 1) {gui_updatemontab();}  #update monitor with the newly rendered plot graph 
+                    
+                    
                 parseresponse();  #grab string from response to send later
                     
                     
@@ -902,9 +905,15 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
     ($mon, $mday, $hours, $min, $sec, $year) = $date =~ 
         /\w+ (\w+) +(\d+) (\d\d):(\d\d):(\d\d) (\d\d\d\d)/;
         
-    $time = "$months{$mon} $mday $hours $min $sec $year"; 
+    $time = "$months{$mon} $mday $hours $min $sec $year";
         
-    open(PLOTLOG, ">>plot.log") or die "ERROR: Failed to open file plot.log\n";
+    if ($plotclear eq 'yes') {
+        open(PLOTLOG, ">plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in clobber mode so log gets truncated
+        $plotclear = 'no';  #reset the value
+    }
+    else {
+        open(PLOTLOG, ">>plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in append mode
+    }
     printf PLOTLOG "%s %2.4f\n", $time, $value;
     close(PLOTLOG); 
         
