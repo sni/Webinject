@@ -34,7 +34,7 @@ our ($logresponse , $logrequest);
 our ($useragent, $request, $response);
 our ($gui, $monitorenabledchkbx, $latency);
 our ($cookie_jar, $proxy, $timeout, @httpauth);
-our ($xnode, $graphtype, $plotclear, $stop);
+our ($xnode, $graphtype, $plotclear, $stop, $nooutput);
 our ($totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
 our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
 our (@casefilelist, $currentcasefile, $casecount, $isfailure);
@@ -102,7 +102,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     writeinitialhtml();  #write opening tags for results file
         
-    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+    unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
         writeinitialstdout();  #write opening tags for STDOUT. 
     }
         
@@ -207,7 +207,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                     
                 print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
-                unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT qq|Test:  $currentcasefile - $testnum \n|;
                 }
                     
@@ -222,7 +222,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($description1) {
                     print RESULTS qq|$description1 <br>\n|; 
-                    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|$description1 \n|;
                     }
                     print RESULTSXML qq|            <description1>$description1</description1>\n|; 
@@ -230,7 +230,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($description2) {
                     print RESULTS qq|$description2 <br>\n|;
-                    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|$description2 \n|;
                     }
                     print RESULTSXML qq|            <description2>$description2</description2>\n|; 
@@ -240,7 +240,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($verifypositive) {
                     print RESULTS qq|Verify: "$verifypositive" <br>\n|;
-                    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|Verify: "$verifypositive" \n|;
                     }
                     print RESULTSXML qq|            <verifypositive>$verifypositive</verifypositive>\n|; 
@@ -248,7 +248,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($verifynegative) { 
                     print RESULTS qq|Verify Negative: "$verifynegative" <br>\n|;
-                    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|Verify Negative: "$verifynegative" \n|;
                     }
                     print RESULTSXML qq|            <verifynegative>$verifynegative</verifynegative>\n|; 
@@ -256,7 +256,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($verifypositivenext) { 
                     print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
-                    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output  
                         print STDOUT qq|Verify On Next Case: "$verifypositivenext" \n|;
                     }
                     print RESULTSXML qq|            <verifypositivenext>$verifypositivenext</verifypositivenext>\n|; 
@@ -264,7 +264,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($verifynegativenext) { 
                     print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
-                    unless ($xnode) { #if using XPath, skip regaular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output  
                         print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" \n|;
                     }
                     print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|; 
@@ -299,10 +299,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
                     print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
-                    if ($xnode) { #only print this way if using XPath
-                        print STDOUT qq|fail|;
-                    }                
-                    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|TEST CASE FAILED \n|;
                     }
                     print RESULTSXML qq|            <success>false</success>\n|;
@@ -313,10 +310,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                 else {
                     print RESULTS qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
-                    if ($xnode) { #only print this way if using XPath
-                        print STDOUT qq|pass|;
-                    }  
-                    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|TEST CASE PASSED \n|;
                     }
                     print RESULTSXML qq|            <success>true</success>\n|;
@@ -329,7 +323,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 print RESULTS qq|Response Time = $latency sec <br>\n|;
                 if ($gui == 1) {gui_timer_output();} 
-                unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT qq|Response Time = $latency sec \n|;
                 }
                 print RESULTSXML qq|            <responsetime>$latency</responsetime>\n|;
@@ -337,7 +331,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 print RESULTSXML qq|        </testcase>\n\n|;
                     
                 print RESULTS qq|<br>\n------------------------------------------------------- <br>\n\n|;
-                unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                    
+                unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set  
                     print STDOUT qq|------------------------------------------------------- \n|;
                 }
                     
@@ -416,7 +411,8 @@ sub writeinitialstdout {  #write opening tags for STDOUT
 
     print STDOUT 
 qq|
-Starting WebInject Engine... 
+Starting WebInject Engine...
+
 -------------------------------------------------------
 |; 
 }
@@ -496,19 +492,19 @@ sub httppost {  #send http request and read response
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
-sub verify {  #do verification of http response and print status to HTML/XML and UI
+sub verify {  #do verification of http response and print status to HTML/XML/STDOUT/UI
         
     if ($verifypositive) {
         if ($response->as_string() =~ /$verifypositive/i) {  #verify existence of string in response
             print RESULTS "<font color=green>Passed Positive Verification</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Positive Verification \n";
             }
             $passedcount++;
         }
         else {
             print RESULTS "<font color=red>Failed Positive Verification</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed Positive Verification \n";         
             }
             $failedcount++;
@@ -518,11 +514,10 @@ sub verify {  #do verification of http response and print status to HTML/XML and
         
         
         
-    if ($verifynegative)
-    {
+    if ($verifynegative) {
         if ($response->as_string() =~ /$verifynegative/i) {  #verify existence of string in response
             print RESULTS "<font color=red>Failed Negative Verification</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Negative Verification \n";            
             }
             $failedcount++;
@@ -530,7 +525,7 @@ sub verify {  #do verification of http response and print status to HTML/XML and
         }
         else {
             print RESULTS "<font color=green>Passed Negative Verification</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Negative Verification \n";
             }
             $passedcount++;                
@@ -542,20 +537,19 @@ sub verify {  #do verification of http response and print status to HTML/XML and
     if ($verifylater) {
         if ($response->as_string() =~ /$verifylater/i) {  #verify existence of string in response
             print RESULTS "<font color=green>Passed Positive Verification (verification set in previous test case)</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
             }
             $passedcount++;
         }
         else {
             print RESULTS "<font color=red>Failed Positive Verification (verification set in previous test case)</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Failed Positive Verification (verification set in previous test case) \n";            
             }
             $failedcount++;
             $isfailure++;            
-        }
-        
+        }        
         $verifylater = '';  #set to null after verification
     }
         
@@ -564,7 +558,7 @@ sub verify {  #do verification of http response and print status to HTML/XML and
     if ($verifylaterneg) {
         if ($response->as_string() =~ /$verifylaterneg/i) {  #verify existence of string in response
             print RESULTS "<font color=red>Failed Negative Verification (negative verification set in previous test case)</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set  
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";     
             }
             $failedcount++;
@@ -572,12 +566,11 @@ sub verify {  #do verification of http response and print status to HTML/XML and
         }
         else {
             print RESULTS "<font color=green>Passed Negative Verification (negative verification set in previous test case)</font><br>\n";
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Negative Verification (negative verification set in previous test case) \n";
             }
             $passedcount++;                   
         }
-        
         $verifylaterneg = '';  #set to null after verification
     }
         
@@ -586,7 +579,7 @@ sub verify {  #do verification of http response and print status to HTML/XML and
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
         print RESULTS "<font color=green>Passed HTTP Response Code Verification (not in error range)</font><br>\n"; 
-        unless ($xnode) { #if using XPath, skip regular STDOUT output 
+        unless ($nooutput) { #skip regular STDOUT output 
             print STDOUT "Passed HTTP Response Code Verification (not in error range) \n"; 
         }
         #succesful response codes (100-399)
@@ -596,13 +589,13 @@ sub verify {  #do verification of http response and print status to HTML/XML and
         $response->as_string() =~ /(HTTP\/1.)(.*)/i;
         if ($1) {  #this is true if an HTTP response returned 
             print RESULTS "<font color=red>Failed HTTP Response Code Verification ($1$2)</font><br>\n"; #($1$2) is http response code
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is http response code   
             }
         }
         else {  #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
-        print RESULTS "<font color=red>Failed - No Response</font><br>\n"; #($1$2) is http response code
-            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+            print RESULTS "<font color=red>Failed - No Response</font><br>\n"; #($1$2) is http response code
+            unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed - No Response \n"; #($1$2) is http response code   
             }
         }
@@ -824,7 +817,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $proxy = $1;
             #print "\nproxy : $proxy \n\n";
         }
-
+            
         if (/<timeout>/) {   
             $_ =~ /<timeout>(.*)<\/timeout>/;
             $timeout = $1;
@@ -845,7 +838,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $globalhttplog = $1;
             #print "\nglobalhttplog : $globalhttplog \n\n";
         }
-        
+            
         if (/<gnuplot>/) {        
             $_ =~ /<gnuplot>(.*)<\/gnuplot>/;
             $gnuplot = $1;
@@ -993,7 +986,7 @@ sub httplog {  #write requests and responses to http.log file
         ($globalhttplog && ($globalhttplog =~ /yes/i)) or
         (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0))
        ) {     
-        print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
+            print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
     }    
 }
 #------------------------------------------------------------------
@@ -1003,7 +996,7 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
         
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
     unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
-        
+            
         %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
                    "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
             
@@ -1031,7 +1024,7 @@ sub gnuplotcfg {  #create gnuplot config file
         
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
     unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
-    
+        
         open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
         print GNUPLOTPLT qq|
 set term png 
