@@ -16,7 +16,7 @@ Version 1.34 - FebJan 10, 2005
 Version 1.33 - Jan 26, 2005
     - Nagios Plugin compatibility
     - Support for multipart/form-data encoded POSTs (file uploads)
-    - Updated results.html output so it is valid xhtml
+    - Updated results.html output so it is valid XHTML
   
 Version 1.32 - Jan 14, 2005
     - Bugfix for erroneous dummy test case printing in GUI status
