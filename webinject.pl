@@ -232,7 +232,7 @@ sub engine
                 if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
                     print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
                     if ($xnode) { #only print this way if using XPath
-                        print STDOUT qq|FAIL|;
+                        print STDOUT qq|pass|;
                     }                
                     unless ($xnode) { #if using XPath, skip stdout output 
                         print STDOUT qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
@@ -244,7 +244,7 @@ sub engine
                 else {
                     print RESULTS qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
                     if ($xnode) { #only print this way if using XPath
-                        print STDOUT qq|PASS|;
+                        print STDOUT qq|fail|;
                     }  
                     unless ($xnode) { #if using XPath, skip stdout output 
                         print STDOUT qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
