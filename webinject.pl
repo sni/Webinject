@@ -1519,15 +1519,30 @@ sub finaltasks {  #do ending tasks
                             'WARNING' , 1,
                             'CRITICAL', 2,);
             if ($casefailedcount > 0) {
-                print "WebInject CRITICAL - $returnmessage \n";
+                if ($globaltimeout) {
+                    print "WebInject CRITICAL - $returnmessage |time=$totalruntime;$globaltimeout;;0\n";
+                }
+                else {
+                    print "WebInject CRITICAL - $returnmessage |time=$totalruntime;;;0\n";
+                }
                 exit $exit_codes{'CRITICAL'};
             }
             elsif (($globaltimeout) && ($totalruntime > $globaltimeout)) { 
-                print "WebInject WARNING - All tests passed successfully but global timeout ($globaltimeout seconds) has been reached \n";
+                if ($globaltimeout) {
+                    print "WebInject WARNING - All tests passed successfully but global timeout ($globaltimeout seconds) has been reached |time=$totalruntime;$globaltimeout;;0\n";
+                }
+                else {
+                    print "WebInject WARNING - All tests passed successfully but global timeout ($globaltimeout seconds) has been reached |time=$totalruntime;;;0\n";
+                }
                 exit $exit_codes{'WARNING'};
             }
-            else { 
-                print "WebInject OK - All tests passed successfully in $totalruntime seconds \n";
+            else {
+                if ($globaltimeout) {
+                    print "WebInject OK - All tests passed successfully in $totalruntime seconds |time=$totalruntime;$globaltimeout;;0\n";
+                }
+                else {
+                    print "WebInject OK - All tests passed successfully in $totalruntime seconds |time=$totalruntime;;;0\n";
+                }
                 exit $exit_codes{'OK'};
             }
         }
