@@ -28,6 +28,8 @@ use Time::HiRes 'time','sleep';
 use Tk;
 use Tk::Stderr;
 use Tk::ROText;
+use Tk::Compound;
+use Tk::ProgressBar::Mac;
 #use Data::Dumper;  #to dump hashes for debugging   
 
 
@@ -56,29 +58,44 @@ $out_window = $mw->Scrolled(ROText,
                   )->place(qw/-x 25 -y 144/); #output window
 
 
-$mw->Button(-text               => 'Run Test Cases',
-            -width              => '15',
+$rtc_button = $mw->Button->Compound;
+$rtc_button->Text(-text => "Run Test Cases");
+$mw->Button(-width              => '85',
+            -height             => '13',
             -background         => '#EFEFEF',
             -activebackground   => '#666699',
             -foreground         => '#000000',
             -activeforeground   => '#FFFFFF',
             -borderwidth        => '3',
+            -image              => $rtc_button,
             -command            => sub{engine()}
             )->place(qw/-x 25 -y 110/);
 
 
-$mw->Button(-text               => 'Exit',
-            -width              => '8',
+$exit_button = $mw->Button->Compound;
+$exit_button->Text(-text => "Exit");
+$mw->Button(-width              => '40',
+            -height             => '13',
             -background         => '#EFEFEF',
             -activebackground   => '#666699',
             -foreground         => '#000000',
             -activeforeground   => '#FFFFFF',
             -borderwidth        => '3',
+            -image              => $exit_button,
             -command            => sub{exit;}
-            )->place(qw/-x 565 -y 5/);
-  
+            )->place(qw/-x 580 -y 5/);
+
+
+$progressbar = $mw->ProgressBar(-width  => '420', 
+                                -bg     => '#666699'
+                                )->place(qw/-x 150 -y 110/);
+
+
 
 MainLoop;
+
+
+
 
 
 #------------------------------------------------------------------
@@ -127,7 +144,9 @@ sub engine
         #special handling for when only one test case exists (hash is referenced different than with multiples due to how the parser formats the hash)
         if ($casecount == 1)
         {  
-            $out_window->insert("end", " ."); $out_window->update();
+            $percentcomplete = ($testnum/$casecount)*100;  
+            $progressbar->set($percentcomplete);  #update progressbar with current status
+            
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             
             #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
@@ -172,8 +191,10 @@ sub engine
         
         
         while ($testnum <= $casecount) #make any changes here to special case above
-        {  
-            $out_window->insert("end", " ."); $out_window->update();
+        {             
+            $percentcomplete = ($testnum/$casecount)*100;  
+            $progressbar->set($percentcomplete);  #update progressbar with current status
+            
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
             if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
@@ -217,7 +238,7 @@ sub engine
             
             print RESULTS "Response Time = $latency s<br>\n";
             print RESULTS "<br>\n-------------------------------------------------------<br>\n\n";
-            
+                        
             $testnum++;
             $totalruncount++;
         }
