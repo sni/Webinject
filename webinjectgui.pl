@@ -143,26 +143,26 @@ $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator
                           )->place(qw/-x 591 -y 79/); $mw->update();
 
 
-
-$mw->Label(-text  => 'Verbose Output',
+$minimalcheckbx = 'minimal_off';  #give it a default value
+$mw->Label(-text  => 'Minimal Output',
            -bg    => '#666699',
            -fg    => '#FFFFFF'
           )->place(qw/-x 45 -y 628/); $mw->update();
-$verbose_checkbx = $mw->Checkbutton(-text       => '', 
-                        -onvalue                => 'verbose_on',
-                        -offvalue               => 'verbose_off',
-                        -variable               => \$verbosecheckbx,
+$minimal_checkbx = $mw->Checkbutton(-text       => '',  #using a text widget instead 
+                        -onvalue                => 'minimal_on',
+                        -offvalue               => 'minimal_off',
+                        -variable               => \$minimalcheckbx,
                         -background             => '#666699',
                         -activebackground       => '#666699',
                         )->place(qw/-x 20 -y 627/); $mw->update();
 
 
-
+$timercheckbx = 'timer_off';  #give it a default value
 $mw->Label(-text  => 'Response Timer Output',
            -bg    => '#666699',
            -fg    => '#FFFFFF'
           )->place(qw/-x 174 -y 628/); $mw->update();
-$timers_checkbx = $mw->Checkbutton(-text        => '', 
+$timers_checkbx = $mw->Checkbutton(-text        => '',  #using a text widget instead 
                         -onvalue                => 'timer_on',
                         -offvalue               => 'timer_off',
                         -variable               => \$timercheckbx,
@@ -222,9 +222,9 @@ sub gui_initial {   #this runs when engine is first loaded
                            -background  => '#666699',
                           );
     
-    $verbose_checkbx->configure(-state       => 'disabled' );  #disable button while running
+    $minimal_checkbx->configure(-state  => 'disabled' );  #disable button while running
 
-    $timers_checkbx->configure(-state       => 'disabled'  );  #disable button while running
+    $timers_checkbx->configure(-state   => 'disabled'  );  #disable button while running
    
     $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
 }
@@ -243,10 +243,8 @@ sub gui_statusbar {
 }
 #------------------------------------------------------------------
 sub gui_tc_descript {
-    if ($verbosecheckbx) {
-        if ($verbosecheckbx  eq "verbose_on") {
-            $status_window->insert("end", "- $description1\n"); $status_window->see("end");
-        }
+    unless ($minimalcheckbx  eq "minimal_on") {
+        $status_window->insert("end", "- $description1\n"); $status_window->see("end");
     }
 }
 #------------------------------------------------------------------
@@ -264,10 +262,8 @@ sub gui_status_failed {
 }
 #------------------------------------------------------------------
 sub gui_timer_output {
-    if ($timercheckbx) {
-        if ($timercheckbx  eq "timer_on") {
-            $status_window->insert("end", "$latency s\n"); $status_window->see("end");
-        }
+    if ($timercheckbx  eq "timer_on") {
+        $status_window->insert("end", "$latency s\n"); $status_window->see("end");
     }
 }    
 #------------------------------------------------------------------
@@ -290,7 +286,7 @@ sub gui_final {
                            -background  => '#EFEFEF',
                           );
     
-    $verbose_checkbx->configure(-state  => 'normal');  #re-enable button after finish
+    $minimal_checkbx->configure(-state  => 'normal');  #re-enable button after finish
 
     $timers_checkbx->configure(-state  => 'normal');  #re-enable button after finish
 }
