@@ -43,7 +43,7 @@ if (-e "plot.log") {  unlink "plot.log"; }
 if (-e "plot.plt") {  unlink "plot.plt"; } 
 if (-e "plot.gif") {  unlink "plot.gif"; }    
 
-
+print "FOOO";
 
 #------------------------------------------------------------------
 sub engine  #wrap the whole engine in a subroutine so it can be integrated with the gui 
@@ -58,9 +58,9 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
     
     #delete files leftover from previous run if they exist (do this here so the are whacked each run)
-    if (-e "plot.log") {  unlink "plot.log"; } 
-    if (-e "plot.plt") {  unlink "plot.plt"; } 
-    if (-e "plot.gif") {  unlink "plot.gif"; } 
+    if (-e "plot.log") { unlink "plot.log"; } 
+    if (-e "plot.plt") { unlink "plot.plt"; } 
+    if (-e "plot.gif") { unlink "plot.gif"; } 
       
     #contsruct objects
     $useragent = LWP::UserAgent->new;
@@ -87,6 +87,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     $casefailedcount = 0;
     $passedcount = 0;
     $failedcount = 0;
+    $STOP = 'NO';
         
         
         
@@ -905,7 +906,7 @@ sub gnuplotcfg {  #create gnuplot config file
     qq|
 set term gif 
 set output \"plot.gif\"
-set size 1,0.5
+set size 1.1,0.5
 set pointsize .5
 set xdata time 
 set ylabel \"Response Time (seconds)\"
