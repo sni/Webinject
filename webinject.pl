@@ -34,7 +34,7 @@ $| = 1; #don't buffer output to STDOUT
 $useragent = LWP::UserAgent->new;
 $cookie_jar = HTTP::Cookies->new;
 
-    print "\nWebInject is running ...  see 'results.html' for output \n\n\n";
+    print "\nWebInject is running ...  see results.html file for output \n\n\n";
 
     open(HTTPLOGFILE, ">http.log") || die "Failed to open http.log file\n";   
 
