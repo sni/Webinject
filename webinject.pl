@@ -118,7 +118,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
         unless ($repeat) { $repeat = 1; }  #set to 1 in case it is not defined in test case file               
             
             
-        foreach ( 1 .. $repeat ) {
+        foreach (1 .. $repeat) {
                 
             while ($testnum <= $casecount) {
                     
@@ -253,7 +253,11 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     
                     
                 plotlog($latency);  #send perf data to log file for plotting
-                `wgnupl32.exe plot.plt`;  #plot it with gnuplot
+                    
+                unless ($graphtype eq 'nograph') {
+                    `wgnupl32.exe plot.plt`;  #plot it with gnuplot
+                }
+                    
                 if ($gui == 1) {gui_updatemontab();}  #update monitor with the newly rendered plot graph 
                     
                     
@@ -315,14 +319,15 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     
                 $testnum++;
                 $totalruncount++;
-                
+                    
+                    
                 #break from sub if user presses stop button in gui    
                 if ($stop eq 'yes'){
-                    $stop = 'no';
                     if ($gui == 1){gui_stop();}
+                    $stop = 'no';
                     return "";
                 }
-                
+                    
             }
                 
             $testnum = 1;  #reset testcase counter so it will reprocess test case file if repeat is set
@@ -941,3 +946,4 @@ plot \"plot.log\" using 1:7 title \"Response Times" w $graphtype
     close(GNUPLOTPLT);
         
 }
+#------------------------------------------------------------------
