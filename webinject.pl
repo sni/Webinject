@@ -30,7 +30,7 @@ use Time::HiRes 'time','sleep';
 $| = 1; #don't buffer output to STDOUT
 
 
-if ($0 eq 'webinject.pl') {  #set flag so we know if it is running standalone or from webinjectgui
+if (($0 eq 'webinject.pl') or ($0 eq 'webinject.exe')) {  #set flag so we know if it is running standalone or from webinjectgui
     $gui = 0; engine();
 }
 else {
