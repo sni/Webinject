@@ -160,7 +160,9 @@ sub engine
             }  
             
             
-            verify();  #verify result from http response       
+            verify();  #verify result from http response
+            
+            httplog(); #write to http.log file            
             
             parseresponse();  #grab string from response to send later
             
@@ -253,8 +255,6 @@ sub httpget {  #send http request and read response
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
     
-    if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
-    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
@@ -273,8 +273,6 @@ sub httppost {  #send http request and read response
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
     
-    if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
-    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
@@ -614,11 +612,24 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
 }
 #------------------------------------------------------------------
 sub url_escape {  #escapes difficult characters with %hexvalue
-    #(WP handles url encoding already, but use this to escape valid chars that LWP won't convert (like +)
+    #LWP handles url encoding already, but use this to escape valid chars that LWP won't convert (like +)
+    
+    my @a = @_;  # make a copy of the arguments
+    map { s/[^-\w.,!~'()\/ ]/sprintf "%%%02x", ord $&/eg } @a;
+    return wantarray ? @a : $a[0];
 
-  my @a = @_;  # make a copy of the arguments
-  map { s/[^-\w.,!~'()\/ ]/sprintf "%%%02x", ord $&/eg } @a;
-  return wantarray ? @a : $a[0];
 }
 #------------------------------------------------------------------
+sub httplog {  #write requests and responses to http.log file
 
+    if ($logrequest && $logrequest eq "yes") {
+        print HTTPLOGFILE $request->as_string;
+        print HTTPLOGFILE "\n\n";
+    } 
+    
+    if ($logresponse && $logresponse eq "yes") {
+        print HTTPLOGFILE $response->as_string;
+        print HTTPLOGFILE "\n\n";} 
+
+}
+#------------------------------------------------------------------
