@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#    Copyright 2004 Corey Goldberg (corey@test-tools.net)
+#    Copyright 2004 Corey Goldberg (corey@webinject.org)
 #
 #    This file is part of WebInject.
 #
