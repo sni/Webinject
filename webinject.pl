@@ -365,12 +365,20 @@ sub parseresponse {  #parse value from response for use in future request (for s
         
         $leftboundary = $parseargs[0];
         $rightboundary = $parseargs[1];
+        $escape = $parseargs[2];
         
         $resptoparse = $response->as_string;
         if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
             $parsedresult = $1; 
         }
-        #print "\n\nParsed String: $parsedresult\n\n";
+        
+        if ($escape) {
+            if ($escape eq 'escape') {
+                $parsedresult = url_escape($parsedresult);
+            }
+        }
+        
+        print "\n\nParsed String: $parsedresult\n\n";
     }
 }
 #------------------------------------------------------------------
@@ -490,3 +498,12 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
+sub url_escape {  #escapes difficult characters with %hexvalue
+    #(WP handles url encoding already, but use this to escape valid chars that LWP won't convert (like +)
+
+  my @a = @_;  # make a copy of the arguments
+  map { s/[^-\w.,!~'()\/ ]/sprintf "%%%02x", ord $&/eg } @a;
+  return wantarray ? @a : $a[0];
+}
+#------------------------------------------------------------------
+
