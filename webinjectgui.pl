@@ -24,6 +24,7 @@ use Tk::Stderr;
 use Tk::ROText;
 use Tk::Compound;
 use Tk::ProgressBar::Mac;
+use Tk::NoteBook;
 
 
 
@@ -33,11 +34,11 @@ $| = 1; #don't buffer output to STDOUT
 
 
  
-$mw = MainWindow->new(-title            => 'WebInject - HTTP Test Tool    (version 1.12)',
+$mw = MainWindow->new(-title            => 'WebInject - HTTP Test Tool    (version 1.20)',
                       -bg               => '#666699',
                       -takefocus        => '1'  #start on top
                       );
-$mw->geometry("650x650+0+0");  #size and screen placement
+$mw->geometry("750x650+0+0");  #size and screen placement
 $mw->InitStderr; #redirect all STDERR to a window
 $mw->raise; #put application in front at startup
 $mw->bind('<F5>' => \&engine);  #F5 key makes it run
@@ -54,53 +55,81 @@ if (-e "logo.gif") {  #if logo graphic exists, use it
     $mw->Photo('logogif', -file => "logo.gif");    
     $mw->Label(-image => 'logogif', 
                -bg    => '#666699'
-              )->place(qw/-x 255 -y 12/); $mw->update();
+              )->place(qw/-x 305 -y 12/); $mw->update();
 }
 
 
 $mw->Label(-text  => 'Engine Status:',
            -bg    => '#666699',
            -fg    => '#FFFFFF'
-          )->place(qw/-x 25 -y 110/); $mw->update();
+          )->place(qw/-x 12 -y 100/); $mw->update();
 
 
 $out_window = $mw->Scrolled(ROText,  #engine status window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
-                   -width       => '85',
+                   -width       => '103',
                    -height      => '7',
-                  )->place(qw/-x 25 -y 128/); $mw->update();
+                  )->place(qw/-x 12 -y 118/); $mw->update();
 
 
-$mw->Label(-text  => 'Test Case Status:',
-           -bg    => '#666699',
-           -fg    => '#FFFFFF'
-           )->place(qw/-x 25 -y 238/); $mw->update(); 
 
 
-$status_window = $mw->Scrolled(ROText,  #test case status window 
+
+
+
+
+
+
+
+
+
+$tabs = $mw->NoteBook(-backpagecolor       => '#666699',
+                     -background          => '#EFEFEF', #color for active tab
+                     -foreground          => 'black', #text color for active tab
+                     -inactivebackground  => '#BFBFBF', #color for inactive tabs
+                    )->place(qw/-x 12 -y 240/);  #outer notebook object
+
+$status_tab = $tabs->add('statustab', -label => 'Status'); $mw->update();
+$mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();
+
+
+
+#$mw->Label(-text  => 'Test Case Status:',
+#           -bg    => '#666699',
+#           -fg    => '#FFFFFF'
+#           )->place(qw/-x 105 -y 238/); $mw->update();
+
+
+
+$status_window = $status_tab->Scrolled(ROText,  #test case status monitor window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
-                   -width       => '85',
-                   -height      => '26',
-                  )->place(qw/-x 25 -y 256/); $mw->update();
+                   -width       => '100',
+                   -height      => '24',
+                  )->pack(); $mw->update();
 $status_window->tagConfigure('red', -foreground => '#FF3333');  #define tag for font color
 $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for font color
 
 
-$rtc_button = $mw->Button->Compound;
-$rtc_button->Text(-text => "Run Test Cases");
-$rtc_button = $mw->Button(-width              => '100',
-                          -height             => '13',
-                          -background         => '#EFEFEF',
-                          -activebackground   => '#666699',
-                          -foreground         => '#000000',
-                          -activeforeground   => '#FFFFFF',
-                          -borderwidth        => '3',
-                          -image              => $rtc_button,
-                          -command            => sub{engine();}
-                          )->place(qw/-x 25 -y 75/); $mw->update();
-$rtc_button->focus();
+
+
+$montab_canvas = $mon_tab->Canvas(-width        => '719',
+                                      -height       => '340',                   
+                                      -background  => '#EFEFEF'
+                                     )->pack(); $mw->update();  #canvas to fill tab to place widgets into
+
+if (-e "plot.gif") {  #if plot graphic exists, put it in canvas
+    $montab_canvas->Photo('plotgraph', -file => "plot.gif");    
+    $montab_canvas->Label(-image => 'plotgraph', )->place(qw/-x 1 -y 1/);
+}
+
+
+
+
+
+
+
 
 
 $restart_button = $mw->Button->Compound;
@@ -119,7 +148,7 @@ $restart_button = $mw->Button(-width          => '50',
 
 $exit_button = $mw->Button->Compound;
 $exit_button->Text(-text => "Exit");
-$exit_button = $mw->Button(-width              => '40',
+$exit_button = $mw->Button(-width              => '50',
                            -height             => '13',
                            -background         => '#EFEFEF',
                            -activebackground   => '#666699',
@@ -128,19 +157,36 @@ $exit_button = $mw->Button(-width              => '40',
                            -borderwidth        => '3',
                            -image              => $exit_button,
                            -command            => sub{exit;}
-                           )->place(qw/-x 596 -y 5/); $mw->update();
+                           )->place(qw/-x 687 -y 5/); $mw->update();
+
+
+
+
+$rtc_button = $mw->Button->Compound;
+$rtc_button->Text(-text => "Run");
+$rtc_button = $mw->Button(-width              => '50',
+                          -height             => '13',
+                          -background         => '#EFEFEF',
+                          -activebackground   => '#666699',
+                          -foreground         => '#000000',
+                          -activeforeground   => '#FFFFFF',
+                          -borderwidth        => '3',
+                          -image              => $rtc_button,
+                          -command            => sub{engine();}
+                          )->place(qw/-x 110 -y 65/); $mw->update();
+$rtc_button->focus();
 
 
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
-                                )->place(qw/-x 146 -y 75/); $mw->update();
+                                )->place(qw/-x 176 -y 65/); $mw->update();
 
 
 $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator 
                           -height      => '9',                   
                           -background  => '#666699',
-                          )->place(qw/-x 591 -y 79/); $mw->update();
+                          )->place(qw/-x 621 -y 69/); $mw->update();
 
 
 $minimalcheckbx = 'minimal_off';  #give it a default value
@@ -212,9 +258,9 @@ sub gui_initial {   #this runs when engine is first loaded
     $totalruntime = '';
 
 
-    $out_window->delete('0.0','end');    #clear window before starting
+    $out_window->delete('0.0','end');  #clear window before starting
     
-    $status_window->delete('0.0','end'); #clear window before starting
+    $status_window->delete('0.0','end');  #clear window before starting
     
     $status_ind->configure(-background  => '#FF9900');  #change status color amber while running
                            
@@ -230,7 +276,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
 }
 #------------------------------------------------------------------
-sub gui_restart { # kill the entire app and restart it
+sub gui_restart {  #kill the entire app and restart it
     if ($0 =~ /webinjectgui.pl/) {
         exec 'perl ./webinjectgui.pl';
     }
@@ -296,4 +342,11 @@ sub gui_final {
 
     $timers_checkbx->configure(-state  => 'normal');  #re-enable button after finish
 }
+#------------------------------------------------------------------
+sub gui_updatemontab {
+    if (-e "plot.gif") {  #if plot graphic exists, put it in canvas
+        $montab_canvas->Photo('plotgraph', -file => "plot.gif");    
+        $montab_canvas->Label(-image => 'plotgraph', )->place(qw/-x 1 -y 1/);
+    }
+}    
 #------------------------------------------------------------------
