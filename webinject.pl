@@ -112,7 +112,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     #change response delay timeout in seconds if it is set in config.xml      
     if ($timeout) {
-        $useragent->timeout("$timeout");
+        $useragent->timeout("$timeout");  #default LWP timeout is 180 secs.
     }
         
     print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
@@ -215,7 +215,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) { convertbackxml($logrequest); }  
                 $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) { convertbackxml($logresponse); }  
                 $sleep = $xmltestcases->{case}->{$testnum}->{sleep}; if ($logresponse) { convertbackxml($logresponse); }
-                    
+                $errormessage = $xmltestcases->{case}->{$testnum}->{errormessage}; if ($logresponse) { convertbackxml($logresponse); }    
                     
                 if ($description1) {  #if we hit a dummy record, skip it
                     if ($description1 =~ /dummy test case/) {
@@ -857,7 +857,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
         }
             
         #use testcase filename passed on command line (config.xml is only used for other options)        
-        push @casefilelist, $ARGV[0];  #first commandline argument is the test case file, put this on the array for processing
+        push @casefilelist, $ARGV[0];  #first command line argument is the test case file, put this on the array for processing
     }
         
     elsif (($#ARGV + 1) > 2) {  #too many command line args were passed
