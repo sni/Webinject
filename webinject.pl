@@ -14,12 +14,14 @@
 #    merchantability or fitness for a particular purpose.  See the
 #    GNU General Public License for more details.
 
+our $version="1.30";
 
 use strict;
 use LWP;
 use HTTP::Cookies;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
+use Getopt::Long;
 use Crypt::SSLeay;
 #use Data::Dumper;  #to dump hashes for debugging   
 
@@ -42,6 +44,8 @@ our ($verifypositive,  $verifylater, $verifynegative, $verifylaterneg);
 our ($url, $baseurl, $postbody);
 our ($gnuplot, $standaloneplot, $globalhttplog);
 our ($currentdatetime, $totalruntime, $starttimer, $endtimer);
+our ($opt_configfile, $opt_version);
+our ($reporttype, $returnmessage, $errormessage, $globaltimeout, %exit_codes);
 
 
 if (($0 =~ /webinject.pl/) or ($0 =~ /webinject.exe/)) {  #set flag so we know if it is running standalone or from webinjectgui
@@ -65,6 +69,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     if ($gui == 1) { gui_initial(); }
         
+    getoptions();  #get command line options
+    
     $startruntimer = time();  #timer for entire test run
     $currentdatetime = localtime time;  #get current date and time for results report
         
@@ -75,12 +81,12 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     #delete files leftover from previous run (do this here so they are whacked each run)
     whackoldfiles();
         
-    processcasefile();
-        
     #contsruct objects
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
+
+    processcasefile();
         
     #add proxy support if it is set in config.xml
     if ($proxy) {
@@ -297,10 +303,19 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 parseresponse();  #grab string from response to send later
                     
                     
-                if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
+                if ($isfailure > 0) {  #if any verification fails, test case is considered a failure
                     print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
                     unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|TEST CASE FAILED \n|;
+                    }
+                    unless ($returnmessage) {  #(used for plugin compatibility) if it's the first error message, set it to variable
+                        if ($errormessage) { 
+                            $returnmessage = $errormessage; 
+                        }
+                        else { 
+                            $returnmessage = "Test case number $testnum failed"; 
+                        }
+                        #print "\nReturn Message : $returnmessage\n"
                     }
                     print RESULTSXML qq|            <success>false</success>\n|;
                     if ($gui == 1){ 
@@ -736,6 +751,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
                        #parse config file and grab values it sets 
         
     my @configfile;
+    my $configexists = 0;
     my $comment_mode;
     my $firstparse;
     my $filename;
@@ -745,10 +761,20 @@ sub processcasefile {  #get test case files to run (from command line or config 
     undef @casefilelist; #empty the array of test case filenames
     undef @configfile;
         
-    #process the config file if it exists    
-    if (-e "config.xml") {  #if config.xml exists, read it
-        open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
-        my @precomment = <CONFIG>;  #read the file into an array
+    #process the config file
+    if ($opt_configfile) {  #if -c option was set on command line, use specified config file
+        open(CONFIG, $opt_configfile) or die "\nERROR: Failed to open $opt_configfile file\n\n";
+        $configexists = 1;  #flag we are going to use a config file
+    }
+    elsif (-e "config.xml") {  #if config.xml exists, read it
+        open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";
+        $configexists = 1;  #flag we are going to use a config file
+    } 
+        
+    if ($configexists) {  #if we have a config file, use it
+        #open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
+        
+        my @precomment = <CONFIG>;  #read the config file into an array
             
         #remove any commented blocks from config file
         foreach (@precomment) {
@@ -762,8 +788,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
                 push(@configfile, $_);
             }
         }
-        
-    }           
+    }
         
     if (($#ARGV + 1) < 1) {  #no command line args were passed  
         #if testcase filename is not passed on the command line, use files in config.xml  
@@ -841,6 +866,21 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $timeout = $1;
             #print "\ntimeout : $timeout \n\n";
         }
+            
+        if (/<globaltimeout>/) {   
+            $_ =~ /<globaltimeout>(.*)<\/globaltimeout>/;
+            $globaltimeout = $1;
+            #print "\nglobaltimeout : $globaltimeout \n\n";
+        }
+            
+        if (/<reporttype>/) {   
+            $_ =~ /<reporttype>(.*)<\/reporttype>/;
+	    if ($1 ne "standard") {
+               $reporttype = $1;
+	       $nooutput = "set";
+	    } 
+            #print "\nreporttype : $reporttype \n\n";
+        }    
             
         if (/<useragent>/) {   
             $_ =~ /<useragent>(.*)<\/useragent>/;
@@ -1077,6 +1117,41 @@ sub finaltasks {  #do ending tasks
     close(HTTPLOGFILE);
     close(RESULTS);
     close(RESULTSXML);
+        
+        
+    #Nagios and plugin compatibility for WebInject
+    if ($reporttype) {  #return value is set which correspond to a montitoring program
+    	if ($reporttype eq 'nagios') { #report test result to Nagios 
+            #predefined exit codes for Nagios
+            %exit_codes  = ('UNKNOWN' ,-1,
+                            'OK'      , 0,
+                            'WARNING' , 1,
+                            'CRITICAL', 2,);
+            if ($casefailedcount > 0) {
+                print "WebInject CRITICAL - $returnmessage \n";
+                exit $exit_codes{'CRITICAL'};
+            }
+            else {
+                if ($globaltimeout) { 
+                    if ($totalruntime > $globaltimeout) {
+                        print "WebInject WARNING - All test passed successfully but global timeout ($globaltimeout seconds) has been reached. \n";
+                        exit $exit_codes{'WARNING'};
+                    }
+                    else { 
+                        undef $globaltimeout; 
+                    }
+                    unless ($globaltimeout) {
+                        print "WebInject OK - All test passed successfully in $totalruntime seconds. \n";
+                        exit $exit_codes{'OK'};
+                    }
+                }
+            }
+        }
+        else {
+            print STDERR "\nError, only 'nagios', and 'standard' are supported for reporttype values.\n\n";
+        }
+    }
+	
 }
 #------------------------------------------------------------------
 sub whackoldfiles {  #delete any files leftover from previous run if they exist
@@ -1106,6 +1181,30 @@ sub plotit {  #call the external plotter to create a graph (if we are in the app
                 gui_no_plotter_found();  #if gnuplot not specified, notify on gui
             }
         }
+    }
+}
+#------------------------------------------------------------------
+sub getoptions {  #command line options
+    Getopt::Long::Configure('bundling');
+    GetOptions(
+        'v|version'     => \$opt_version,
+        'c|config=s'    => \$opt_configfile,
+        'n|no-output'   => \$nooutput,
+        ) 
+        or do {
+            print_usage();
+            exit();
+        };
+    if ($opt_version) {
+	print "WebInject version $version\nFor more info: http://www.webinject.org\n";
+  	exit();
+    }
+    sub print_usage {
+        print <<EOB
+    Usage:
+      webinject.pl [-c|--config config_file] [-n|--no-output] [testcase_file [XPath]]
+      webinject.pl --version|-v
+EOB
     }
 }
 #------------------------------------------------------------------
