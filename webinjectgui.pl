@@ -150,7 +150,6 @@ $tabs = $mw->NoteBook(-backpagecolor       => '#666699',
                      )->place(qw/-x 12 -y 240/);  #outer notebook object
 
 $status_tab = $tabs->add('statustab', -label => 'Status'); $mw->update();
-$mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();
 
 
 
@@ -167,7 +166,6 @@ $statustab_buttoncanvas = $statustab_canvas->Canvas(-width        => '700',
                                                     -height       => '24',
                                                     -background   => '#666699',
                                                    )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
-                                       
 
 
 
@@ -176,14 +174,14 @@ $statustab_buttoncanvas->Label(-text  => 'Minimal Output',
                                -bg    => '#666699',
                                -fg    => 'white',
                               )->place(qw/-x 49 -y 4/); $mw->update();
-$minimal_checkbx = $statustab_buttoncanvas->Checkbutton(-text       => '',  #using a text widget instead 
-                        -onvalue                => 'minimal_on',
-                        -offvalue               => 'minimal_off',
-                        -variable               => \$minimalcheckbx,
-                        -background             => '#666699',
-                        -activebackground       => '#666699',
-                        -highlightbackground    => '#666699',
-                        )->place(qw/-x 20 -y 2/); $mw->update();
+$statustab_buttoncanvas->Checkbutton(-text                   => '',  #using a text widget instead 
+                                     -onvalue                => 'minimal_on',
+                                     -offvalue               => 'minimal_off',
+                                     -variable               => \$minimalcheckbx,
+                                     -background             => '#666699',
+                                     -activebackground       => '#666699',
+                                     -highlightbackground    => '#666699',
+                                    )->place(qw/-x 20 -y 2/); $mw->update();
 
 
 $timercheckbx = 'timer_off';  #give it a default value
@@ -191,17 +189,14 @@ $statustab_buttoncanvas->Label(-text  => 'Response Timer Output',
                                -bg    => '#666699',
                                -fg    => 'white',
                               )->place(qw/-x 199 -y 4/); $mw->update();
-$timers_checkbx = $statustab_buttoncanvas->Checkbutton(-text        => '',  #using a text widget instead 
-                        -onvalue                => 'timer_on',
-                        -offvalue               => 'timer_off',
-                        -variable               => \$timercheckbx,
-                        -background             => '#666699',
-                        -activebackground       => '#666699',
-                        -highlightbackground    => '#666699',
-                        )->place(qw/-x 170 -y 2/); $mw->update();
-
-
-
+$statustab_buttoncanvas->Checkbutton(-text                   => '',  #using a text widget instead 
+                                     -onvalue                => 'timer_on',
+                                     -offvalue               => 'timer_off',
+                                     -variable               => \$timercheckbx,
+                                     -background             => '#666699',
+                                     -activebackground       => '#666699',
+                                     -highlightbackground    => '#666699',
+                                    )->place(qw/-x 170 -y 2/); $mw->update();
 
 
 $status_window = $statustab_canvas->Scrolled(ROText,  #test case status monitor window 
@@ -216,82 +211,24 @@ $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for
 
 
 
-$montab_canvas = $mon_tab->Canvas(-width        => '719',
-                                  -height       => '365',                   
-                                  -background   => '#EFEFEF',
-                                 )->pack(); $mw->update();  #canvas to fill tab (to place widgets into)
 
-
-$montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
-                                            -height       => '240',
-                                            -background   => '#EFEFEF',
-                                           )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph)
-           
-
-                                             
-
-$clear_graph = $mon_tab->Button->Compound;
-$clear_graph->Text(-text => "Clear Graph");
-$clear_graph = $mon_tab->Button(-width         => '60',
-                           -height             => '13',
-                           -background         => '#EFEFEF',
-                           -activebackground   => '#666699',
-                           -foreground         => '#000000',
-                           -activeforeground   => '#FFFFFF',
-                           -borderwidth        => '3',
-                           -image              => $clear_graph,
-                           -command            => sub{gui_cleargraph_button();}
-                          )->place(qw/-x 630 -y 310/); $mw->update();
+$monitorenabledchkbx = 'monitor_off';  #give it a default value
+$mw->Label(-text  => 'Enable Monitor',
+           -bg    => '#666699',
+           -fg    => 'white',
+          )->place(qw/-x 189 -y 242/); $mw->update();
+$monitor_enabledchkbx = $mw->Checkbutton(-text                   => '',  #using a text widget instead 
+                                         -onvalue                => 'monitor_on',
+                                         -offvalue               => 'monitor_off',
+                                         -variable               => \$monitorenabledchkbx,
+                                         -background             => '#666699',
+                                         -activebackground       => '#666699',
+                                         -highlightbackground    => '#666699',
+                                         -command                => sub{monitor_enable_disable();},
+                                        )->place(qw/-x 160 -y 240/); $mw->update();
 
 
 
-$montab_buttoncanvas = $montab_canvas->Canvas(-width        => '700',  
-                                              -height       => '24',
-                                              -background   => '#666699',
-                                             )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
-
-
-$radiolinegraph = $montab_buttoncanvas->Label(-text  => 'Line Graph',
-                                              -bg    => '#666699',
-                                              -fg    => 'white',
-                                             )->place(qw/-x 49 -y 4/); $mw->update();
-$radiolinegraph = $montab_buttoncanvas->Radiobutton(-value                  => 'lines',
-                                                    -variable               => \$graphtype,
-                                                    -indicatoron            => 'true',
-                                                    -background             => '#666699',
-                                                    -activebackground       => '#666699',
-                                                    -highlightbackground    => '#666699',
-                                                    )->place(qw/-x 20 -y 2/); $mw->update();
-$radiolinegraph->select;  #select as default
-
-
-
-$montab_buttoncanvas->Label(-text  => 'Impulse Graph',
-                            -bg    => '#666699',
-                            -fg    => 'white',
-                           )->place(qw/-x 199 -y 4/); $mw->update();
-$montab_buttoncanvas->Radiobutton(-value                  => 'impulses',
-                                  -variable               => \$graphtype,
-                                  -background             => '#666699',
-                                  -activebackground       => '#666699',
-                                  -highlightbackground    => '#666699',
-                                 )->place(qw/-x 170 -y 2/); $mw->update();
-                                 
-
-
-$montab_buttoncanvas->Label(-text  => 'No Graph',
-                            -bg    => '#666699',
-                            -fg    => 'white',
-                           )->place(qw/-x 349 -y 4/); $mw->update();
-$montab_buttoncanvas->Radiobutton(-value                  => 'nograph',
-                                  -variable               => \$graphtype,
-                                  -background             => '#666699',
-                                  -activebackground       => '#666699',
-                                  -highlightbackground    => '#666699',
-                                  -command            => sub{gui_cleargraph();}  #remove graph from view
-                                 )->place(qw/-x 320 -y 2/); $mw->update();
-                                 
-                                 
 
 
 $stop_button = $mw->Button->Compound;
@@ -389,7 +326,8 @@ sub gui_initial {   #this runs when engine is first loaded
 
     $rtc_button->placeForget;  #remove the run botton
     $stop_button->place(qw/-x 110 -y 65/);  #place the stop button
-
+    
+    $monitor_enabledchkbx->configure(-state  => 'disabled');  #disable button while running
 
     $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
 }
@@ -438,6 +376,7 @@ sub gui_timer_output {
 }    
 #------------------------------------------------------------------
 sub gui_final {
+        
     $out_window->insert("end", "Execution Finished... see results.html file for detailed output"); $out_window->see("end");
     
     $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime seconds\n");
@@ -452,20 +391,23 @@ sub gui_final {
     }
      
         
-    $minimal_checkbx->configure(-state  => 'normal');  #re-enable button after finish
-
-    $timers_checkbx->configure(-state  => 'normal');  #re-enable button after finish
+    $monitor_enabledchkbx->configure(-state  => 'normal');  #re-enable button after finish
+        
 }
 #------------------------------------------------------------------
 sub gui_updatemontab {
         
-    $montab_plotcanvas->place(qw/-x 0 -y 0/); $mw->update();  #replace the canvas (to place graph into)
-        
-    if ((-e "plot.gif") and (($graphtype ne 'nograph') or ($plotclear ne 'yes'))) {  #if plot graphic exists, put it in canvas
-        
-        $montab_plotcanvas->Photo('plotgraph', -file => "plot.gif");    
-        $montab_plotcanvas->Label(-image => 'plotgraph')->place(qw/-x 7 -y 0/);
+    if ($monitorenabledchkbx ne 'monitor_off') {  #don't try to update if monitor is disabled in gui
+            
+        $montab_plotcanvas->place(qw/-x 0 -y 0/); $mw->update();  #replace the canvas (to place graph into)
+            
+        if ((-e "plot.gif") and (($graphtype ne 'nograph') or ($plotclear ne 'yes'))) {  #if plot graphic exists, put it in canvas
+            
+            $montab_plotcanvas->Photo('plotgraph', -file => "plot.gif");    
+            $montab_plotcanvas->Label(-image => 'plotgraph')->place(qw/-x 7 -y 0/);
+        }
     }
+    
 }    
 #------------------------------------------------------------------
 sub gui_stop {  #flip button and do cleanup when user clicks Stop
@@ -481,7 +423,9 @@ sub gui_stop {  #flip button and do cleanup when user clicks Stop
 }
 #------------------------------------------------------------------
 sub gui_cleargraph {  #remove graph
+        
     if (-e "plot.gif") { unlink "plot.gif"; }  #delete a plot file if it exists so an old one is never rendered 
+        
     $montab_plotcanvas->placeForget;  #remove it from view
         
     $montab_plotcanvas->destroy;   #destroy the canvas
@@ -558,5 +502,86 @@ sub viewconfig {
     $config_text->insert("end", @configfile);
 
     close(CONFIG);
+}
+#------------------------------------------------------------------
+sub monitor_enable_disable {
+        
+    if ($monitorenabledchkbx eq 'monitor_on') {
+        
+        $mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();  #add the notebook tab
+        
+        $montab_canvas = $mon_tab->Canvas(-width        => '719',
+                                          -height       => '365',                   
+                                          -background   => '#EFEFEF',
+                                         )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to fill tab (to place widgets into)
+        
+        $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
+                                                    -height       => '240',
+                                                    -background   => '#EFEFEF',
+                                                   )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph)
+                   
+        $clear_graph = $mon_tab->Button->Compound;
+        $clear_graph->Text(-text => "Clear Graph");
+        $clear_graph = $mon_tab->Button(-width         => '60',
+                                   -height             => '13',
+                                   -background         => '#EFEFEF',
+                                   -activebackground   => '#666699',
+                                   -foreground         => '#000000',
+                                   -activeforeground   => '#FFFFFF',
+                                   -borderwidth        => '3',
+                                   -image              => $clear_graph,
+                                   -command            => sub{gui_cleargraph_button();}
+                                  )->place(qw/-x 630 -y 310/); $mw->update();
+        
+        $montab_buttoncanvas = $montab_canvas->Canvas(-width        => '700',  
+                                                      -height       => '24',
+                                                      -background   => '#666699',
+                                                     )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
+        
+        $montab_buttoncanvas->Label(-text  => 'Line Graph',
+                                    -bg    => '#666699',
+                                    -fg    => 'white',
+                                   )->place(qw/-x 49 -y 4/); $mw->update();
+        $radiolinegraph = $montab_buttoncanvas->Radiobutton(-value                  => 'lines',
+                                                            -variable               => \$graphtype,
+                                                            -indicatoron            => 'true',
+                                                            -background             => '#666699',
+                                                            -activebackground       => '#666699',
+                                                            -highlightbackground    => '#666699',
+                                                            )->place(qw/-x 20 -y 2/); $mw->update();
+        $radiolinegraph->select;  #select as default
+        
+        $montab_buttoncanvas->Label(-text  => 'Impulse Graph',
+                                    -bg    => '#666699',
+                                    -fg    => 'white',
+                                   )->place(qw/-x 199 -y 4/); $mw->update();
+        $montab_buttoncanvas->Radiobutton(-value                  => 'impulses',
+                                          -variable               => \$graphtype,
+                                          -background             => '#666699',
+                                          -activebackground       => '#666699',
+                                          -highlightbackground    => '#666699',
+                                         )->place(qw/-x 170 -y 2/); $mw->update();
+        
+        $montab_buttoncanvas->Label(-text  => 'No Graph',
+                                    -bg    => '#666699',
+                                    -fg    => 'white',
+                                   )->place(qw/-x 349 -y 4/); $mw->update();
+        $montab_buttoncanvas->Radiobutton(-value                  => 'nograph',
+                                          -variable               => \$graphtype,
+                                          -background             => '#666699',
+                                          -activebackground       => '#666699',
+                                          -highlightbackground    => '#666699',
+                                          -command                => sub{gui_cleargraph();}  #remove graph from view
+                                         )->place(qw/-x 320 -y 2/); $mw->update();
+    }
+        
+        
+        
+    if ($monitorenabledchkbx eq 'monitor_off') { #delete the tab
+        
+        $mon_tab = $tabs->delete('montab', -label => 'Monitor'); $mw->update();
+        
+    }
+
 }
 #------------------------------------------------------------------
