@@ -71,7 +71,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     if ($gui == 1) { gui_initial(); }
         
     getoptions();  #get command line options
-    
+        
     $startruntimer = time();  #timer for entire test run
     $currentdatetime = localtime time;  #get current date and time for results report
         
@@ -109,7 +109,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     writeinitialhtml();  #write opening tags for results file
         
-    unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
+    unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
         writeinitialstdout();  #write opening tags for STDOUT. 
     }
         
@@ -348,7 +348,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 print RESULTS qq|<br>\n------------------------------------------------------- <br>\n\n|;
                     
-                unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set  
+                unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set   
                     print STDOUT qq|------------------------------------------------------- \n|;
                 }
                     
@@ -553,14 +553,14 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
     if ($verifylater) {
         if ($response->as_string() =~ /$verifylater/si) {  #verify existence of string in response
             print RESULTS "<font color=green>Passed Positive Verification (verification set in previous test case)</font><br>\n";
-            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
+            unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
             }
             $passedcount++;
         }
         else {
             print RESULTS "<font color=red>Failed Positive Verification (verification set in previous test case)</font><br>\n";
-            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
+            unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Failed Positive Verification (verification set in previous test case) \n";            
             }
             $failedcount++;
@@ -574,7 +574,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
     if ($verifylaterneg) {
         if ($response->as_string() =~ /$verifylaterneg/si) {  #verify existence of string in response
             print RESULTS "<font color=red>Failed Negative Verification (negative verification set in previous test case)</font><br>\n";
-            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set  
+            unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set  
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";     
             }
             $failedcount++;
@@ -582,7 +582,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         }
         else {
             print RESULTS "<font color=green>Passed Negative Verification (negative verification set in previous test case)</font><br>\n";
-            unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
+            unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Negative Verification (negative verification set in previous test case) \n";
             }
             $passedcount++;                   
@@ -1109,7 +1109,7 @@ sub finaltasks {  #do ending tasks
         
     writefinalhtml();  #write summary and closing tags for results file
         
-    unless ($xnode) { #if using XPath, skip regular STDOUT output 
+    unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
         writefinalstdout();  #write summary and closing tags for STDOUT
     }
         
