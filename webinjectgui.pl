@@ -36,7 +36,7 @@ $| = 1; #don't buffer output to STDOUT
  
 $mw = MainWindow->new(-title            => 'WebInject - HTTP Test Tool    (version 1.20)',
                       -bg               => '#666699',
-                      -takefocus        => '1'  #start on top
+                      -takefocus        => '1',  #start on top
                       );
 $mw->geometry("750x650+0+0");  #size and screen placement
 $mw->InitStderr; #redirect all STDERR to a window
@@ -54,14 +54,14 @@ if (-e "logo.gif") {  #if icon graphic exists, use it
 if (-e "logo.gif") {  #if logo graphic exists, use it
     $mw->Photo('logogif', -file => "logo.gif");    
     $mw->Label(-image => 'logogif', 
-               -bg    => '#666699'
+               -bg    => '#666699',
               )->place(qw/-x 305 -y 12/); $mw->update();
 }
 
 
 $mw->Label(-text  => 'Engine Status:',
            -bg    => '#666699',
-           -fg    => '#FFFFFF'
+           -fg    => '#FFFFFF',
           )->place(qw/-x 12 -y 100/); $mw->update();
 
 
@@ -73,34 +73,73 @@ $out_window = $mw->Scrolled(ROText,  #engine status window
                   )->place(qw/-x 12 -y 118/); $mw->update();
 
 
-
-
-
-
-
-
-
-
-
-
-
 $tabs = $mw->NoteBook(-backpagecolor       => '#666699',
-                     -background          => '#EFEFEF', #color for active tab
-                     -foreground          => 'black', #text color for active tab
-                     -inactivebackground  => '#BFBFBF', #color for inactive tabs
-                    )->place(qw/-x 12 -y 240/);  #outer notebook object
+                      -background          => '#EFEFEF', #color for active tab
+                      -foreground          => 'black', #text color for active tab
+                      -inactivebackground  => '#BFBFBF', #color for inactive tabs
+                     )->place(qw/-x 12 -y 240/);  #outer notebook object
 
 $status_tab = $tabs->add('statustab', -label => 'Status'); $mw->update();
 $mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();
 
 
 
-$status_window = $status_tab->Scrolled(ROText,  #test case status monitor window 
+$statustab_canvas = $status_tab->Canvas(-width          => '719',  
+                                        -height         => '365',
+                                        -highlightcolor => '#CCCCCC',
+                                        -background     => '#EFEFEF',
+                                       )->pack(); $mw->update();  #canvas to fill tab to place widgets into
+
+
+
+
+$statustab_buttoncanvas = $statustab_canvas->Canvas(-width        => '700',  
+                                                    -height       => '24',                                     
+                                                    -background   => '#666699',
+                                                   )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
+                                       
+
+
+
+$minimalcheckbx = 'minimal_off';  #give it a default value
+$statustab_buttoncanvas->Label(-text  => 'Minimal Output',
+           -bg    => '#666699',
+           -fg    => 'white',
+          )->place(qw/-x 49 -y 4/); $mw->update();
+$minimal_checkbx = $statustab_buttoncanvas->Checkbutton(-text       => '',  #using a text widget instead 
+                        -onvalue                => 'minimal_on',
+                        -offvalue               => 'minimal_off',
+                        -variable               => \$minimalcheckbx,
+                        -background             => '#666699',
+                        -activebackground       => '#666699',
+                        -highlightbackground    => '#666699',
+                        )->place(qw/-x 20 -y 2/); $mw->update();
+
+
+$timercheckbx = 'timer_off';  #give it a default value
+$statustab_buttoncanvas->Label(-text  => 'Response Timer Output',
+           -bg    => '#666699',
+           -fg    => 'white',
+          )->place(qw/-x 199 -y 4/); $mw->update();
+$timers_checkbx = $statustab_buttoncanvas->Checkbutton(-text        => '',  #using a text widget instead 
+                        -onvalue                => 'timer_on',
+                        -offvalue               => 'timer_off',
+                        -variable               => \$timercheckbx,
+                        -background             => '#666699',
+                        -activebackground       => '#666699',
+                        -highlightbackground    => '#666699',
+                        )->place(qw/-x 170 -y 2/); $mw->update();
+
+
+
+
+
+$status_window = $statustab_canvas->Scrolled(ROText,  #test case status monitor window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
-                   -width       => '100',
-                   -height      => '24',
-                  )->pack(); $mw->update();
+                   -width       => '102', 
+                   -height      => '23', 
+                  )->place(qw/-x 0 -y 0/); $mw->update();
 $status_window->tagConfigure('red', -foreground => '#FF3333');  #define tag for font color
 $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for font color
 
@@ -108,29 +147,25 @@ $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for
 
 
 $montab_canvas = $mon_tab->Canvas(-width        => '719',
-                                      -height       => '340',                   
-                                      -background  => '#EFEFEF'
-                                     )->pack(); $mw->update();  #canvas to fill tab to place widgets into
+                                  -height       => '365',                   
+                                  -background   => '#EFEFEF',
+                                 )->pack(); $mw->update();  #canvas to fill tab to place widgets into
 
 
-if (-e "plot.gif") {  #if plot graphic exists, put it in canvas
-    $montab_canvas->Photo('plotgraph', -file => "plot.gif");    
-    $montab_canvas->Label(-image => 'plotgraph', )->place(qw/-x 1 -y 1/);
-}
 
 
 $restart_button = $mw->Button->Compound;
 $restart_button->Text(-text => "Restart");
-$restart_button = $mw->Button(-width          => '50',
-                          -height             => '13',
-                          -background         => '#EFEFEF',
-                          -activebackground   => '#666699',
-                          -foreground         => '#000000',
-                          -activeforeground   => '#FFFFFF',
-                          -borderwidth        => '3',
-                          -image              => $restart_button,
-                          -command            => sub{gui_restart();}
-                          )->place(qw/-x 5 -y 5/); $mw->update();
+$restart_button = $mw->Button(-width              => '50',
+                              -height             => '13',
+                              -background         => '#EFEFEF',
+                              -activebackground   => '#666699',
+                              -foreground         => '#000000',
+                              -activeforeground   => '#FFFFFF',
+                              -borderwidth        => '3',
+                              -image              => $restart_button,
+                              -command            => sub{gui_restart();}
+                             )->place(qw/-x 5 -y 5/); $mw->update();
 
 
 
@@ -145,7 +180,7 @@ $exit_button = $mw->Button(-width              => '50',
                            -borderwidth        => '3',
                            -image              => $exit_button,
                            -command            => sub{exit;}
-                           )->place(qw/-x 687 -y 5/); $mw->update();
+                          )->place(qw/-x 687 -y 5/); $mw->update();
 
 
 
@@ -160,8 +195,8 @@ $stop_button = $mw->Button(-width              => '50',
                            -activeforeground   => '#FFFFFF',
                            -borderwidth        => '3',
                            -image              => $stop_button,
-                           -command            => sub {$STOP = 'YES';}
-                           )->place; $mw->update();  #create this button but don't place it yet
+                           -command            => sub{$STOP = 'YES';}
+                          )->place; $mw->update();  #create this button but don't place it yet
                            
                            
                            
@@ -185,43 +220,13 @@ $rtc_button->focus();
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
-                                )->place(qw/-x 176 -y 65/); $mw->update();
+                               )->place(qw/-x 176 -y 65/); $mw->update();
 
 
 $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator 
                           -height      => '9',                   
                           -background  => '#666699',
                           )->place(qw/-x 621 -y 69/); $mw->update();
-
-
-$minimalcheckbx = 'minimal_off';  #give it a default value
-$mw->Label(-text  => 'Minimal Output',
-           -bg    => '#666699',
-           -fg    => '#FFFFFF'
-          )->place(qw/-x 49 -y 629/); $mw->update();
-$minimal_checkbx = $mw->Checkbutton(-text       => '',  #using a text widget instead 
-                        -onvalue                => 'minimal_on',
-                        -offvalue               => 'minimal_off',
-                        -variable               => \$minimalcheckbx,
-                        -background             => '#666699',
-                        -activebackground       => '#666699',
-                        -highlightbackground    => '#666699'
-                        )->place(qw/-x 20 -y 627/); $mw->update();
-
-
-$timercheckbx = 'timer_off';  #give it a default value
-$mw->Label(-text  => 'Response Timer Output',
-           -bg    => '#666699',
-           -fg    => '#FFFFFF'
-          )->place(qw/-x 199 -y 629/); $mw->update();
-$timers_checkbx = $mw->Checkbutton(-text        => '',  #using a text widget instead 
-                        -onvalue                => 'timer_on',
-                        -offvalue               => 'timer_off',
-                        -variable               => \$timercheckbx,
-                        -background             => '#666699',
-                        -activebackground       => '#666699',
-                        -highlightbackground    => '#666699'
-                        )->place(qw/-x 170 -y 627/); $mw->update();
 
 
 
@@ -324,7 +329,7 @@ sub gui_timer_output {
 sub gui_final {
     $out_window->insert("end", "Execution Finished... see results.html file for detailed output"); $out_window->see("end");
     
-    $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime  seconds\n");
+    $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime seconds\n");
     $status_window->insert("end", "\nTest Cases Run: $totalruncount\nTest Cases Passed: $casepassedcount\nTest Cases Failed: $casefailedcount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
     $status_window->see("end");
 
@@ -344,7 +349,7 @@ sub gui_final {
 sub gui_updatemontab {
     if (-e "plot.gif") {  #if plot graphic exists, put it in canvas
         $montab_canvas->Photo('plotgraph', -file => "plot.gif");    
-        $montab_canvas->Label(-image => 'plotgraph', )->place(qw/-x 1 -y 1/);
+        $montab_canvas->Label(-image => 'plotgraph', )->place(qw/-x 8 -y 0/);
     }
 }    
 #------------------------------------------------------------------
