@@ -42,7 +42,7 @@ $mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
 $mw->InitStderr; #redirect all STDOUT to a window
 
 
-$mw -> Photo('logogif', -file => "webinjectlogo.gif");
+$mw -> Photo('logogif', -file => "logo.gif");
 $mw ->Label(-image => 'logogif', 
             -bg    => '#666699'
             )->place(qw/-x 210 -y 20/);
