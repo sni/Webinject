@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.32";
+our $version="1.33";
 
 use strict;
 use LWP;
@@ -1156,20 +1156,13 @@ sub finaltasks {  #do ending tasks
                 print "WebInject CRITICAL - $returnmessage \n";
                 exit $exit_codes{'CRITICAL'};
             }
-            else {
-                if ($globaltimeout) { 
-                    if ($totalruntime > $globaltimeout) {
-                        print "WebInject WARNING - All tests passed successfully but global timeout ($globaltimeout seconds) has been reached \n";
-                        exit $exit_codes{'WARNING'};
-                    }
-                    else { 
-                        undef $globaltimeout; 
-                    }
-                    unless ($globaltimeout) {
-                        print "WebInject OK - All tests passed successfully in $totalruntime seconds \n";
-                        exit $exit_codes{'OK'};
-                    }
-                }
+            elsif (($globaltimeout) && ($totalruntime > $globaltimeout)) { 
+                print "WebInject WARNING - All tests passed successfully but global timeout ($globaltimeout seconds) has been reached \n";
+                exit $exit_codes{'WARNING'};
+            }
+            else { 
+                print "WebInject OK - All tests passed successfully in $totalruntime seconds \n";
+                exit $exit_codes{'OK'};
             }
         }
         else {
