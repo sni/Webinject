@@ -33,7 +33,7 @@ $| = 1; #don't buffer output to STDOUT
 
 
  
-$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool    (version .93)',
+$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool    (version .94)',
                       -width  => '650', 
                       -height => '650', 
                       -bg     => '#666699',
@@ -68,7 +68,7 @@ $out_window = $mw->Scrolled(ROText,  #engine status window
                    -background  => '#EFEFEF',
                    -width       => '85',
                    -height      => '7',
-                  )->place(qw/-x 25 -y 128/); $mw->update(); 
+                  )->place(qw/-x 25 -y 128/); $mw->update();
 
 
 $mw->Label(-text  => 'Test Case Status:',
@@ -82,6 +82,8 @@ $status_window = $mw->Scrolled(ROText,  #test case status window
                    -width       => '85',
                    -height      => '26',
                   )->place(qw/-x 25 -y 256/); $mw->update();
+$status_window->tagConfigure('red', -foreground => '#FF3333');  #define tag for font color
+$status_window->tagConfigure('green', -foreground => '#009900'); #define tag for font color
 
 
 $rtc_button = $mw->Button->Compound;
@@ -174,7 +176,7 @@ sub gui_initial {
 }
 #------------------------------------------------------------------
 sub gui_processing_msg {
-    $out_window->insert("end", "processing test case file:\n$currentcasefile\n\n"); $out_window->see("end");
+    $out_window->insert("end", "processing test case file:\n$currentcasefile\n\n", 'bold'); $out_window->see("end");
 }
 #------------------------------------------------------------------
 sub gui_statusbar {
@@ -187,15 +189,15 @@ sub gui_tc_descript {
 }
 #------------------------------------------------------------------
 sub gui_status_passed {
-    $status_window->insert("end", "PASSED\n"); $status_window->see("end");
+    $status_window->insert("end", "PASSED\n", 'green'); $status_window->see("end");
 } 
 #------------------------------------------------------------------
 sub gui_status_failed {
     if ($1 and $2) {
-        $status_window->insert("end", "FAILED ($1$2)\n"); $status_window->see("end");
+        $status_window->insert("end", "FAILED ($1$2)\n", 'red'); $status_window->see("end");
     } 
     else {
-        $status_window->insert("end", "FAILED\n"); $status_window->see("end");
+        $status_window->insert("end", "FAILED\n", 'red'); $status_window->see("end");
     }
 }
 #------------------------------------------------------------------
