@@ -25,7 +25,7 @@ use Tk::ROText;
 use Tk::Compound;
 use Tk::ProgressBar::Mac;
 
-require('webinject.pl');
+
 
 $| = 1; #don't buffer output to STDOUT
 
@@ -125,6 +125,17 @@ $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator
 
 
 
+
+if (-e "webinject.pl")
+{
+    do "webinject.pl";  #load the engine  
+}
+else
+{
+    print STDERR "I can not find the test engine (webinject.pl) and I need this to run.";
+}
+
+
 MainLoop;
 
 
@@ -134,8 +145,8 @@ MainLoop;
 sub gui_initial {
     
     #vars set in test engine
-    $currentcasefile = '';
-    $testnum = '';
+    $currentcasefile = ''; 
+    $testnum = ''; 
     $casecount = '';
     $description1 = '';
     $totalruncount = '';
