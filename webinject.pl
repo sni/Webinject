@@ -736,7 +736,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
         
     undef @casefilelist; #empty the array
         
-    if ($#ARGV < 1) {  #if testcase filename is not passed on the command line, use config.xml
+    if ($#ARGV < 0) {  #if testcase filename is not passed on the command line, use config.xml
             
         open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
         @configfile = <CONFIG>;  #read the file into an array
@@ -938,8 +938,7 @@ sub httplog {  #write requests and responses to http.log file
 #------------------------------------------------------------------
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
         
-    our (%months, $date, $time, $mon, $mday, $hours, $min, $sec, $year);
-    #our (%months, $date, $time, $mon, $mday, $hours, $min, $sec, $year, $value);
+    our (%months, $date, $time, $mon, $mday, $hours, $min, $sec, $year, $value);
         
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
     unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
@@ -947,8 +946,7 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
         %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
                    "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
             
-        #local ($value) = @_; 
-        my $value = @_; 
+        local ($value) = @_; 
         $date = scalar localtime; 
         ($mon, $mday, $hours, $min, $sec, $year) = $date =~ 
             /\w+ (\w+) +(\d+) (\d\d):(\d\d):(\d\d) (\d\d\d\d)/;
