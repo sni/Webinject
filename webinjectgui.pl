@@ -412,24 +412,13 @@ sub gui_updatemontab {
 sub gui_updatemonstats {  #update timers and counts in monitor tab
     
     if ($monitorenabledchkbx ne 'monitor_off') {  #don't try to update if monitor is disabled in gui
-    
-        $mintime_text->delete('0.0','end');    
-        $mintime_text->insert("end", "Min: $minresponse sec");
-    
-        $maxtime_text->delete('0.0','end');    
-        $maxtime_text->insert("end", "Max: $maxresponse sec");
-    
-        $avgtime_text->delete('0.0','end');    
-        $avgtime_text->insert("end", "Avg: $avgresponse sec");
-    
-        $runcounttotal_text->delete('0.0','end');    
-        $runcounttotal_text->insert("end", "Total: $totalruncount");
-    
-        $runcountcasespassed_text->delete('0.0','end');    
-        $runcountcasespassed_text->insert("end", "Passed: $casepassedcount");
-    
-        $runcountcasespfailed_text->delete('0.0','end');    
-        $runcountcasespfailed_text->insert("end", "Failed: $casefailedcount");
+        
+        $mintime_text->configure(-text => "Min:  $minresponse sec");
+        $maxtime_text->configure(-text => "Max:  $maxresponse sec");
+        $avgtime_text->configure(-text => "Avg:  $avgresponse sec");
+        $runcounttotal_text->configure(-text => "Total:  $totalruncount");
+        $runcountcasespassed_text->configure(-text => "Passed:  $casepassedcount");
+        $runcountcasespfailed_text->configure(-text => "Failed:  $casefailedcount");
     }
 }
 #------------------------------------------------------------------
@@ -601,87 +590,95 @@ sub monitor_enable_disable {
 
 
 
-        $resptime_label = $montab_canvas->ROText(-width       => '20',
-                                                 -height      => '1',
-                                                 -background  => '#EFEFEF',
-                                                 -foreground  => 'black',
-                                                 -relief      => 'flat',
-                                                )->place(qw/-x 12 -y 245/); $mw->update();                    
-        $resptime_label->insert("end", 'Response Times:');
-       
-       
+        $resptime_label = $montab_canvas->Label(-width       => '25',
+                                                -height      => '1',
+                                                -background  => '#EFEFEF',
+                                                -foreground  => 'black',
+                                                -relief      => 'flat',
+                                                -anchor      => 'w',
+                                               )->place(qw/-x 12 -y 245/); $mw->update();                    
+        $resptime_label->configure(-text => 'Response Times:');
+        
+        
         $minresponse = 'N/A';  #set initial value for timer display
-        $mintime_text = $montab_canvas->ROText(-width       => '20',
-                                               -height      => '1',
-                                               -background  => '#EFEFEF',
-                                               -foreground  => 'black',
-                                               -relief      => 'flat',
-                                              )->place(qw/-x 12 -y 265/); $mw->update();                    
-        $mintime_text->insert("end", "Min: $minresponse sec");
+        $mintime_text = $montab_canvas->Label(-width       => '25',
+                                              -height      => '1',
+                                              -background  => '#EFEFEF',
+                                              -foreground  => 'black',
+                                              -relief      => 'flat',
+                                              -anchor      => 'w',
+                                             )->place(qw/-x 12 -y 265/); $mw->update();                    
+        $mintime_text->configure(-text => "Min:  $minresponse sec");
         
         
         $maxresponse = 'N/A';  #set initial value for timer display
-        $maxtime_text = $montab_canvas->ROText(-width       => '20',
-                                               -height      => '1',
-                                               -background  => '#EFEFEF',
-                                               -foreground  => 'black',
-                                               -relief      => 'flat',
-                                              )->place(qw/-x 12 -y 280/); $mw->update();                    
-        $maxtime_text->insert("end", "Max: $maxresponse sec");
+        $maxtime_text = $montab_canvas->Label(-width       => '25',
+                                              -height      => '1',
+                                              -background  => '#EFEFEF',
+                                              -foreground  => 'black',
+                                              -relief      => 'flat',
+                                              -anchor      => 'w',
+                                             )->place(qw/-x 12 -y 280/); $mw->update();                    
+        $maxtime_text->configure(-text => "Max:  $maxresponse sec");
         
         
         $avgresponse = 'N/A';  #set initial value for timer display
-        $avgtime_text = $montab_canvas->ROText(-width       => '20',
-                                               -height      => '1',
-                                               -background  => '#EFEFEF',
-                                               -foreground  => 'black',
-                                               -relief      => 'flat',
-                                              )->place(qw/-x 12 -y 295/); $mw->update();                    
-        $avgtime_text->insert("end", "Avg: $avgresponse sec");
+        $avgtime_text = $montab_canvas->Label(-width       => '25',
+                                              -height      => '1',
+                                              -background  => '#EFEFEF',
+                                              -foreground  => 'black',
+                                              -relief      => 'flat',
+                                              -anchor      => 'w',
+                                             )->place(qw/-x 12 -y 295/); $mw->update();                    
+        $avgtime_text->configure(-text => "Avg:  $avgresponse sec");
         
       
         
         
         
-        $runcount_label = $montab_canvas->ROText(-width       => '20',
-                                                 -height      => '1',
-                                                 -background  => '#EFEFEF',
-                                                 -foreground  => 'black',
-                                                 -relief      => 'flat',
-                                                )->place(qw/-x 250 -y 245/); $mw->update();                    
-        $runcount_label->insert("end", 'Runtime Counts:');
+        $runcount_label = $montab_canvas->Label(-width       => '25',
+                                                -height      => '1',
+                                                -background  => '#EFEFEF',
+                                                -foreground  => 'black',
+                                                -relief      => 'flat',
+                                                -anchor      => 'w',
+                                               )->place(qw/-x 250 -y 245/); $mw->update();                    
+        $runcount_label->configure(-text => 'Runtime Counts:');
        
        
         $totalruncount = 'N/A';  #set initial value for count display
-        $runcounttotal_text = $montab_canvas->ROText(-width       => '20',
-                                                      height      => '1',
-                                                     -background  => '#EFEFEF',
-                                                     -foreground  => 'black',
-                                                     -relief      => 'flat',
-                                                    )->place(qw/-x 250 -y 265/); $mw->update();                    
-        $runcounttotal_text->insert("end", "Total: $totalruncount");
+        $runcounttotal_text = $montab_canvas->Label(-width       => '25',
+                                                    -height      => '1',
+                                                    -background  => '#EFEFEF',
+                                                    -foreground  => 'black',
+                                                    -relief      => 'flat',
+                                                    -anchor      => 'w',
+                                                   )->place(qw/-x 250 -y 265/); $mw->update();                    
+        $runcounttotal_text->configure(-text => "Total:  $totalruncount");
         
         
         $casepassedcount = 'N/A';  #set initial value for count display
-        $runcountcasespassed_text = $montab_canvas->ROText(-width       => '20',
+        $runcountcasespassed_text = $montab_canvas->Label(-width       => '25',
+                                                          -height      => '1',
+                                                          -background  => '#EFEFEF',
+                                                          -foreground  => 'black',
+                                                          -relief      => 'flat',
+                                                          -anchor      => 'w',
+                                                         )->place(qw/-x 250 -y 280/); $mw->update();                    
+        $runcountcasespassed_text->configure(-text => "Passed:  $casepassedcount");
+        
+        
+        $casefailedcount = 'N/A';  #set initial value for count display
+        $runcountcasespfailed_text = $montab_canvas->Label(-width       => '25',
                                                            -height      => '1',
                                                            -background  => '#EFEFEF',
                                                            -foreground  => 'black',
                                                            -relief      => 'flat',
-                                                          )->place(qw/-x 250 -y 280/); $mw->update();                    
-        $runcountcasespassed_text->insert("end", "Passed: $casepassedcount");
-        
-        
-        $casefailedcount = 'N/A';  #set initial value for count display
-        $runcountcasespfailed_text = $montab_canvas->ROText(-width       => '20',
-                                                            -height      => '1',
-                                                            -background  => '#EFEFEF',
-                                                            -foreground  => 'black',
-                                                            -relief      => 'flat',
-                                                           )->place(qw/-x 250 -y 295/); $mw->update();                    
-        $runcountcasespfailed_text->insert("end", "Failed: $casefailedcount");
-        
-                                         
+                                                           -anchor      => 'w',
+                                                          )->place(qw/-x 250 -y 295/); $mw->update();                    
+        $runcountcasespfailed_text->configure(-text => "Failed:  $casefailedcount");
+            
+            
     }  #end monitor create
     
 
