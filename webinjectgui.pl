@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-#    Copyright 2004 Corey Goldberg (corey@goldb.org)
+#    Copyright 2004-2005 Corey Goldberg (corey@goldb.org)
 #
 #    This file is part of WebInject.
 #
@@ -480,7 +480,7 @@ sub about {
                                 
     $about_text->insert("end", qq| 
 WebInject
-©2004 Corey Goldberg
+©2004-2005 Corey Goldberg
 
 please visit www.webinject.org
 for information and documentation.
