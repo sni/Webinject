@@ -1367,7 +1367,7 @@ sub getoptions {  #command line options
         
     Getopt::Long::Configure('bundling');
     GetOptions(
-        'v|version'     => \$opt_version,
+        'v|V|version'   => \$opt_version,
         'c|config=s'    => \$opt_configfile,
         'n|no-output'   => \$nooutput,
         ) 
