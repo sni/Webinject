@@ -21,9 +21,9 @@
 
 use LWP;
 use HTTP::Cookies;
-use Crypt::SSLeay;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
+use Crypt::SSLeay;
 #use Data::Dumper;  #to dump hashes for debugging   
 
 
@@ -35,13 +35,12 @@ if (($0 eq 'webinject.pl') or ($0 eq 'webinject.exe')) {  #set flag so we know i
 }
 else {
     $gui = 1;
+    
+    whackoldfiles(); #delete files leftover from previous run (do this here so they are whacked on startup when running from gui)
 }
 
 
-#delete files leftover from previous run if they exist (do this here so the are whacked on startup)
-if (-e "plot.log") {  unlink "plot.log"; } 
-if (-e "plot.plt") {  unlink "plot.plt"; } 
-if (-e "plot.png") {  unlink "plot.png"; }    
+
 
 
 
@@ -57,10 +56,8 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
     open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
     
-    #delete files leftover from previous run if they exist (do this here so the are whacked each run)
-    if (-e "plot.log") { unlink "plot.log"; } 
-    if (-e "plot.plt") { unlink "plot.plt"; } 
-    if (-e "plot.png") { unlink "plot.png"; } 
+    #delete files leftover from previous run (do this here so they are whacked each run)
+    whackoldfiles();
       
     #contsruct objects
     $useragent = LWP::UserAgent->new;
@@ -84,9 +81,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
         
     if ($gui == 1){$curgraphtype = $graphtype;}  #set the initial value so we know if the user changes the graph setting from the gui
         
-    unless (($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) {  #don't do this if monitor is disabled in gui
-        gnuplotcfg(); #create the gnuplot config file
-    }
+    gnuplotcfg(); #create the gnuplot config file
         
         
     $totalruncount = 0;
@@ -100,7 +95,6 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     $minresponse = 10000000; #set to large value so first minresponse will be less
     $stop = 'no';
     $plotclear = 'no';
-        
         
         
     foreach (@casefilelist) { #process test case files named in config.xml
@@ -262,19 +256,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     
                 plotlog($latency);  #send perf data to log file for plotting
                     
-                unless (($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) {  #do this unless monitor is disabled in gui
-                    unless ($graphtype eq 'nograph') {  #do this unless its being called from the gui with No Graph set
-                        if ($gnuplot) {  #if gnuplot is specified in config.xml, use it
-                            system "$gnuplot", "plot.plt";  #plot it with gnuplot
-                        }
-                        elsif (($^O eq 'MSWin32') and (-e './wgnupl32.exe')) {  #check for Win32 
-                            system "wgnupl32.exe", "plot.plt";  #plot it with gnuplot
-                        }
-                        elsif ($gui == 1) {
-                            gui_no_plotter_found();  #if gnuplot not specified, notify on gui
-                        }
-                    }
-                }
+                plotit();  #call the external plotter to create a graph
                  
                 if ($gui == 1) {gui_updatemontab();}  #update monitor with the newly rendered plot graph 
                     
@@ -604,7 +586,6 @@ sub parseresponse {  #parse values from responses for use in future request (for
                 $parsedresult = url_escape($parsedresult);
             }
         }
-        
         #print "\n\nParsed String: $parsedresult\n\n";
     }
         
@@ -625,7 +606,6 @@ sub parseresponse {  #parse values from responses for use in future request (for
                 $parsedresult1 = url_escape($parsedresult1);
             }
         }
-        
         #print "\n\nParsed String: $parsedresult1\n\n";
     }
         
@@ -646,7 +626,6 @@ sub parseresponse {  #parse values from responses for use in future request (for
                 $parsedresult2 = url_escape($parsedresult2);
             }
         }
-        
         #print "\n\nParsed String: $parsedresult2\n\n";
     }
         
@@ -667,7 +646,6 @@ sub parseresponse {  #parse values from responses for use in future request (for
                 $parsedresult3 = url_escape($parsedresult3);
             }
         }
-        
         #print "\n\nParsed String: $parsedresult3\n\n";
     }
     
@@ -687,8 +665,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
             if ($escape eq 'escape') {
                 $parsedresult4 = url_escape($parsedresult4);
             }
-        }
-            
+        }           
         #print "\n\nParsed String: $parsedresult4\n\n";
     }
         
@@ -709,7 +686,6 @@ sub parseresponse {  #parse values from responses for use in future request (for
                 $parsedresult5 = url_escape($parsedresult5);
             }
         }
-            
         #print "\n\nParsed String: $parsedresult5\n\n";
     }
         
@@ -797,6 +773,12 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $gnuplot = $1;
             #print "\n$gnuplot \n\n";
         }
+        
+        if (/<standaloneplot>/) {        
+            $_ =~ /<standaloneplot>(.*)<\/standaloneplot>/;
+            $standaloneplot = $1;
+            #print "\nstandaloneplot \n\n";
+        }
             
     }  
         
@@ -844,7 +826,6 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
         close(XMLTOCONVERT);
     }
-        
 }
 #------------------------------------------------------------------
 sub cleancases {  #cleanup conversions made to file for ampersands and single testcase instance
@@ -872,7 +853,6 @@ sub url_escape {  #escapes difficult characters with %hexvalue
     my @a = @_;  # make a copy of the arguments
     map { s/[^-\w.,!~'()\/ ]/sprintf "%%%02x", ord $&/eg } @a;
     return wantarray ? @a : $a[0];
-        
 }
 #------------------------------------------------------------------
 sub httplog {  #write requests and responses to http.log file
@@ -894,37 +874,43 @@ sub httplog {  #write requests and responses to http.log file
         print HTTPLOGFILE $request->as_string, "\n\n";
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
-        
 }
 #------------------------------------------------------------------
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
-       
-    %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
-               "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
         
-    local ($value) = @_; 
-    $date = scalar localtime; 
-    ($mon, $mday, $hours, $min, $sec, $year) = $date =~ 
-        /\w+ (\w+) +(\d+) (\d\d):(\d\d):(\d\d) (\d\d\d\d)/;
+    #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
+    unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
         
-    $time = "$months{$mon} $mday $hours $min $sec $year";
-        
-    if ($plotclear eq 'yes') {
-        open(PLOTLOG, ">plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in clobber mode so log gets truncated
-        $plotclear = 'no';  #reset the value
-    }
-    else {
-        open(PLOTLOG, ">>plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in append mode
-    }
-    printf PLOTLOG "%s %2.4f\n", $time, $value;
-    close(PLOTLOG); 
-        
+        %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
+                   "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
+            
+        local ($value) = @_; 
+        $date = scalar localtime; 
+        ($mon, $mday, $hours, $min, $sec, $year) = $date =~ 
+            /\w+ (\w+) +(\d+) (\d\d):(\d\d):(\d\d) (\d\d\d\d)/;
+            
+        $time = "$months{$mon} $mday $hours $min $sec $year";
+            
+        if ($plotclear eq 'yes') {  #used to clear the graph when requested
+            open(PLOTLOG, ">plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in clobber mode so log gets truncated
+            $plotclear = 'no';  #reset the value 
+        }
+        else {
+            open(PLOTLOG, ">>plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in append mode
+        }
+          
+        printf PLOTLOG "%s %2.4f\n", $time, $value;
+        close(PLOTLOG);
+    }    
 }
 #------------------------------------------------------------------
 sub gnuplotcfg {  #create gnuplot config file
-        
-    open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
-    print GNUPLOTPLT qq|
+    
+    #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
+    unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
+    
+        open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
+        print GNUPLOTPLT qq|
 set term png 
 set output \"plot.png\"
 set size 1.1,0.5
@@ -937,8 +923,9 @@ set tmargin 2
 set timefmt \"%m %d %H %M %S %Y\"
 plot \"plot.log\" using 1:7 title \"Response Times" w $graphtype
 |;      
-    close(GNUPLOTPLT);
+        close(GNUPLOTPLT);
         
+    }
 }
 #------------------------------------------------------------------
 sub finaltasks {  #do ending tasks
@@ -946,7 +933,7 @@ sub finaltasks {  #do ending tasks
     if ($gui == 1){gui_stop();}
         
     writefinalhtml();  #write summary and closing tags for results file
-    
+        
     unless ($xnode) { #if using XPath, skip regular STDOUT output 
         writefinalstdout();  #write summary and closing tags for STDOUT
     }
@@ -956,6 +943,35 @@ sub finaltasks {  #do ending tasks
     close(HTTPLOGFILE);
     close(RESULTS);
     close(RESULTSXML);
+}
+#------------------------------------------------------------------
+sub whackoldfiles {  #delete any files leftover from previous run if they exist
         
+    if (-e "plot.log") { unlink "plot.log"; } 
+    if (-e "plot.plt") { unlink "plot.plt"; } 
+    if (-e "plot.png") { unlink "plot.png"; }
+        
+    #verify files are deleted, if not give the filesystem time to delete them before continuing    
+    while ((-e "plot.log") or (-e "plot.plt") or (-e "plot.png")) {
+        sleep .5; 
+    }
+}
+#------------------------------------------------------------------
+sub plotit {  #call the external plotter to create a graph (if we are in the appropriate mode)
+        
+    #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
+    unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) { 
+        unless ($graphtype eq 'nograph') {  #do this unless its being called from the gui with No Graph set
+            if ($gnuplot) {  #if gnuplot is specified in config.xml, use it
+                system "$gnuplot", "plot.plt";  #plot it with gnuplot
+            }
+            elsif (($^O eq 'MSWin32') and (-e './wgnupl32.exe')) {  #check for Win32 exe 
+                system "wgnupl32.exe", "plot.plt";  #plot it with gnuplot using exe
+            }
+            elsif ($gui == 1) {
+                gui_no_plotter_found();  #if gnuplot not specified, notify on gui
+            }
+        }
+    }
 }
 #------------------------------------------------------------------
