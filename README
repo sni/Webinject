@@ -7,8 +7,14 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 1.34 - FebJan 10, 2005
+    - MRTG External Monitoring Script (Plugin) compatibility
+    - Bugfix for using comment tags in config files
+    - Suppress logging when running in plugin mode
+    - Changed default standalone plot mode to OFF
+
 Version 1.33 - Jan 26, 2005
-    - Nagios plugin compatibility
+    - Nagios Plugin compatibility
     - Support for multipart/form-data encoded POSTs (file uploads)
     - Updated results.html output so it is valid xhtml
   
@@ -30,7 +36,7 @@ Version 1.30 - Jan 07, 2005
     - New test case parameter to add a custom error message
     - Added separators to http.log for readability
     - Enhanced command line options/switches
-    - Nagios plugin compatibility (beta)
+    - Nagios Plugin compatibility (beta)
     - More verbose error handling when running from command line
     - Ability to handle reserved XML character "<" within test cases by escaping it with a backslash "<"
     - Changed output when using XPath notation from command line
