@@ -275,10 +275,6 @@ sub gui_initial {   #this runs when engine is first loaded
     $stop_button->place(qw/-x 110 -y 65/);  #place the stop button
 
 
-    $minimal_checkbx->configure(-state  => 'disabled' );  #disable button while running
-
-    $timers_checkbx->configure(-state   => 'disabled'  );  #disable button while running
-   
     $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
 }
 #------------------------------------------------------------------
