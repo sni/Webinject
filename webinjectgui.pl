@@ -149,8 +149,9 @@ $mw->Label(-text  => 'Verbose Output',
            -fg    => '#FFFFFF'
           )->place(qw/-x 45 -y 628/); $mw->update();
 $verbose_checkbx = $mw->Checkbutton(-text       => '', 
-                        -onvalue                => 'Verbose',
-                        -offvalue               => '',
+                        -onvalue                => 'verbose_on',
+                        -offvalue               => 'verbose_off',
+                        -variable               => \$verbosecheckbx,
                         -background             => '#666699',
                         -activebackground       => '#666699',
                         )->place(qw/-x 20 -y 627/); $mw->update();
@@ -162,8 +163,9 @@ $mw->Label(-text  => 'Response Timer Output',
            -fg    => '#FFFFFF'
           )->place(qw/-x 174 -y 628/); $mw->update();
 $timers_checkbx = $mw->Checkbutton(-text        => '', 
-                        -onvalue                => 'Timer_ON',
-                        -offvalue               => '',
+                        -onvalue                => 'timer_on',
+                        -offvalue               => 'timer_off',
+                        -variable               => \$timercheckbx,
                         -background             => '#666699',
                         -activebackground       => '#666699'
                         )->place(qw/-x 150 -y 627/); $mw->update();
@@ -197,7 +199,8 @@ sub gui_initial {   #this runs when engine is first loaded
     
     #vars set in test engine
     $currentcasefile = ''; 
-    $testnum = ''; 
+    $testnum = '';
+    $latency = '';    
     $casecount = '';
     $description1 = '';
     $totalruncount = '';
@@ -206,6 +209,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $casefailedcount = '';
     $casepassedcount = '';
     $totalruntime = '';
+
 
     $out_window->delete('0.0','end');    #clear window before starting
     
@@ -239,7 +243,11 @@ sub gui_statusbar {
 }
 #------------------------------------------------------------------
 sub gui_tc_descript {
-    $status_window->insert("end", "- $description1\n"); $status_window->see("end");
+    if ($verbosecheckbx) {
+        if ($verbosecheckbx  eq "verbose_on") {
+            $status_window->insert("end", "- $description1\n"); $status_window->see("end");
+        }
+    }
 }
 #------------------------------------------------------------------
 sub gui_status_passed {
@@ -254,6 +262,14 @@ sub gui_status_failed {
         $status_window->insert("end", "FAILED\n", 'red'); $status_window->see("end");
     }
 }
+#------------------------------------------------------------------
+sub gui_timer_output {
+    if ($timercheckbx) {
+        if ($timercheckbx  eq "timer_on") {
+            $status_window->insert("end", "$latency s\n"); $status_window->see("end");
+        }
+    }
+}    
 #------------------------------------------------------------------
 sub gui_final {
     $out_window->insert("end", "Execution Finished... see results.html file for detailed output"); $out_window->see("end");

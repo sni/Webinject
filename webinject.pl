@@ -256,6 +256,7 @@ sub engine
                     
                     
                 print RESULTS qq|Response Time = $latency s <br>\n|;
+                if ($gui == 1) {gui_timer_output();} 
                 unless ($xnode) { #if using XPath, skip stdout output 
                     print STDOUT qq|Response Time = $latency s <br>\n|;
                 }
