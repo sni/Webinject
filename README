@@ -6,6 +6,11 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+
+Version 0.93 - March 22, 2004
+    -Dynamic response parsing added to support cookieless session handling
+    -Version number added to GUI window title bar
+    
 Version 0.92 - March 05, 2004
     -Minor bug fixes
     -Status light added to GUI
