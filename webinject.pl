@@ -41,7 +41,7 @@ else {
 #delete files leftover from previous run if they exist (do this here so the are whacked on startup)
 if (-e "plot.log") {  unlink "plot.log"; } 
 if (-e "plot.plt") {  unlink "plot.plt"; } 
-if (-e "plot.gif") {  unlink "plot.gif"; }    
+if (-e "plot.png") {  unlink "plot.png"; }    
 
 
 
@@ -60,7 +60,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     #delete files leftover from previous run if they exist (do this here so the are whacked each run)
     if (-e "plot.log") { unlink "plot.log"; } 
     if (-e "plot.plt") { unlink "plot.plt"; } 
-    if (-e "plot.gif") { unlink "plot.gif"; } 
+    if (-e "plot.png") { unlink "plot.png"; } 
       
     #contsruct objects
     $useragent = LWP::UserAgent->new;
@@ -914,8 +914,8 @@ sub gnuplotcfg {  #create gnuplot config file
         
     open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
     print GNUPLOTPLT qq|
-set term gif 
-set output \"plot.gif\"
+set term png 
+set output \"plot.png\"
 set size 1.1,0.5
 set pointsize .5
 set xdata time 

@@ -25,6 +25,7 @@ use Tk::ROText;
 use Tk::Compound;
 use Tk::ProgressBar::Mac;
 use Tk::NoteBook;
+use Tk::PNG;
 
 
 
@@ -400,9 +401,9 @@ sub gui_updatemontab {
         
     if ($monitorenabledchkbx ne 'monitor_off') {  #don't try to update if monitor is disabled in gui
             
-        if ((-e "plot.gif") and (($graphtype ne 'nograph') or ($plotclear ne 'yes'))) {  #if plot graphic exists, put it in canvas
+        if ((-e "plot.png") and (($graphtype ne 'nograph') or ($plotclear ne 'yes'))) {  #if plot graphic exists, put it in canvas
             
-            $montab_plotcanvas->Photo('plotgraph', -file => "plot.gif");    
+            $montab_plotcanvas->Photo('plotgraph', -file => "plot.png");    
             $montab_plotcanvas->Label(-image => 'plotgraph')->place(qw/-x 7 -y 0/);
         }
     }
@@ -436,7 +437,7 @@ sub gui_stop {  #flip button and do cleanup when user clicks Stop
 #------------------------------------------------------------------
 sub gui_cleargraph {  #remove graph
         
-    if (-e "plot.gif") { unlink "plot.gif"; }  #delete a plot file if it exists so an old one is never rendered 
+    if (-e "plot.png") { unlink "plot.png"; }  #delete a plot file if it exists so an old one is never rendered 
         
         
     $montab_plotcanvas->destroy;   #destroy the canvas
