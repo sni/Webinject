@@ -39,41 +39,46 @@ $| = 1; #don't buffer output to STDOUT
 $mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
                       -width  => '635', 
                       -height => '700', 
-                      -bg     => '#666699'
+                      -bg     => '#666699',
                       );
 $mw->InitStderr; #redirect all STDERR to a window
 
 
-$mw ->Photo('logogif', -file => "logo.gif");
+$mw->update();
+$icon = $mw->Photo(-file => 'icon.gif');
+$mw->iconimage($icon);
+
+
+$mw ->Photo('logogif', -file => "logo.gif");    
 $mw ->Label(-image => 'logogif', 
             -bg    => '#666699'
-            )->place(qw/-x 235 -y 12/);
+            )->place(qw/-x 235 -y 12/); $mw->update();
 
 
 $mw ->Label(-text  => 'Test Case File:',
             -bg    => '#666699'
-            )->place(qw/-x 25 -y 120/);
+            )->place(qw/-x 25 -y 120/); $mw->update();
 
 
-$out_window = $mw->Scrolled(ROText, 
+$out_window = $mw->Scrolled(ROText,  #output window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
                    -width       => '80',
                    -height      => '12',
-                  )->place(qw/-x 25 -y 138/); #output window
+                  )->place(qw/-x 25 -y 138/); $mw->update(); 
 
 
 $mw ->Label(-text  => 'Test Case Status:',
             -bg    => '#666699'
-            )->place(qw/-x 25 -y 318/);
+            )->place(qw/-x 25 -y 318/); $mw->update(); 
 
 
-$status_window = $mw->Scrolled(ROText, 
+$status_window = $mw->Scrolled(ROText,  #status window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
                    -width       => '80',
                    -height      => '24',
-                  )->place(qw/-x 25 -y 336/); #status window
+                  )->place(qw/-x 25 -y 336/); $mw->update();
 
 
 $rtc_button = $mw->Button->Compound;
@@ -87,7 +92,7 @@ $rtc_button = $mw->Button(-width              => '85',
                           -borderwidth        => '3',
                           -image              => $rtc_button,
                           -command            => sub{engine();}
-                          )->place(qw/-x 25 -y 85/);
+                          )->place(qw/-x 25 -y 85/); $mw->update();
 
 
 $exit_button = $mw->Button->Compound;
@@ -101,12 +106,12 @@ $exit_button = $mw->Button(-width              => '40',
                            -borderwidth        => '3',
                            -image              => $exit_button,
                            -command            => sub{exit;}
-                           )->place(qw/-x 580 -y 5/);
+                           )->place(qw/-x 580 -y 5/); $mw->update();
 
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
-                                )->place(qw/-x 150 -y 85/);
+                                )->place(qw/-x 150 -y 85/); $mw->update();
 
 
 
