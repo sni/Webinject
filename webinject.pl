@@ -293,6 +293,11 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     $testnum = ($casecount + 1); 
                 }
                     
+                    
+                    
+                $endruntimer = time();
+                $totalruntime = (int(1000 * ($endruntimer - $startruntimer)) / 1000);  #elapsed time rounded to thousandths 
+                    
                 $testnum++;
                 $totalruncount++;
                 
@@ -310,8 +315,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     }
         
         
-    $endruntimer = time();
-    $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
+    
         
         
     if ($gui == 1){gui_final();}
@@ -898,7 +902,8 @@ sub gnuplotcfg {  #create gnuplot config file
         
     open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
     print GNUPLOTPLT 
-    qq|set term gif 
+    qq|
+set term gif 
 set output \"plot.gif\"
 set size 1,0.5
 set pointsize .5
@@ -908,7 +913,7 @@ set yrange [0:]
 set bmargin 2
 set tmargin 2
 set timefmt \"%m %d %H %M %S %Y\"
-plot \"plot.log\" using 1:7 title \"Response Times" w impulses
+plot \"plot.log\" using 1:7 title \"Response Times" w lines
 |;      
     close(GNUPLOTPLT);
         
