@@ -59,6 +59,7 @@ if (($0 =~ /webinject.pl/) or ($0 =~ /webinject.exe/)) {  #set flag so we know i
 }
 else {
     $gui = 1;
+    getdirname();  #get the directory webinject engine is running from
     whackoldfiles(); #delete files leftover from previous run (do this here so they are whacked on startup when running from gui)
 }
 
@@ -74,18 +75,11 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     if ($gui == 1) { gui_initial(); }
         
-    #get the directory webinject engine is running from   
-    $dirname = $0;    
-    $dirname =~ s|(.*/).*|$1|;  #for nix systems
-    $dirname =~ s|(.*\\).*|$1|; #for windoz systems   
-    if ($dirname eq $0) { 
-        $dirname = './'; 
-    }
+    getdirname();  #get the directory webinject engine is running from
         
     getoptions();  #get command line options
         
-    #delete files leftover from previous run (do this here so they are whacked each run)
-    whackoldfiles();
+    whackoldfiles();  #delete files leftover from previous run (do this here so they are whacked each run)
         
     #contsruct objects
     $useragent = LWP::UserAgent->new;
@@ -567,8 +561,12 @@ qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
             font-family: Verdana, Arial, Helvetica, sans-serif; 
             font-size: 10px;
         }
-        .pass { color: green }
-        .fail { color: red }
+        .pass { 
+            color: green; 
+        }
+        .fail { 
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -698,7 +696,7 @@ sub httppost_form_data {  #send multipart/form-data HTTP request and read respon
 sub verify {  #do verification of http response and print status to HTML/XML/STDOUT/UI
         
     if ($verifypositive) {
-        if ($response->as_string() =~ /$verifypositive/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifypositive^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Positive Verification</span><br />\n|;
             }
@@ -718,11 +716,11 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
     }
-
-
+        
+        
         
     if ($verifypositive1) {
-        if ($response->as_string() =~ /$verifypositive1/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifypositive1^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Second Positive Verification</span><br />\n|;
             }
@@ -742,11 +740,11 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
     }
-
-
+        
+        
         
     if ($verifypositive2) {
-        if ($response->as_string() =~ /$verifypositive2/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifypositive2^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Third Positive Verification</span><br />\n|;
             }
@@ -766,11 +764,11 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
     }
-
-
-
+        
+        
+        
     if ($verifypositive3) {
-        if ($response->as_string() =~ /$verifypositive3/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifypositive3^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Fourth Positive Verification</span><br />\n|;
             }
@@ -790,11 +788,11 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
     }
-
-
+        
+        
         
     if ($verifynegative) {
-        if ($response->as_string() =~ /$verifynegative/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifynegative^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Negative Verification</span><br />\n|;
             }
@@ -814,11 +812,11 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $passedcount++;                
         }
     }
-
-
-
+        
+        
+        
     if ($verifynegative1) {
-        if ($response->as_string() =~ /$verifynegative1/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifynegative1^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Second Negative Verification</span><br />\n|;
             }
@@ -838,11 +836,11 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $passedcount++;                
         }
     }
-
-
-
+        
+        
+        
     if ($verifynegative2) {
-        if ($response->as_string() =~ /$verifynegative2/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifynegative2^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Third Negative Verification</span><br />\n|;
             }
@@ -866,7 +864,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
 
 
     if ($verifynegative3) {
-        if ($response->as_string() =~ /$verifynegative3/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifynegative3^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Fourth Negative Verification</span><br />\n|;
             }
@@ -890,7 +888,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
 
         
     if ($verifylater) {
-        if ($response->as_string() =~ /$verifylater/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifylater^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
             }
@@ -915,7 +913,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
         
     if ($verifylaterneg) {
-        if ($response->as_string() =~ /$verifylaterneg/si) {  #verify existence of string in response
+        if ($response->as_string() =~ m^$verifylaterneg^si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
             }
@@ -1008,7 +1006,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
+        if ($resptoparse =~ m^$leftboundary(.*?)$rightboundary^s) {
             $parsedresult = $1; 
         }
             
@@ -1028,7 +1026,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
+        if ($resptoparse =~ m^$leftboundary(.*?)$rightboundary^s) {
             $parsedresult1 = $1; 
         }
             
@@ -1048,7 +1046,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
+        if ($resptoparse =~ m^$leftboundary(.*?)$rightboundary^s) {
             $parsedresult2 = $1; 
         }
             
@@ -1068,7 +1066,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
+        if ($resptoparse =~ m^$leftboundary(.*?)$rightboundary^s) {
             $parsedresult3 = $1; 
         }
             
@@ -1088,7 +1086,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
+        if ($resptoparse =~ m^$leftboundary(.*?)$rightboundary^s) {
             $parsedresult4 = $1; 
         }
         
@@ -1108,7 +1106,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
+        if ($resptoparse =~ m^$leftboundary(.*?)$rightboundary^s) {
             $parsedresult5 = $1; 
         }
             
@@ -1152,12 +1150,12 @@ sub processcasefile {  #get test case files to run (from command line or config 
             
         #remove any commented blocks from config file
          foreach (@precomment) {
-            unless (m~<comment>.*</comment>~) {  #single line comment 
+            unless (m^<comment>.*</comment>^) {  #single line comment 
                 #multi-line comments
                 if (/<comment>/) {   
                     $comment_mode = 1;
                 } 
-                elsif (m~</comment>~) {   
+                elsif (m^</comment>^) {   
                     $comment_mode = 0;
                 } 
                 elsif (!$comment_mode) {
@@ -1174,7 +1172,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
                 
             if (/<testcasefile>/) {   
                 $firstparse = $';  #print "$' \n\n";
-                $firstparse =~ /<\/testcasefile>/;
+                $firstparse =~ m^</testcasefile>^;
                 $filename = $`;  #string between tags will be in $filename
                 #print "\n$filename \n\n";
                 push @casefilelist, $filename;  #add next filename we grab to end of array
@@ -1229,43 +1227,43 @@ sub processcasefile {  #get test case files to run (from command line or config 
     foreach (@configfile) {
             
         if (/<baseurl>/) {   
-            $_ =~ /<baseurl>(.*)<\/baseurl>/;
+            $_ =~ m^<baseurl>(.*)</baseurl>^;
             $baseurl = $1;
             #print "\nbaseurl : $baseurl \n\n";
         }
 
         if (/<baseurl1>/) {   
-            $_ =~ /<baseurl1>(.*)<\/baseurl1>/;
+            $_ =~ m^<baseurl1>(.*)</baseurl1>^;
             $baseurl1 = $1;
             #print "\nbaseurl1 : $baseurl1 \n\n";
         }
 
         if (/<baseurl2>/) {   
-            $_ =~ /<baseurl2>(.*)<\/baseurl2>/;
+            $_ =~ m^<baseurl2>(.*)</baseurl2>^;
             $baseurl2 = $1;
             #print "\nbaseurl2 : $baseurl2 \n\n";
         }
             
         if (/<proxy>/) {   
-            $_ =~ /<proxy>(.*)<\/proxy>/;
+            $_ =~ m^<proxy>(.*)</proxy>^;
             $proxy = $1;
             #print "\nproxy : $proxy \n\n";
         }
             
         if (/<timeout>/) {   
-            $_ =~ /<timeout>(.*)<\/timeout>/;
+            $_ =~ m^<timeout>(.*)</timeout>^;
             $timeout = $1;
             #print "\ntimeout : $timeout \n\n";
         }
             
         if (/<globaltimeout>/) {  #used in plugin integration
-            $_ =~ /<globaltimeout>(.*)<\/globaltimeout>/;
+            $_ =~ m^<globaltimeout>(.*)</globaltimeout>^;
             $globaltimeout = $1;
             #print "\nglobaltimeout : $globaltimeout \n\n";
         }
             
         if (/<reporttype>/) {   
-            $_ =~ /<reporttype>(.*)<\/reporttype>/;
+            $_ =~ m^<reporttype>(.*)</reporttype>^;
 	    if ($1 ne "standard") {
                $reporttype = $1;
 	       $nooutput = "set";
@@ -1274,7 +1272,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
         }    
             
         if (/<useragent>/) {   
-            $_ =~ /<useragent>(.*)<\/useragent>/;
+            $_ =~ m^<useragent>(.*)</useragent>^;
             $setuseragent = $1;
             if ($setuseragent) { #http useragent that will show up in webserver logs
                 $useragent->agent($setuseragent);
@@ -1283,19 +1281,19 @@ sub processcasefile {  #get test case files to run (from command line or config 
         }
          
         if (/<globalhttplog>/) {   
-            $_ =~ /<globalhttplog>(.*)<\/globalhttplog>/;
+            $_ =~ m^<globalhttplog>(.*)</globalhttplog>^;
             $globalhttplog = $1;
             #print "\nglobalhttplog : $globalhttplog \n\n";
         }
             
         if (/<gnuplot>/) {        
-            $_ =~ /<gnuplot>(.*)<\/gnuplot>/;
+            $_ =~ m^<gnuplot>(.*)</gnuplot>^;
             $gnuplot = $1;
             #print "\ngnuplot : $gnuplot \n\n";
         }
         
         if (/<standaloneplot>/) {        
-            $_ =~ /<standaloneplot>(.*)<\/standaloneplot>/;
+            $_ =~ m^<standaloneplot>(.*)</standaloneplot>^;
             $standaloneplot = $1;
             #print "\nstandaloneplot : $standaloneplot \n\n";
         }
@@ -1305,7 +1303,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
                 #array of values, then we use [] to get a reference to that array
                 #and push that reference onto @httpauth.             
 	    my @authentry;
-            $_ =~ /<httpauth>(.*)<\/httpauth>/;
+            $_ =~ m^<httpauth>(.*)</httpauth>^;
             @authentry = split(/:/, $1);
             if ($#authentry != 4) {
                 print STDERR "\nError: httpauth should have 5 fields delimited by colons\n\n"; 
@@ -1597,6 +1595,15 @@ sub plotit {  #call the external plotter to create a graph (if we are in the app
         }
     }
 }
+#------------------------------------------------------------------
+sub getdirname {  #get the directory webinject engine is running from   
+    $dirname = $0;    
+    $dirname =~ s^(.*/).*^$1^;  #for nix systems
+    $dirname =~ s^(.*\\).*^$1^; #for windoz systems   
+    if ($dirname eq $0) { 
+        $dirname = './'; 
+    }
+}    
 #------------------------------------------------------------------
 sub getoptions {  #command line options
         
