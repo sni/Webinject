@@ -83,7 +83,7 @@ sub engine
         
         cleancases();
         
-        while ($testnum <= $casecount) #make any changes here to special case above
+        while ($testnum <= $casecount)
         {             
             if ($gui == 1){gui_statusbar();}
             
