@@ -681,21 +681,22 @@ sub monitor_enable_disable {
             
             
     }  #end monitor create
-    
-
-
-
-
-
-
-
-
-
+     
+        
+        
     if ($monitorenabledchkbx eq 'monitor_off') { #delete the tab when disabled
         
         $mon_tab = $tabs->delete('montab', -label => 'Monitor'); $mw->update();
     }
-
+        
 }
-
+#------------------------------------------------------------------
+sub gui_no_plotter_found {  #if gnuplot not specified, notify on gui
+        
+    $montab_plotcanvas->Label(-text  => "Sorry, I can't display the graph.\nMake sure you have gnuplot on your system and it's location is specified in config.xml. ",
+                              -bg    => '#EFEFEF',
+                              -fg    => 'black',
+                             )->place(qw/-x 95 -y 100/); $mw->update();
+}
+  
 #------------------------------------------------------------------
