@@ -9,7 +9,7 @@ Release History:
 
 Version 1.10 - June 23, 2004
     -Added XML formatted output (results.xml is created each run)
-    -Added new config.xml parameter (<globalhttplog>) for HTTP logging (always or on failure)
+    -Added new config.xml parameter (<globalhttplog>) for HTTP logging (always, or on failure)
     -Added more detailed pass/fail status to HTML report
     -Redefined criteria for test case pass/pail
     -Added results summary and additional formatting to STDOUT (for standalone mode)
