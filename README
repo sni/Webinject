@@ -1,67 +1,86 @@
-Webinject
+WebInject
 
-Copyright 2004 Corey Goldberg (corey@goldb.org)
+Copyright 2004, 2005 Corey Goldberg (corey@goldb.org)
 For information and documentation, visit the website at http://www.webinject.org
 
 ---------------------------------
 Release History:
 
 
-Version 1.20 - September 27, 2004
-    - Added real-time response time monitoring (stats display and integration with gnuplot for plot/graph)
+Version 1.30 - Coming Soon!
+    - HTTP Basic Authentication support
+    - No longer forced to have test cases in strict incremental numbered order
+    - Source code compiles with the "use strict" pragma
+    - Ability to run engine from a different directory using the config.xml in that directory
+    - Comments allowed in config file using <commment></comment> tags
+    - Other config.xml options are still used when you pass a test case filename as a command line argument
+    - New config option to change response delay timeout <timeout></timeout>;
+    - Added separators to http.log for readability
+    - Enhanced command line options/switches
+    - Nagios plugin compatibility (beta)
+    - More verbose error handling when running from command line
+    - Ability to handle reserved XML character "<" within test cases by escaping it with a backslash "<"
+    - Changed output when using XPath notation from command line
+    - Bugfix for proxy support
+    - Bugfix for sending a parsed value in a POST body
+    - Bugfix for erroneous errors when running from command line
+    - Bugfix for warnings that appeared when running with Perl in -w mode
+    - Code refactoring
+
+Version 1.20 - Sept 27, 2004
+    - Real-time response time monitoring (stats display and integration with gnuplot for plot/graph)
     - Added tabbed layout to GUI with 'Status' and 'Monitor' windows
     - Added 'Stop' button to GUI to halt execution
-    - Added new testcase parameter 'sleep', to throttle execution
+    - New testcase parameter 'sleep', to throttle execution
     - Added timer summary to HTML report
     - Removed HTML tags from STDOUT display and cleaned up formatting
     - GUI enhancements
     - Code refactoring
-    
-Version 1.12 - July 28, 2004
-    -Added test case file parameter 'repeat', to run a test case file multiple times
-    -Added GUI options for Minimal Output and Response Timer Output
-    -Added new config.xml parameter to define a custom User-Agent string to be sent in HTTP headers
-    -Added XPath Node selection to optional command line parameters
-    -Bug fix for GUI Restart button
-    
-Version 1.10 - June 23, 2004
-    -Added XML formatted output (results.xml is created each run)
-    -Added new config.xml parameter for HTTP logging
-    -Added more detailed pass/fail status to HTML report
-    -Redefined criteria for test case pass/pail
-    -Added results summary and additional formatting to STDOUT (for standalone mode)
-    -Minor code refactoring
-    
-Version 0.95 - May 17, 2004
-    -Added Restart button to GUI
-    -Added 5 additional parsing parameters/variables to use in test cases
-    -Fixes to GUI positioning
-    
-Version 0.94 - April 29, 2004
-    -Bug fix for malformed HTTP Post
-    -Added colors to status window text
-    
-Version 0.93 - March 22, 2004
-    -Added dynamic response parsing support cookieless session handling
-    -Added version number to GUI window title bar
-    
-Version 0.92 - March 05, 2004
-    -Minor bug fixes
-    -Added status light to GUI
-    -Added new config.xml parameter for HTTP proxy support
-    -Added new config.xml parameter for Baseurl constant
-    
-Version 0.91 - Feb 23, 2004
-    -Decoupled GUI (webinjectgui) from Test Engine (webinject) so engine can run standalone
-    -Testcase name can be passed on command line as well as via config.xml
-    -Code cleanup
-    -Output sent to STDOUT as well as reports (for standalone mode)
-    
-Version 0.90 - Feb 19, 2004
-    -Initial public beta release
-    -Contains SSL/TLS support
-    -Perl/Tk GUI
-    -Automatic cookie handling
-    
 
+Version 1.12 - July 28, 2004
+    - New test case file parameter 'repeat', to run a test case file multiple times
+    - Added GUI options for Minimal Output and Response Timer Output
+    - New config.xml parameter to define a custom User-Agent string to be sent in HTTP headers
+    - Added XPath Node selection to optional command line parameters
+    - Bugfix for GUI Restart button
+
+Version 1.10 - June 23, 2004
+    - Added XML formatted output (results.xml is created each run)
+    - New config.xml parameter for HTTP logging
+    - More detailed pass/fail status to HTML report
+    - Redefined criteria for test case pass/pail
+    - Results summary and additional formatting to STDOUT (for standalone mode)
+    - Minor code refactoring
+
+Version 0.95 - May 17, 2004
+    - Added Restart button to GUI
+    - Added 5 additional parsing parameters/variables to use in test cases
+    - Fixes to GUI positioning
+
+Version 0.94 - April 29, 2004
+    - Bugfix for malformed HTTP Post
+    - Added colors to status window text
+
+Version 0.93 - March 22, 2004
+    - Dynamic response parsing support cookieless session handling
+    - Added version number to GUI window title bar
+
+Version 0.92 - March 05, 2004
+    - Minor bug fixes
+    - Added status light to GUI
+    - New config.xml parameter for HTTP proxy support
+    - New config.xml parameter for Baseurl constant
+
+Version 0.91 - Feb 23, 2004
+    - Decoupled GUI (webinjectgui) from Test Engine (webinject) so engine can run standalone
+    - Testcase name can be passed on command line as well as via config.xml
+    - Code cleanup
+    - Output sent to STDOUT as well as reports (for standalone mode)
+
+Version 0.90 - Feb 19, 2004
+    - Initial public beta release
+    - Contains SSL/TLS support
+    - Perl/Tk GUI
+    - Automatic cookie handling
+    
 ---------------------------------
