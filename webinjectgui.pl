@@ -44,7 +44,7 @@ $mw->raise; #put application in front at startup
 $mw->bind('<F5>' => \&engine);  #F5 key makes it run
 
 
-if (-e "logo.gif") {  #if icon graphic exists, use it
+if (-e "icon.gif") {  #if icon graphic exists, use it
     $mw->update();
     $icon = $mw->Photo(-file => 'icon.gif');
     $mw->iconimage($icon);
@@ -471,7 +471,7 @@ sub about {
                             );
     $about->raise; #put in front
     $about->geometry("300x200+200+200");  #size and screen placement
-    if (-e "logo.gif") {  #if icon graphic exists, use it
+    if (-e "icon.gif") {  #if icon graphic exists, use it
         $about->update();
         $icon = $about->Photo(-file => 'icon.gif');
         $about->iconimage($icon);
