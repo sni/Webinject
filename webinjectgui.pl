@@ -31,7 +31,7 @@ $| = 1; #don't buffer output to STDOUT
 
 
  
-$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
+$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool     (version .92)',
                       -width  => '650', 
                       -height => '650', 
                       -bg     => '#666699',
@@ -52,7 +52,7 @@ if (-e "logo.gif") {  #if logo graphic exists, use it
     $mw->Photo('logogif', -file => "logo.gif");    
     $mw->Label(-image => 'logogif', 
                 -bg    => '#666699'
-                )->place(qw/-x 235 -y 12/); $mw->update();
+                )->place(qw/-x 255 -y 12/); $mw->update();
 }
 
 
