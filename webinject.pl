@@ -98,180 +98,188 @@ sub engine
             
         cleancases();
             
+        $repeat = $xmltestcases->{repeat};  #grab the number of times to iterate test case file
+        unless ($repeat) { $repeat = 1; }  #set to 1 in case it is not defined in test case file               
             
-        while ($testnum <= $casecount) {
-                
-            if ($xnode) {  #if an XPath Node is defined, only process the single Node 
-                $testnum = $xnode; 
-            }
-                
-            $isfailure = 0;
-                
-            if ($gui == 1){gui_statusbar();}
-                
-            $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
-            if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
-            if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
-                
-            #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
-            $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g; if ($gui == 1){gui_tc_descript();}}
-            $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g; 
-                $url =~ s/{PARSEDRESULT}/$parsedresult/g; $url =~ s/{PARSEDRESULT1}/$parsedresult1/g; $url =~ s/{PARSEDRESULT2}/$parsedresult2/g; $url =~ s/{PARSEDRESULT3}/$parsedresult3/g; 
-                $url =~ s/{PARSEDRESULT4}/$parsedresult4/g; $url =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
-            $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g; 
-                $postbody =~ s/{PARSEDRESULT}/$parsedresult/g; $url =~ s/{PARSEDRESULT1}/$parsedresult1/g; $postbody =~ s/{PARSEDRESULT2}/$parsedresult2/g; 
-                $postbody =~ s/{PARSEDRESULT3}/$parsedresult3/g; $postbody =~ s/{PARSEDRESULT4}/$parsedresult4/g; $postbody =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
-            $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; 
-                $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; 
-                $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) {$verifypositivenext =~ s/{AMPERSAND}/&/g; $verifypositivenext =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $verifynegativenext = $xmltestcases->{case}->{$testnum}->{verifynegativenext}; if ($verifynegativenext) {$verifynegativenext =~ s/{AMPERSAND}/&/g; $verifynegativenext =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $parseresponse = $xmltestcases->{case}->{$testnum}->{parseresponse}; if ($parseresponse) {$parseresponse =~ s/{AMPERSAND}/&/g; $parseresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $parseresponse1 = $xmltestcases->{case}->{$testnum}->{parseresponse1}; if ($parseresponse1) {$parseresponse1 =~ s/{AMPERSAND}/&/g; $parseresponse1 =~ s/{TIMESTAMP}/$timestamp/g;}
-            $parseresponse2 = $xmltestcases->{case}->{$testnum}->{parseresponse2}; if ($parseresponse2) {$parseresponse2 =~ s/{AMPERSAND}/&/g; $parseresponse2 =~ s/{TIMESTAMP}/$timestamp/g;} 
-            $parseresponse3 = $xmltestcases->{case}->{$testnum}->{parseresponse3}; if ($parseresponse3) {$parseresponse3 =~ s/{AMPERSAND}/&/g; $parseresponse3 =~ s/{TIMESTAMP}/$timestamp/g;} 
-            $parseresponse4 = $xmltestcases->{case}->{$testnum}->{parseresponse4}; if ($parseresponse4) {$parseresponse4 =~ s/{AMPERSAND}/&/g; $parseresponse4 =~ s/{TIMESTAMP}/$timestamp/g;} 
-            $parseresponse5 = $xmltestcases->{case}->{$testnum}->{parseresponse5}; if ($parseresponse5) {$parseresponse5 =~ s/{AMPERSAND}/&/g; $parseresponse5 =~ s/{TIMESTAMP}/$timestamp/g;} 
-            $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-                
-                
-            print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
-            unless ($xnode) { #if using XPath, skip stdout output 
-                print STDOUT qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
-            }
-                
-            unless ($casefilecheck eq $currentcasefile) {
-                unless ($currentcasefile eq $casefilelist[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
-                    print RESULTSXML qq|    </testcases>\n\n|;
-                }
-                print RESULTSXML qq|    <testcases file="$currentcasefile">\n\n|;
-            }
-                
-            print RESULTSXML qq|        <testcase id="$testnum">\n|;
-                
-            if ($description1) {
-                print RESULTS qq|$description1 <br>\n|; 
-                unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|$description1 <br>\n|;
-                }
-                print RESULTSXML qq|            <description1>$description1</description1>\n|; 
-            }
-                
-            if ($description2) {
-                print RESULTS qq|$description2 <br>\n|;
-                unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|$description2 <br>\n|;
-                }
-                print RESULTSXML qq|            <description2>$description2</description2>\n|; 
-            }
-                
-            print RESULTS qq|<br>\n|;
-            unless ($xnode) { #if using XPath, skip stdout output 
-                print STDOUT qq|<br>\n|;
-            }
             
-            if ($verifypositive) {
-                print RESULTS qq|Verify: "$verifypositive" <br>\n|;
-                unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|Verify: "$verifypositive" <br>\n|;
+        foreach ( 1 .. $repeat ) {
+            
+            while ($testnum <= $casecount) {
+                    
+                if ($xnode) {  #if an XPath Node is defined, only process the single Node 
+                    $testnum = $xnode; 
                 }
-                print RESULTSXML qq|            <verifypositive>$verifypositive</verifypositive>\n|; 
-            }
-                
-            if ($verifynegative) { 
-                print RESULTS qq|Verify Negative: "$verifynegative" <br>\n|;
+                    
+                $isfailure = 0;
+                    
+                if ($gui == 1){gui_statusbar();}
+                    
+                $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
+                if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
+                if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
+                    
+                #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
+                $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g; if ($gui == 1){gui_tc_descript();}}
+                $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g; 
+                    $url =~ s/{PARSEDRESULT}/$parsedresult/g; $url =~ s/{PARSEDRESULT1}/$parsedresult1/g; $url =~ s/{PARSEDRESULT2}/$parsedresult2/g; $url =~ s/{PARSEDRESULT3}/$parsedresult3/g; 
+                    $url =~ s/{PARSEDRESULT4}/$parsedresult4/g; $url =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
+                $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g; 
+                    $postbody =~ s/{PARSEDRESULT}/$parsedresult/g; $url =~ s/{PARSEDRESULT1}/$parsedresult1/g; $postbody =~ s/{PARSEDRESULT2}/$parsedresult2/g; 
+                    $postbody =~ s/{PARSEDRESULT3}/$parsedresult3/g; $postbody =~ s/{PARSEDRESULT4}/$parsedresult4/g; $postbody =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
+                $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; 
+                    $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; 
+                    $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) {$verifypositivenext =~ s/{AMPERSAND}/&/g; $verifypositivenext =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $verifynegativenext = $xmltestcases->{case}->{$testnum}->{verifynegativenext}; if ($verifynegativenext) {$verifynegativenext =~ s/{AMPERSAND}/&/g; $verifynegativenext =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $parseresponse = $xmltestcases->{case}->{$testnum}->{parseresponse}; if ($parseresponse) {$parseresponse =~ s/{AMPERSAND}/&/g; $parseresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $parseresponse1 = $xmltestcases->{case}->{$testnum}->{parseresponse1}; if ($parseresponse1) {$parseresponse1 =~ s/{AMPERSAND}/&/g; $parseresponse1 =~ s/{TIMESTAMP}/$timestamp/g;}
+                $parseresponse2 = $xmltestcases->{case}->{$testnum}->{parseresponse2}; if ($parseresponse2) {$parseresponse2 =~ s/{AMPERSAND}/&/g; $parseresponse2 =~ s/{TIMESTAMP}/$timestamp/g;} 
+                $parseresponse3 = $xmltestcases->{case}->{$testnum}->{parseresponse3}; if ($parseresponse3) {$parseresponse3 =~ s/{AMPERSAND}/&/g; $parseresponse3 =~ s/{TIMESTAMP}/$timestamp/g;} 
+                $parseresponse4 = $xmltestcases->{case}->{$testnum}->{parseresponse4}; if ($parseresponse4) {$parseresponse4 =~ s/{AMPERSAND}/&/g; $parseresponse4 =~ s/{TIMESTAMP}/$timestamp/g;} 
+                $parseresponse5 = $xmltestcases->{case}->{$testnum}->{parseresponse5}; if ($parseresponse5) {$parseresponse5 =~ s/{AMPERSAND}/&/g; $parseresponse5 =~ s/{TIMESTAMP}/$timestamp/g;} 
+                $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
+                $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
+                    
+                    
+                print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
                 unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|Verify Negative: "$verifynegative" <br>\n|;
+                    print STDOUT qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
                 }
-                print RESULTSXML qq|            <verifynegative>$verifynegative</verifynegative>\n|; 
-            }
-                
-            if ($verifypositivenext) { 
-                print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
+                    
+                unless ($casefilecheck eq $currentcasefile) {
+                    unless ($currentcasefile eq $casefilelist[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
+                        print RESULTSXML qq|    </testcases>\n\n|;
+                    }
+                    print RESULTSXML qq|    <testcases file="$currentcasefile">\n\n|;
+                }
+                    
+                print RESULTSXML qq|        <testcase id="$testnum">\n|;
+                    
+                if ($description1) {
+                    print RESULTS qq|$description1 <br>\n|; 
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|$description1 <br>\n|;
+                    }
+                    print RESULTSXML qq|            <description1>$description1</description1>\n|; 
+                }
+                    
+                if ($description2) {
+                    print RESULTS qq|$description2 <br>\n|;
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|$description2 <br>\n|;
+                    }
+                    print RESULTSXML qq|            <description2>$description2</description2>\n|; 
+                }
+                    
+                print RESULTS qq|<br>\n|;
                 unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
+                    print STDOUT qq|<br>\n|;
                 }
-                print RESULTSXML qq|            <verifypositivenext>$verifypositivenext</verifypositivenext>\n|; 
-            }
                 
-            if ($verifynegativenext) { 
-                print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
-                unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
+                if ($verifypositive) {
+                    print RESULTS qq|Verify: "$verifypositive" <br>\n|;
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|Verify: "$verifypositive" <br>\n|;
+                    }
+                    print RESULTSXML qq|            <verifypositive>$verifypositive</verifypositive>\n|; 
                 }
-                print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|; 
-            }
-                
-                
-            if($method) {
-                if ($method eq "get") {httpget();}
-                elsif ($method eq "post") {httppost();}
-                else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
-            }
-            else {   
-                httpget();  #use "get" if no method is specified  
-            }  
-                
-                
-            verify();  #verify result from http response
-                
-            httplog();  #write to http.log file            
-                
-            parseresponse();  #grab string from response to send later
-                
-                
-            if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
-                print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
-                if ($xnode) { #only print this way if using XPath
-                    print STDOUT qq|FAIL|;
-                }                
-                unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
+                    
+                if ($verifynegative) { 
+                    print RESULTS qq|Verify Negative: "$verifynegative" <br>\n|;
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|Verify Negative: "$verifynegative" <br>\n|;
+                    }
+                    print RESULTSXML qq|            <verifynegative>$verifynegative</verifynegative>\n|; 
                 }
-                print RESULTSXML qq|            <success>false</success>\n|;
-                if ($gui == 1){gui_status_failed();}
-                $casefailedcount++;
-            }
-            else {
-                print RESULTS qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
-                if ($xnode) { #only print this way if using XPath
-                    print STDOUT qq|PASS|;
+                    
+                if ($verifypositivenext) { 
+                    print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
+                    }
+                    print RESULTSXML qq|            <verifypositivenext>$verifypositivenext</verifypositivenext>\n|; 
+                }
+                    
+                if ($verifynegativenext) { 
+                    print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
+                    }
+                    print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|; 
+                }
+                    
+                    
+                if($method) {
+                    if ($method eq "get") {httpget();}
+                    elsif ($method eq "post") {httppost();}
+                    else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
+                }
+                else {   
+                    httpget();  #use "get" if no method is specified  
                 }  
-                unless ($xnode) { #if using XPath, skip stdout output 
-                    print STDOUT qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
+                    
+                    
+                verify();  #verify result from http response
+                    
+                httplog();  #write to http.log file            
+                    
+                parseresponse();  #grab string from response to send later
+                    
+                    
+                if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
+                    print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
+                    if ($xnode) { #only print this way if using XPath
+                        print STDOUT qq|FAIL|;
+                    }                
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
+                    }
+                    print RESULTSXML qq|            <success>false</success>\n|;
+                    if ($gui == 1){gui_status_failed();}
+                    $casefailedcount++;
                 }
-                print RESULTSXML qq|            <success>true</success>\n|;
-                if ($gui == 1){gui_status_passed();}
-                $casepassedcount++;
+                else {
+                    print RESULTS qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
+                    if ($xnode) { #only print this way if using XPath
+                        print STDOUT qq|PASS|;
+                    }  
+                    unless ($xnode) { #if using XPath, skip stdout output 
+                        print STDOUT qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
+                    }
+                    print RESULTSXML qq|            <success>true</success>\n|;
+                    if ($gui == 1){gui_status_passed();}
+                    $casepassedcount++;
+                }
+                    
+                    
+                print RESULTS qq|Response Time = $latency s <br>\n|;
+                unless ($xnode) { #if using XPath, skip stdout output 
+                    print STDOUT qq|Response Time = $latency s <br>\n|;
+                }
+                print RESULTSXML qq|            <responsetime>$latency</responsetime>\n|;
+                    
+                print RESULTSXML qq|        </testcase>\n\n|;
+                    
+                print RESULTS qq|<br>\n------------------------------------------------------- <br>\n\n|;
+                unless ($xnode) { #if using XPath, skip stdout output 
+                    print STDOUT qq|<br>\n------------------------------------------------------- <br>\n\n|;
+                }
+                    
+                $casefilecheck = $currentcasefile;  #set this so <testcases> xml is only closed after each file is done processing
+                    
+                if ($xnode) {  #if an XPath Node is defined, only process the single Node 
+                    $testnum = ($casecount + 1); 
+                }
+                    
+                $testnum++;
+                $totalruncount++;
             }
                 
-                
-            print RESULTS qq|Response Time = $latency s <br>\n|;
-            unless ($xnode) { #if using XPath, skip stdout output 
-                print STDOUT qq|Response Time = $latency s <br>\n|;
-            }
-            print RESULTSXML qq|            <responsetime>$latency</responsetime>\n|;
-                
-            print RESULTSXML qq|        </testcase>\n\n|;
-                
-            print RESULTS qq|<br>\n------------------------------------------------------- <br>\n\n|;
-            unless ($xnode) { #if using XPath, skip stdout output 
-                print STDOUT qq|<br>\n------------------------------------------------------- <br>\n\n|;
-            }
-                
-            $casefilecheck = $currentcasefile;  #set this so <testcases> xml is only closed after each file is done processing
-                
-            if ($xnode) {  #if an XPath Node is defined, only process the single Node 
-                $testnum = ($casecount + 1); 
-            }
-                
-            $testnum++;
-            $totalruncount++;
-        }       
+            $testnum = 1;  #reset testcase counter so it will reprocess test case file if repeat is set
+        }
     }
         
         
