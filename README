@@ -7,6 +7,11 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 0.95 - May 17, 2004
+    -Added Restart button to GUI
+    -Added 5 additional parsing parameters/variables to use in test cases
+    -Fixes to GUI positioning
+    
 Version 0.94 - April 29, 2004
     -Bug fix for malformed HTTP Post
     -Color added to status window text
