@@ -43,20 +43,21 @@ $mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
                       -bg     => '#666699',
                       );
 $mw->InitStderr; #redirect all STDERR to a window
- 
+$mw->raise; #put application in front at startup
+
  
 $mw->update();
 $icon = $mw->Photo(-file => 'icon.gif');
 $mw->iconimage($icon);
 
 
-$mw ->Photo('logogif', -file => "logo.gif");    
-$mw ->Label(-image => 'logogif', 
+$mw->Photo('logogif', -file => "logo.gif");    
+$mw->Label(-image => 'logogif', 
             -bg    => '#666699'
             )->place(qw/-x 235 -y 12/); $mw->update();
 
 
-$mw ->Label(-text  => 'Engine Status:',
+$mw->Label(-text  => 'Engine Status:',
             -bg    => '#666699'
             )->place(qw/-x 25 -y 110/); $mw->update();
 
@@ -69,9 +70,9 @@ $out_window = $mw->Scrolled(ROText,  #engine status window
                   )->place(qw/-x 25 -y 128/); $mw->update(); 
 
 
-$mw ->Label(-text  => 'Test Case Status:',
-            -bg    => '#666699'
-            )->place(qw/-x 25 -y 238/); $mw->update(); 
+$mw->Label(-text  => 'Test Case Status:',
+           -bg    => '#666699'
+           )->place(qw/-x 25 -y 238/); $mw->update(); 
 
 
 $status_window = $mw->Scrolled(ROText,  #test case status window 
