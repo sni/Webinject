@@ -441,8 +441,8 @@ qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
             font-family: Verdana, Arial, Helvetica, sans-serif; 
             font-size: 10px;
         }
-        .pass { color: Green }
-        .fail { color: Red }
+        .pass { color: green }
+        .fail { color: red }
     </style>
 </head>
 <body>
