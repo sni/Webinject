@@ -60,7 +60,7 @@ sub engine
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
-    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy) }; #add proxy support if its set in config.xml
+    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy)}; #add proxy support if its set in config.xml
 
 
     $totalruncount = 0;
@@ -87,8 +87,8 @@ sub engine
         
         cleancases();
         
-        while ($testnum <= $casecount) {
-        
+        while ($testnum <= $casecount) {        
+            
             if ($gui == 1){gui_statusbar();}
             
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
@@ -99,15 +99,16 @@ sub engine
             $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g; if ($gui == 1){gui_tc_descript();}}
             $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g;}  
-            $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g; $url =~ s/{PARSEDRESULT}/$parsedresult/g;}  
+            $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g; $postbody =~ s/{PARSEDRESULT}/$parsedresult/g;}  
             $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) {$verifypositivenext =~ s/{AMPERSAND}/&/g; $verifypositivenext =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifynegativenext = $xmltestcases->{case}->{$testnum}->{verifynegativenext}; if ($verifynegativenext) {$verifynegativenext =~ s/{AMPERSAND}/&/g; $verifynegativenext =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $parseresponse = $xmltestcases->{case}->{$testnum}->{parseresponse}; if ($parseresponse) {$parseresponse =~ s/{AMPERSAND}/&/g; $parseresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
             $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
             $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-                         
+            
             print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             print STDOUT "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             if ($description1) {
@@ -137,6 +138,7 @@ sub engine
                 print STDOUT "Verify Negative On Next Case: \"$verifynegativenext\" <br> \n";
             }
             
+            
             if($method) {
                 if ($method eq "get") {httpget();}
                 elsif ($method eq "post") {httppost();}
@@ -145,14 +147,18 @@ sub engine
             else{   
                 httpget(); #use "get" if no method is specified  
             }  
-                
-            verify();  #verify result from http response
+            
+            
+            verify();  #verify result from http response       
+            
+            parseresponse();  #grab string from response to send later
+            
             
             print RESULTS "Response Time = $latency s<br>\n";
             print STDOUT "Response Time = $latency s<br>\n";
             print RESULTS "<br>\n-------------------------------------------------------<br>\n\n";
             print STDOUT "<br>\n-------------------------------------------------------<br>\n\n";
-                        
+              
             $testnum++;
             $totalruncount++;
         }       
@@ -228,12 +234,14 @@ sub httpget {  #send http request and read response
     $request = new HTTP::Request('GET',"$url");
 
     $cookie_jar->add_cookie_header($request);
+    #print $request->as_string; print "\n\n";
     
     $starttimer = time();
     $response = $useragent->simple_request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
-      
+    #print $response->as_string; print "\n\n";
+    
     if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
     if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
@@ -252,7 +260,8 @@ sub httppost {  #send http request and read response
     $response = $useragent->simple_request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
-     
+    #print $response->as_string; print "\n\n";
+    
     if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
     if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
@@ -346,6 +355,23 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
         $failedcount++;            
     }
         
+}
+#------------------------------------------------------------------
+sub parseresponse {  #parse value from response for use in future request (for session id's, dynamic URL rewriting, etc)
+    
+    if ($parseresponse) {
+        
+        @parseargs = split (/\|/, $parseresponse);
+        
+        $leftboundary = $parseargs[0];
+        $rightboundary = $parseargs[1];
+        
+        $resptoparse = $response->as_string;
+        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
+            $parsedresult = $1; 
+        }
+        #print "\n\nParsed String: $parsedresult\n\n";
+    }
 }
 #------------------------------------------------------------------
 sub processcasefile {  #get test case files to run (from command line or config file) and evaluate constants
