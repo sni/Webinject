@@ -145,7 +145,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         $xmltestcases = XMLin("./$currentcasefile"); #slurp test case file to parse
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
-        #print keys %{$configfile};  #print keys from dereferenced hash
+        #print keys %{$configfile};  #for debug, print keys from dereferenced hash
             
         cleancases();
             
@@ -613,7 +613,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
      
     if ($parseresponse) {
            
-        @parseargs = split (/\|/, $parseresponse);
+        @parseargs = split(/\|/, $parseresponse);
             
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
@@ -633,7 +633,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         
     if ($parseresponse1) {
             
-        @parseargs = split (/\|/, $parseresponse1);
+        @parseargs = split(/\|/, $parseresponse1);
             
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
@@ -653,7 +653,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         
     if ($parseresponse2) {
             
-        @parseargs = split (/\|/, $parseresponse2);
+        @parseargs = split(/\|/, $parseresponse2);
             
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
@@ -673,7 +673,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         
     if ($parseresponse3) {
             
-        @parseargs = split (/\|/, $parseresponse3);
+        @parseargs = split(/\|/, $parseresponse3);
             
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
@@ -693,7 +693,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
     
     if ($parseresponse4) {
             
-        @parseargs = split (/\|/, $parseresponse4);
+        @parseargs = split(/\|/, $parseresponse4);
             
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
@@ -713,7 +713,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         
     if ($parseresponse5) {
             
-        @parseargs = split (/\|/, $parseresponse5);
+        @parseargs = split(/\|/, $parseresponse5);
             
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
@@ -733,21 +733,39 @@ sub parseresponse {  #parse values from responses for use in future request (for
 }
 #------------------------------------------------------------------
 sub processcasefile {  #get test case files to run (from command line or config file) and evaluate constants
+                       #parse config file and grab values it sets 
         
     my @configfile;
+    my $comment_mode;
     my $firstparse;
     my $filename;
     my $xpath;
     my $setuseragent;
         
     undef @casefilelist; #empty the array of test case filenames
+    undef @configfile;
         
+    #process the config file if it exists    
     if (-e "config.xml") {  #if config.xml exists, read it
         open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
-            @configfile = <CONFIG>;  #read the file into an array
+        my @precomment = <CONFIG>;  #read the file into an array
+            
+        #remove any commented blocks from config file
+        foreach (@precomment) {
+            if (/<comment>/) {   
+                $comment_mode = 1;
+            } 
+            elsif (m:</comment>:) {   
+                $comment_mode = 0;
+            } 
+            elsif (!$comment_mode) {
+                push(@configfile, $_);
+            }
+        }
+        
     }           
         
-    if (($#ARGV + 1) < 1) { #no command line args were passed  
+    if (($#ARGV + 1) < 1) {  #no command line args were passed  
         #if testcase filename is not passed on the command line, use files in config.xml  
         #parse test case file names from config.xml and build array
         foreach (@configfile) {
@@ -771,19 +789,19 @@ sub processcasefile {  #get test case files to run (from command line or config 
         }
     }
         
-    elsif (($#ARGV + 1) == 1) { #one command line arg was passed
+    elsif (($#ARGV + 1) == 1) {  #one command line arg was passed
         #use testcase filename passed on command line (config.xml is only used for other options)
         push @casefilelist, $ARGV[0];  #first commandline argument is the test case file, put this on the array for processing
     }
         
-    elsif (($#ARGV + 1) == 2) { #two command line args were passed
+    elsif (($#ARGV + 1) == 2) {  #two command line args were passed
             
         undef $xnode; #reset xnode
         undef $xpath; #reset xpath
             
         $xpath = $ARGV[1];
             
-        if ($xpath =~ /\/(.*)\[/) {    #if the argument contains a "/" and "[", it is really an XPath  
+        if ($xpath =~ /\/(.*)\[/) {  #if the argument contains a "/" and "[", it is really an XPath  
             $xpath =~ /(.*)\/(.*)\[(.*?)\]/;  #if it contains XPath info, just grab the file name
             $xnode = $3;  #grab the XPath Node value.. (from inside the "[]")
             #print "\nXPath Node is: $xnode \n";
@@ -796,7 +814,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
         push @casefilelist, $ARGV[0];  #first commandline argument is the test case file, put this on the array for processing
     }
         
-    elsif (($#ARGV + 1) > 2) { #too many command line args were passed
+    elsif (($#ARGV + 1) > 2) {  #too many command line args were passed
         die "\nERROR: Too many arguments\n\n";
     }
         
@@ -853,7 +871,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             
         if (/<httpauth>/) {        
             $_ =~ /<httpauth>(.*)<\/httpauth>/;
-            @httpauth = split (/:/, $1);
+            @httpauth = split(/:/, $1);
             if ($#httpauth != 4) {
                 print STDERR "\nSorry, httpauth should have 5 fields delimited by colons...\n"; 
                 undef @httpauth;
