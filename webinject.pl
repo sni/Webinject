@@ -49,7 +49,7 @@ our ($verifynegative1,$verifynegative2,$verifynegative3);
 our ($url, $baseurl, $baseurl1, $baseurl2, $postbody, $posttype);
 our ($gnuplot, $standaloneplot, $globalhttplog);
 our ($currentdatetime, $totalruntime, $starttimer, $endtimer);
-our ($opt_configfile, $opt_version);
+our ($opt_configfile, $opt_version, $opt_output);
 our ($reporttype, $returnmessage, $errormessage, $globaltimeout, %exit_codes);
 
 
@@ -119,10 +119,17 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     }
         
     #open file handles
-    unless ($reporttype) {  #we suppress most logging when running in a plugin mode   
-        open(HTTPLOGFILE, ">$dirname"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
-        open(RESULTS, ">$dirname"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
-        open(RESULTSXML, ">$dirname"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
+    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+        if ($opt_output) {  #use output location if it is passed from the command line
+            open(HTTPLOGFILE, ">$opt_output"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
+            open(RESULTS, ">$opt_output"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
+            open(RESULTSXML, ">$opt_output"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
+        }
+        else {
+            open(HTTPLOGFILE, ">$dirname"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
+            open(RESULTS, ">$dirname"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
+            open(RESULTSXML, ">$dirname"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
+        }
     }
         
     unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
@@ -1596,7 +1603,8 @@ sub plotit {  #call the external plotter to create a graph (if we are in the app
     }
 }
 #------------------------------------------------------------------
-sub getdirname {  #get the directory webinject engine is running from   
+sub getdirname {  #get the directory webinject engine is running from
+        
     $dirname = $0;    
     $dirname =~ s^(.*/).*^$1^;  #for nix systems
     $dirname =~ s^(.*\\).*^$1^; #for windoz systems   
@@ -1611,6 +1619,7 @@ sub getoptions {  #command line options
     GetOptions(
         'v|V|version'   => \$opt_version,
         'c|config=s'    => \$opt_configfile,
+        'o|output=s'    => \$opt_output,
         'n|no-output'   => \$nooutput,
         ) 
         or do {
@@ -1624,7 +1633,7 @@ sub getoptions {  #command line options
     sub print_usage {
         print <<EOB
     Usage:
-      webinject.pl [-c|--config config_file] [-n|--no-output] [testcase_file [XPath]]
+      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [testcase_file [XPath]]
       webinject.pl --version|-v
 EOB
     }
