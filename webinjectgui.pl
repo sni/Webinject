@@ -147,13 +147,14 @@ $minimalcheckbx = 'minimal_off';  #give it a default value
 $mw->Label(-text  => 'Minimal Output',
            -bg    => '#666699',
            -fg    => '#FFFFFF'
-          )->place(qw/-x 45 -y 628/); $mw->update();
+          )->place(qw/-x 49 -y 629/); $mw->update();
 $minimal_checkbx = $mw->Checkbutton(-text       => '',  #using a text widget instead 
                         -onvalue                => 'minimal_on',
                         -offvalue               => 'minimal_off',
                         -variable               => \$minimalcheckbx,
                         -background             => '#666699',
                         -activebackground       => '#666699',
+                        -highlightbackground    => '#666699'
                         )->place(qw/-x 20 -y 627/); $mw->update();
 
 
@@ -161,14 +162,15 @@ $timercheckbx = 'timer_off';  #give it a default value
 $mw->Label(-text  => 'Response Timer Output',
            -bg    => '#666699',
            -fg    => '#FFFFFF'
-          )->place(qw/-x 174 -y 628/); $mw->update();
+          )->place(qw/-x 199 -y 629/); $mw->update();
 $timers_checkbx = $mw->Checkbutton(-text        => '',  #using a text widget instead 
                         -onvalue                => 'timer_on',
                         -offvalue               => 'timer_off',
                         -variable               => \$timercheckbx,
                         -background             => '#666699',
-                        -activebackground       => '#666699'
-                        )->place(qw/-x 150 -y 627/); $mw->update();
+                        -activebackground       => '#666699',
+                        -highlightbackground    => '#666699'
+                        )->place(qw/-x 170 -y 627/); $mw->update();
                         
                         
                         
