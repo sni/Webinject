@@ -542,7 +542,7 @@ sub verify {  #do verification of http response and print status to HTML/XML and
     }
         
         
-    
+        
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
         print RESULTS "<font color=green>Passed HTTP Response Code Verification (not in error range)</font><br>\n"; 
@@ -553,10 +553,18 @@ sub verify {  #do verification of http response and print status to HTML/XML and
         $passedcount++;         
     }
     else {
-        $response->as_string() =~ /(HTTP\/1.)(.*)/i;  
-        print RESULTS "<font color=red>Failed HTTP Response Code Verification ($1$2)</font><br>\n"; #($1$2) is http response code
-        unless ($xnode) { #if using XPath, skip regular STDOUT output 
-            print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is http response code   
+        $response->as_string() =~ /(HTTP\/1.)(.*)/i;
+        if ($1) {  #this is true if an HTTP response returned 
+            print RESULTS "<font color=red>Failed HTTP Response Code Verification ($1$2)</font><br>\n"; #($1$2) is http response code
+            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is http response code   
+            }
+        }
+        else {  #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
+        print RESULTS "<font color=red>Failed - No Response</font><br>\n"; #($1$2) is http response code
+            unless ($xnode) { #if using XPath, skip regular STDOUT output 
+                print STDOUT "Failed - No Response \n"; #($1$2) is http response code   
+            }
         }
         $failedcount++;
         $isfailure++;
