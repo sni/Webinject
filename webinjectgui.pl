@@ -24,18 +24,16 @@ use Tk::Stderr;
 use Tk::ROText;
 use Tk::Compound;
 use Tk::ProgressBar::Mac;
-use Tk::CollapsableFrame;
-use Tk::LabEntry;
 
 
 
 
 
-$| = 1; #don't buffer output
+$| = 1; #don't buffer output to STDOUT
 
 
  
-$mw = MainWindow->new(-title            => 'WebInject - HTTP Test Tool    (version 2.0 alpha)',
+$mw = MainWindow->new(-title            => 'WebInject - HTTP Test Tool    (version 1.10)',
                       -bg               => '#666699',
                       -takefocus        => '1'  #start on top
                       );
@@ -68,9 +66,8 @@ $mw->Label(-text  => 'Engine Status:',
 $out_window = $mw->Scrolled(ROText,  #engine status window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
-                   -relief      => 'ridge',
                    -width       => '85',
-                   -height      => '7'
+                   -height      => '7',
                   )->place(qw/-x 25 -y 128/); $mw->update();
 
 
@@ -82,67 +79,11 @@ $mw->Label(-text  => 'Test Case Status:',
 $status_window = $mw->Scrolled(ROText,  #test case status window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
-                   -relief      => 'ridge',
                    -width       => '85',
-                   -height      => '19'
+                   -height      => '26',
                   )->place(qw/-x 25 -y 256/); $mw->update();
 $status_window->tagConfigure('red', -foreground => '#FF3333');  #define tag for font color
 $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for font color
-
-
-
-
-
-
-
-
-$colf_canvas = $mw->Canvas(-height              => '100', 
-                           -width               => '600',
-                           -background          => '#666699',
-                           -highlightthickness  => '0'
-                          )->place(qw/-x 25 -y 540/); $mw->update();
-                          
-$collapse_frame = $colf_canvas->CollapsableFrame(-title         => 'Load Test Options:',
-                                                 -height        => '100',
-                                                 -width         => '600',
-                                                 -background    => '#666699'
-                                                )->place(qw/-x 0 -y 0/); $mw->update();
-$collapse_frame->{frame}->configure(-background => '#EFEFEF');
-$collapse_frame->{ident}->configure(-background => '#EFEFEF');
-$collapse_frame->{opcl}->configure(-background  => '#EFEFEF');
-$colf = $collapse_frame->Subwidget();  #put stuff in colf to get it inside the collapsableframe
-$colf->configure(-background => '#EFEFEF');
-
-#$mw->Label(-text  => 'Load Test Options:',
-#           -bg    => '#EFEFEF'
-#           )->place(qw/-x 51 -y 543/); $mw->update(); 
-
-#$mw->Canvas(-height             => '24', 
-#            -width              => '485',
-#            -background         => '#666699',
-#            -highlightthickness => '0'
-#           )->place(qw/-x 142 -y 540/); $mw->update();
-
-if ($^O eq 'MSWin32') {  #check to see if they are running Windows OS  
-    $colf->Label(-text          => 'Sorry, You are running MS Windows.  WebInject only supports multiprocessed load testing on Unix/Linux.',
-                 -background    => '#EFEFEF'
-                )->pack(-anchor => 'w', -pady => '20'); $mw->update();
-}
-else {  #if they are not on windows, give the load testing options
-    $colf->LabEntry(-label        => 'Number of Processes',
-                    -background   => '#EFEFEF',
-                    -textvariable => \$numprocs
-                   )->pack(-anchor => 'w', -pady => '20'); $mw->update();
-}
- 
-
-
-
-
-
-
-
-
 
 
 $rtc_button = $mw->Button->Compound;
@@ -235,14 +176,13 @@ sub gui_initial {   #this runs when engine is first loaded
     $casefailedcount = '';
     $casepassedcount = '';
     $totalruntime = '';
-    $numprocs = 1;
-    @monitor = ();
 
-    $out_window->delete('0.0','end');  #clear window before starting
+    $out_window->delete('0.0','end');    #clear window before starting
     
-    $status_window->delete('0.0','end');  #clear window before starting
+    $status_window->delete('0.0','end'); #clear window before starting
     
     $status_ind->configure(-background  => '#FF9900');  #change status color amber while running
+                           
 
     $rtc_button->configure(-state       => 'disabled',  #disable button while running
                            -background  => '#666699',
@@ -299,17 +239,5 @@ sub gui_final {
     $rtc_button->configure(-state       => 'normal',  #re-enable button after finish
                            -background  => '#EFEFEF',
                            );
-}
-#------------------------------------------------------------------
-sub monitor_window {
-    $mondisplay = " \n";
-    $status_window->delete('0.0','end');  #clear window before updating
-    
-    foreach (@monitor) {  #process each line of the array into a scalar text var for display
-	$mondisplay = "$mondisplay" . "$_";	
-    }
-    
-    $status_window->insert("end",  $mondisplay);
-    $status_window->update();
 }
 #------------------------------------------------------------------
