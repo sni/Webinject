@@ -38,6 +38,11 @@ else {
 }
 
 
+#delete files leftover from previous run if they exist (do this here so the are whacked on startup)
+if (-e "plot.log") {  unlink "plot.log"; } 
+if (-e "plot.plt") {  unlink "plot.plt"; } 
+if (-e "plot.gif") {  unlink "plot.gif"; }    
+
 
 
 #------------------------------------------------------------------
@@ -52,9 +57,10 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
     open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
     
-    if (-e "plot.log") {  unlink "plot.log"; }#if there is a plot.log from a previous run, delete it
-    if (-e "plot.plt") {  unlink "plot.plt"; }#if there is a plot.plt from a previous run, delete it
-    if (-e "plot.png") {  unlink "plot.png"; }#if there is a plot.plt from a previous run, delete it    
+    #delete files leftover from previous run if they exist (do this here so the are whacked each run)
+    if (-e "plot.log") {  unlink "plot.log"; } 
+    if (-e "plot.plt") {  unlink "plot.plt"; } 
+    if (-e "plot.gif") {  unlink "plot.gif"; } 
       
     #contsruct objects
     $useragent = LWP::UserAgent->new;
@@ -279,6 +285,8 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     print STDOUT qq|<br>\n------------------------------------------------------- <br>\n\n|;
                 }
                     
+                    
+                    
                 $casefilecheck = $currentcasefile;  #set this so <testcases> xml is only closed after each file is done processing
                     
                 if ($xnode) {  #if an XPath Node is defined, only process the single Node 
@@ -287,6 +295,14 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     
                 $testnum++;
                 $totalruncount++;
+                
+                #break from sub if user presses stop button in gui    
+                if ($STOP eq 'YES'){
+                    $STOP = 'NO';
+                    if ($gui == 1){gui_stop();}
+                    return "";
+                }
+                
             }
                 
             $testnum = 1;  #reset testcase counter so it will reprocess test case file if repeat is set
