@@ -69,8 +69,8 @@ $| = 1; #don't buffer output to STDOUT
      
      
         #special handling for when only one test case exists (hash is referenced different than with multiples due to how the parser formats the hash)
-        if ($casecount == 1){  
-        
+        if ($casecount == 1)
+        {  
             #populate variables with values from testcase file and revert {AMPERSAND} back to "&"
             $description1 = $xmltestcases->{case}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g;}
             $description2 = $xmltestcases->{case}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g;}
@@ -90,17 +90,17 @@ $| = 1; #don't buffer output to STDOUT
             if ($verifynegative) {print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";}
             
             if($method)
-                {
-                    if ($method eq "get")
-                        {   httpget();  }
-                    elsif ($method eq "post")
-                        {   httppost(); }
-                    else {print qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
+            {
+                if ($method eq "get")
+                {   httpget();  }
+                elsif ($method eq "post")
+                {   httppost(); }
+                else {print qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
                 }
             else
-                {   
-                    httpget();  #use "get" if no method is specified 
-                }  
+            {   
+                httpget(); #use "get" if no method is specified  
+            }  
                 
             verify();  #verify result from http response
             
@@ -112,8 +112,11 @@ $| = 1; #don't buffer output to STDOUT
         }
         
         
-        while ($testnum <= $casecount){  #make any changes here to special case above
+        while ($testnum <= $casecount) #make any changes here to special case above
+        {  
             print " .";
+            if ($verifynext) {$verifylater = $verifynext;}  #grab $verifynext string from previous test case (if it exists)
+            
             #populate variables with values from testcase file and revert {AMPERSAND} back to "&"
             $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g;}
             $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g;}
@@ -124,6 +127,7 @@ $| = 1; #don't buffer output to STDOUT
             $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g;}
             $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g;}
             $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g;}
+            $verifynext = $xmltestcases->{case}->{$testnum}->{verifynext}; if ($verifynext) {$verifynext =~ s/{AMPERSAND}/&/g;}
             
             print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             if ($description1) {print RESULTS "$description1 <br>\n";}
@@ -133,17 +137,17 @@ $| = 1; #don't buffer output to STDOUT
             if ($verifynegative) {print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";}
             
             if($method)
-                {
-                    if ($method eq "get")
-                        {   httpget();  }
-                    elsif ($method eq "post")
-                        {   httppost(); }
-                    else {print qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
+            {
+                if ($method eq "get")
+                {   httpget();  }
+                elsif ($method eq "post")
+                {   httppost(); }
+                else {print qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
                 }
             else
-                {   
+            {   
                 httpget(); #use "get" if no method is specified  
-                }  
+            }  
                 
             verify();  #verify result from http response
             
@@ -256,47 +260,66 @@ sub httppost {  #send http request and read response
 sub verify {  #do verification of http response
 
     if ($verifypositive)
+    {
+        if ($response->as_string() =~ /$verifypositive/i)  #verify existence of string in response
         {
-        if ($response->as_string() =~ /$verifypositive/i)  #verify existance of string in response
-            {
             print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
             $passedcount++;
-            }
+        }
         else
-            {
+        {
             print RESULTS "<b><font color=red>FAILED</font></b><br>\n"; 
             $failedcount++;                
-            }
         }
-        
-        
+    }
+
+
+
     if ($verifynegative)
+    {
+        if ($response->as_string() =~ /$verifynegative/i)  #verify existence of string in response
         {
-        if ($response->as_string() =~ /$verifynegative/i)  #verify existance of string in response
-            {
             print RESULTS "<b><font color=red>FAILED</font></b><br>\n"; 
             $failedcount++;  
-            }
+        }
         else
-            {
+        {
             print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
             $passedcount++;                
-            }
         }
+    }
+
+
+    
+    if ($verifylater)
+    {
+        if ($response->as_string() =~ /$verifylater/i)  #verify existence of string in response
+        {
+            print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
+            $passedcount++;
+        }
+        else
+        {
+            print RESULTS "<b><font color=red>FAILED</font></b><br>\n"; 
+            $failedcount++;                
+        }
+        
+        $verifylater = '';
+    }
         
         
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i)  #verify existance of string in response
-        {
+    {
         #don't print anything for succesful response codes (100-399) 
-        }
+    }
     else
-        {
+    {
         print RESULTS "<b><font color=red>FAILED</font></b>"; 
         $response->as_string() =~ /(HTTP\/1.)(.*)/i;
         print RESULTS " ($1$2)<br>\n";  #print http response code to report if failed         
         $failedcount++;            
-        }
+    }
         
 }
 #------------------------------------------------------------------
@@ -309,14 +332,14 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
     $casecount = 0;
     
     foreach (@xmltoconvert)
-        { 
+    { 
         s/&/{AMPERSAND}/g;  #convert ampersands (&) &'s are malformed XML
         
         if ($_ =~ /<case/) #count test cases based on '<case' tag
-            {
+        {
             $casecount++; 
-            }    
-        }  
+        }    
+    }  
 
     close(XMLTOCONVERT);   
 
