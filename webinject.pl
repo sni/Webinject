@@ -25,19 +25,75 @@ use HTTP::Cookies;
 use Crypt::SSLeay;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
-use Data::Dumper;   
+use Tk;
+use Tk::Stderr;
+use Tk::ROText;
+#use Data::Dumper;  #to dump hashes for debugging   
+
 
 $| = 1; #don't buffer output to STDOUT
+
+
+$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
+                      -width  => '635', 
+                      -height => '525', 
+                      -bg     => '#666699'
+                      );
+$mw->InitStderr; #redirect all STDOUT to a window
+
+
+$mw -> Photo('logogif', -file => "webinjectlogo.gif");
+$mw ->Label(-image => 'logogif', 
+            -bg    => '#666699'
+            )->place(qw/-x 210 -y 20/);
+
+
+$out_window = $mw->Scrolled(ROText, 
+                   -scrollbars  => 'e',
+                   -background  => '#EFEFEF',
+                   -width       => '80',
+                   -height      => '25',
+                  )->place(qw/-x 25 -y 144/); #output window
+
+
+$mw->Button(-text               => 'Run Test Cases',
+            -width              => '15',
+            -background         => '#EFEFEF',
+            -activebackground   => '#666699',
+            -foreground         => '#000000',
+            -activeforeground   => '#FFFFFF',
+            -borderwidth        => '3',
+            -command            => sub{engine()}
+            )->place(qw/-x 25 -y 110/);
+
+
+$mw->Button(-text               => 'Exit',
+            -width              => '8',
+            -background         => '#EFEFEF',
+            -activebackground   => '#666699',
+            -foreground         => '#000000',
+            -activeforeground   => '#FFFFFF',
+            -borderwidth        => '3',
+            -command            => sub{exit;}
+            )->place(qw/-x 565 -y 5/);
+  
+
+MainLoop;
+
+
+#------------------------------------------------------------------
+sub engine 
+{
 
     $startruntimer = time();  #timer for entire test run
     
     $currentdatetime = localtime time;  #get current date and time for results report
 
-    print "\nWebInject is running ...  see results.html file for output \n\n\n";
+    $out_window->insert("end", "\nStarting Webinject Engine...  see results.html file for output \n\n\n"); $out_window->update();
+    
+    open(HTTPLOGFILE, ">http.log") || die "\nERROR: Failed to open http.log file\n\n";   
 
-    open(HTTPLOGFILE, ">http.log") || die "Failed to open http.log file\n";   
-
-    open(RESULTS, ">results.html") || die "Failed to open results.html file\n";    
+    open(RESULTS, ">results.html") || die "\nERROR: Failed to open results.html file\n\n";    
       
     writeinitialhtml();
        
@@ -65,12 +121,13 @@ $| = 1; #don't buffer output to STDOUT
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #print keys from dereferenced hash
         
-        print "completed preprocessing test case file:\n$currentcasefile\nbeginning execution \n";
+        $out_window->insert("end", "completed preprocessing test case file:\n$currentcasefile\nbeginning execution \n"); $out_window->update();
      
      
         #special handling for when only one test case exists (hash is referenced different than with multiples due to how the parser formats the hash)
         if ($casecount == 1)
         {  
+            $out_window->insert("end", " ."); $out_window->update();
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             
             #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
@@ -97,7 +154,7 @@ $| = 1; #don't buffer output to STDOUT
                 {   httpget();  }
                 elsif ($method eq "post")
                 {   httppost(); }
-                else {print qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
+                else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
                 }
             else
             {   
@@ -116,7 +173,7 @@ $| = 1; #don't buffer output to STDOUT
         
         while ($testnum <= $casecount) #make any changes here to special case above
         {  
-            print " .";
+            $out_window->insert("end", " ."); $out_window->update();
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
             if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
@@ -149,7 +206,7 @@ $| = 1; #don't buffer output to STDOUT
                 {   httpget();  }
                 elsif ($method eq "post")
                 {   httppost(); }
-                else {print qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
+                else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
                 }
             else
             {   
@@ -165,11 +222,11 @@ $| = 1; #don't buffer output to STDOUT
             $totalruncount++;
         }
         
-        print "\n";
+        $out_window->insert("end", "\n"); $out_window->update();
     }
     
     
-    print "\n\nexecution completed\n\n";
+    $out_window->insert("end", "\n\nExecution Finished\n\n"); $out_window->update();
 
     $endruntimer = time();
     $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
@@ -178,7 +235,9 @@ $| = 1; #don't buffer output to STDOUT
     
     close(RESULTS);
     close(HTTPLOGFILE);
-
+    
+    
+}
 
 
 
@@ -351,7 +410,7 @@ sub verify {  #do verification of http response
 sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml parser doesn't puke
 #this is a riduclous kluge but works
 
-    open(XMLTOCONVERT, "$currentcasefile") || die "\nFailed to open test case file\n";  #open file handle   
+    open(XMLTOCONVERT, "$currentcasefile") || die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
     
     $casecount = 0;
@@ -369,14 +428,16 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
     close(XMLTOCONVERT);   
 
 
-    open(XMLTOCONVERT, ">$currentcasefile") || die "\nFailed to open test case file\n";  #open file handle   
+    open(XMLTOCONVERT, ">$currentcasefile") || die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
 sub processconfigfile {  #get test case files to run and evaluate constants
-
-    open(CONFIG, "config.xml") || die "\nFailed to open config.xml file\n";  #open file handle   
+    
+    undef @casefilelist; #empty the array
+    
+    open(CONFIG, "config.xml") || die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
     @configfile = <CONFIG>;  #Read the file into an array
 
     #parse test case file names from config.xml and build array
@@ -399,6 +460,7 @@ sub processconfigfile {  #get test case files to run and evaluate constants
     {
         push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
     }
+    
     #print "testcase file list: @casefilelist\n\n";
     
     #grab value for constant: baseurl
