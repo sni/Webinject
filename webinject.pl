@@ -31,7 +31,7 @@ our ($parseresponse,$parseresponse1, $parseresponse2, $parseresponse3, $parseres
 our ($logresponse , $logrequest);
 our ($useragent, $request, $response);
 our ($gui, $monitorenabledchkbx, $latency);
-our ($cookie_jar, $proxy, @httpauth);
+our ($cookie_jar, $proxy, $timeout, @httpauth);
 our ($xnode, $graphtype, $plotclear, $stop);
 our ($totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
 our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
@@ -89,6 +89,11 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     if (@httpauth) {
         $useragent->credentials("$httpauth[0]:$httpauth[1]", $httpauth[2],
                 $httpauth[3] => $httpauth[4]);
+    }
+        
+    #change response delay timeout in seconds if it is set in config.xml      
+    if ($timeout) {
+        $useragent->timeout("$timeout");
     }
         
     print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
@@ -180,7 +185,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     $url =~ s/{PARSEDRESULT}/$parsedresult/g; $url =~ s/{PARSEDRESULT1}/$parsedresult1/g; $url =~ s/{PARSEDRESULT2}/$parsedresult2/g; $url =~ s/{PARSEDRESULT3}/$parsedresult3/g; 
                     $url =~ s/{PARSEDRESULT4}/$parsedresult4/g; $url =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
                 $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g; 
-                    $postbody =~ s/{PARSEDRESULT}/$parsedresult/g; $url =~ s/{PARSEDRESULT1}/$parsedresult1/g; $postbody =~ s/{PARSEDRESULT2}/$parsedresult2/g; 
+                    $postbody =~ s/{PARSEDRESULT}/$parsedresult/g; $postbody =~ s/{PARSEDRESULT1}/$parsedresult1/g; $postbody =~ s/{PARSEDRESULT2}/$parsedresult2/g; 
                     $postbody =~ s/{PARSEDRESULT3}/$parsedresult3/g; $postbody =~ s/{PARSEDRESULT4}/$parsedresult4/g; $postbody =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
                 $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; 
                     $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
@@ -357,7 +362,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     return "";  #break from sub
                 }
                     
-                if ($sleep) {  #if a sleep value is set in the case, sleep that amount
+                if ($sleep) {  #if a sleep value is set in the test case, sleep that amount
                     sleep($sleep)
                 }                    
                     
@@ -803,13 +808,19 @@ sub processcasefile {  #get test case files to run (from command line or config 
         if (/<baseurl>/) {   
             $_ =~ /<baseurl>(.*)<\/baseurl>/;
             $baseurl = $1;
-            #print "\n$baseurl \n\n";
+            #print "\nbaseurl : $baseurl \n\n";
         }
             
         if (/<proxy>/) {   
             $_ =~ /<proxy>(.*)<\/proxy>/;
             $proxy = $1;
-            #print "\n$proxy \n\n";
+            #print "\nproxy : $proxy \n\n";
+        }
+
+        if (/<timeout>/) {   
+            $_ =~ /<timeout>(.*)<\/timeout>/;
+            $timeout = $1;
+            #print "\ntimeout : $timeout \n\n";
         }
             
         if (/<useragent>/) {   
@@ -818,13 +829,13 @@ sub processcasefile {  #get test case files to run (from command line or config 
             if ($setuseragent) { #http useragent that will show up in webserver logs
                 $useragent->agent($setuseragent);
             }  
-            #print "\n$setuseragent \n\n";
+            #print "\nuseragent : $setuseragent \n\n";
         }
          
         if (/<globalhttplog>/) {   
             $_ =~ /<globalhttplog>(.*)<\/globalhttplog>/;
             $globalhttplog = $1;
-            #print "\n$globalhttplog \n\n";
+            #print "\nglobalhttplog : $globalhttplog \n\n";
         }
         
         if (/<gnuplot>/) {        
@@ -950,6 +961,9 @@ sub httplog {  #write requests and responses to http.log file
         print HTTPLOGFILE $request->as_string, "\n\n";
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
+
+    print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
+
 }
 #------------------------------------------------------------------
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
