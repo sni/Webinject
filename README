@@ -7,6 +7,13 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 1.12 - July 28, 2004
+    -Added test case file parameter for repeat
+    -GUI options added for Minimal Output and Response Timer Output
+    -Option added to config.xml to define a custome User-Agent string to be sent in HTTP headers
+    -XPath Node selection option added to optional commandline parameters
+    -Bug fix for GUI Restart button
+    
 Version 1.10 - June 23, 2004
     -Added XML formatted output (results.xml is created each run)
     -Added new config.xml parameter (<globalhttplog>) for HTTP logging (always, or on failure)
