@@ -14,6 +14,7 @@
 #    merchantability or fitness for a particular purpose.  See the
 #    GNU General Public License for more details.
 
+
 our $version="1.30";
 
 use strict;
@@ -510,7 +511,7 @@ sub httppost {  #send http request and read response
 sub verify {  #do verification of http response and print status to HTML/XML/STDOUT/UI
         
     if ($verifypositive) {
-        if ($response->as_string() =~ /$verifypositive/i) {  #verify existence of string in response
+        if ($response->as_string() =~ /$verifypositive/si) {  #verify existence of string in response
             print RESULTS "<font color=green>Passed Positive Verification</font><br>\n";
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Positive Verification \n";
@@ -530,7 +531,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
         
     if ($verifynegative) {
-        if ($response->as_string() =~ /$verifynegative/i) {  #verify existence of string in response
+        if ($response->as_string() =~ /$verifynegative/si) {  #verify existence of string in response
             print RESULTS "<font color=red>Failed Negative Verification</font><br>\n";
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Negative Verification \n";            
@@ -550,7 +551,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
         
     if ($verifylater) {
-        if ($response->as_string() =~ /$verifylater/i) {  #verify existence of string in response
+        if ($response->as_string() =~ /$verifylater/si) {  #verify existence of string in response
             print RESULTS "<font color=green>Passed Positive Verification (verification set in previous test case)</font><br>\n";
             unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
@@ -571,7 +572,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
         
     if ($verifylaterneg) {
-        if ($response->as_string() =~ /$verifylaterneg/i) {  #verify existence of string in response
+        if ($response->as_string() =~ /$verifylaterneg/si) {  #verify existence of string in response
             print RESULTS "<font color=red>Failed Negative Verification (negative verification set in previous test case)</font><br>\n";
             unless (($xnode) or ($nooutput)) { #skip regular STDOUT output if using an XPath or $nooutput is set  
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";     
@@ -633,7 +634,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
+        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
             $parsedresult = $1; 
         }
             
@@ -653,7 +654,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
+        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
             $parsedresult1 = $1; 
         }
             
@@ -673,7 +674,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
+        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
             $parsedresult2 = $1; 
         }
             
@@ -693,7 +694,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
+        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
             $parsedresult3 = $1; 
         }
             
@@ -713,7 +714,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
+        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
             $parsedresult4 = $1; 
         }
         
@@ -733,7 +734,7 @@ sub parseresponse {  #parse values from responses for use in future request (for
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
             
         $resptoparse = $response->as_string;
-        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
+        if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/s) {
             $parsedresult5 = $1; 
         }
             
@@ -1119,8 +1120,8 @@ sub finaltasks {  #do ending tasks
     close(RESULTSXML);
         
         
-    #Nagios and plugin compatibility for WebInject
-    if ($reporttype) {  #return value is set which correspond to a montitoring program
+    #Nagios plugin compatibility for WebInject
+    if ($reporttype) {  #return value is set which corresponds to a monitoring program
     	if ($reporttype eq 'nagios') { #report test result to Nagios 
             #predefined exit codes for Nagios
             %exit_codes  = ('UNKNOWN' ,-1,
