@@ -537,15 +537,15 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
     $request = new HTTP::Request('POST',"$url");
     $request->content_type("$posttype");
     $request->content("$postbody");
-    $cookie_jar->add_cookie_header("$request");
+    $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
     $starttimer = time();
-    $response = $useragent->request("$request");
+    $response = $useragent->request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
         
-    $cookie_jar->extract_cookies("$response");
+    $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
@@ -556,15 +556,15 @@ sub httppost_form_data {  #send multipart/form-data HTTP request and read respon
     $request = POST "$url",
                Content_Type => "$posttype",
                Content => \%myContent_;
-    $cookie_jar->add_cookie_header("$request");
+    $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
     $starttimer = time();
-    $response = $useragent->request("$request");
+    $response = $useragent->request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
         
-    $cookie_jar->extract_cookies("$response");
+    $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
