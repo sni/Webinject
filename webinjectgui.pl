@@ -41,16 +41,14 @@ $mw->raise; #put application in front at startup
 $mw->bind('<F5>' => \&engine);  #F5 key makes it run
 
 
-if (-e "logo.gif") #if icon graphic exists, use it
-{  
+if (-e "logo.gif") {  #if icon graphic exists, use it
     $mw->update();
     $icon = $mw->Photo(-file => 'icon.gif');
     $mw->iconimage($icon);
 }
 
 
-if (-e "logo.gif") #if logo graphic exists, use it
-{ 
+if (-e "logo.gif") {  #if logo graphic exists, use it
     $mw->Photo('logogif', -file => "logo.gif");    
     $mw->Label(-image => 'logogif', 
                 -bg    => '#666699'
@@ -126,12 +124,10 @@ $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator
 
 
 
-if (-e "webinject.pl")
-{
+if (-e "webinject.pl") {
     do "webinject.pl";  #load the engine  
-}
-else
-{
+} 
+else {
     print STDERR "I can not find the test engine (webinject.pl) and I need this to run.";
 }
 
@@ -186,12 +182,10 @@ sub gui_status_passed {
 } 
 #------------------------------------------------------------------
 sub gui_status_failed {
-    if ($1 and $2)
-    {
+    if ($1 and $2) {
         $status_window->insert("end", "FAILED ($1$2)\n"); $status_window->see("end");
-    }
-    else
-    {
+    } 
+    else {
         $status_window->insert("end", "FAILED\n"); $status_window->see("end");
     }
 }
@@ -203,16 +197,14 @@ sub gui_final {
     $status_window->insert("end", "\nTest Cases Run: $totalruncount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
     $status_window->see("end");
 
-    if ($failedcount > 0)  #change status color to reflect failure or all tests passed
-        {
+    if ($failedcount > 0) {  #change status color to reflect failure or all tests passed
             $status_ind->configure(-background  => '#FF3333');  #red
-        }
-    else
-        {
+    } 
+    else {
             $status_ind->configure(-background  => '#009900');  #green
-        }
-
-                           
+    }
+     
+     
     $rtc_button->configure(-state       => 'normal',  #re-enable button after finish
                            -background  => '#EFEFEF',
                            );
