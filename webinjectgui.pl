@@ -40,16 +40,22 @@ $mw->InitStderr; #redirect all STDERR to a window
 $mw->raise; #put application in front at startup
 $mw->bind('<F5>' => \&engine);
 
- 
-$mw->update();
-$icon = $mw->Photo(-file => 'icon.gif');
-$mw->iconimage($icon);
+
+if (-e "logo.gif") #if icon graphic exists, use it
+{  
+    $mw->update();
+    $icon = $mw->Photo(-file => 'icon.gif');
+    $mw->iconimage($icon);
+}
 
 
-$mw->Photo('logogif', -file => "logo.gif");    
-$mw->Label(-image => 'logogif', 
-            -bg    => '#666699'
-            )->place(qw/-x 235 -y 12/); $mw->update();
+if (-e "logo.gif") #if logo graphic exists, use it
+{ 
+    $mw->Photo('logogif', -file => "logo.gif");    
+    $mw->Label(-image => 'logogif', 
+                -bg    => '#666699'
+                )->place(qw/-x 235 -y 12/); $mw->update();
+}
 
 
 $mw->Label(-text  => 'Engine Status:',
