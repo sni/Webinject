@@ -80,9 +80,10 @@ $cookie_jar = HTTP::Cookies->new;
             $logrequest = $xmltestcases->{case}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g;}
             $logresponse = $xmltestcases->{case}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g;}
             
-            print RESULTS "<b>Test #$testnum <br>\nTest Case File: $currentcasefile</b> <br>\n";
+            print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             if ($description1) {print RESULTS "$description1 <br>\n";}
-            if ($description2) {print RESULTS "$description2 <br><br>\n";}
+            if ($description2) {print RESULTS "$description2 <br>\n";}
+            print RESULTS "<br>\n";
             if ($verifypositive) {print RESULTS "Verify: \"$verifypositive\" <br> \n";}
             if ($verifynegative) {print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";}
             
@@ -109,7 +110,7 @@ $cookie_jar = HTTP::Cookies->new;
         }
         
         
-        while ($testnum <= $casecount){
+        while ($testnum <= $casecount){  #make any changes here to special case above
             print " .";
             #populate variables with values from testcase file and revert {AMPERSAND} back to "&"
             $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g;}
@@ -122,9 +123,10 @@ $cookie_jar = HTTP::Cookies->new;
             $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g;}
             $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g;}
             
-            print RESULTS "<b>Test #$testnum <br>\nTest Case File: $currentcasefile</b> <br>\n";
+            print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             if ($description1) {print RESULTS "$description1 <br>\n";}
-            if ($description2) {print RESULTS "$description2 <br><br>\n";}
+            if ($description2) {print RESULTS "$description2 <br>\n";}
+            print RESULTS "<br>\n";
             if ($verifypositive) {print RESULTS "Verify: \"$verifypositive\" <br> \n";}
             if ($verifynegative) {print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";}
             
@@ -185,6 +187,7 @@ qq(
 </head>
 <body>
 <hr>
+--------------------------------------<br>
 ); 
 
 }
