@@ -33,11 +33,11 @@ $| = 1; #don't buffer output to STDOUT
 
 
  
-$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool    (version .94)',
-                      -width  => '650', 
-                      -height => '650', 
-                      -bg     => '#666699',
+$mw = MainWindow->new(-title            => 'WebInject - HTTP Test Tool    (version .95)',
+                      -bg               => '#666699',
+                      -takefocus        => '1'  #start on top
                       );
+$mw->geometry("650x650+0+0");  #size and screen placement
 $mw->InitStderr; #redirect all STDERR to a window
 $mw->raise; #put application in front at startup
 $mw->bind('<F5>' => \&engine);  #F5 key makes it run
@@ -101,6 +101,20 @@ $rtc_button = $mw->Button(-width              => '100',
 $rtc_button->focus();
 
 
+$restart_button = $mw->Button->Compound;
+$restart_button->Text(-text => "Restart");
+$restart_button = $mw->Button(-width          => '50',
+                          -height             => '13',
+                          -background         => '#EFEFEF',
+                          -activebackground   => '#666699',
+                          -foreground         => '#000000',
+                          -activeforeground   => '#FFFFFF',
+                          -borderwidth        => '3',
+                          -image              => $restart_button,
+                          -command            => sub{gui_restart();}
+                          )->place(qw/-x 5 -y 5/); $mw->update();
+
+
 $exit_button = $mw->Button->Compound;
 $exit_button->Text(-text => "Exit");
 $exit_button = $mw->Button(-width              => '40',
@@ -149,7 +163,7 @@ MainLoop;
 
 
 #------------------------------------------------------------------
-sub gui_initial {
+sub gui_initial {   #this runs when engine is first loaded
     
     #vars set in test engine
     $currentcasefile = ''; 
@@ -173,6 +187,10 @@ sub gui_initial {
                            );
     
     $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
+}
+#------------------------------------------------------------------
+sub gui_restart {
+    exec 'perl ./webinjectgui.pl';  # kill the entire app and restart it
 }
 #------------------------------------------------------------------
 sub gui_processing_msg {
