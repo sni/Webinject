@@ -7,14 +7,15 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
-Version 1.30 - Jan 05, 2005
+Version 1.30 - Jan 07, 2005
     - HTTP Basic Authentication support
     - No longer forced to have test cases in strict incremental numbered order
     - Source code compiles with the "use strict" pragma
     - Ability to run engine from a different directory using the config.xml in that directory
     - Comments allowed in config file using <commment></comment> tags
     - Other config.xml options are still used when you pass a test case filename as a command line argument
-    - New config option to change response delay timeout <timeout></timeout>;
+    - New config option to change response delay timeout <timeout></timeout>
+    - New test case parameter to add a custom error message
     - Added separators to http.log for readability
     - Enhanced command line options/switches
     - Nagios plugin compatibility (beta)
