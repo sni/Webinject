@@ -7,6 +7,10 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 0.94 - April 29, 2004
+    -Bug fix for malformed HTTP Post
+    -Color added to status window text
+    
 Version 0.93 - March 22, 2004
     -Dynamic response parsing added to support cookieless session handling
     -Version number added to GUI window title bar
