@@ -7,7 +7,7 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
-Version 1.20 - ???, 2004
+Version 1.20 - September 27, 2004
     - Added real-time response time monitoring (stats display and integration with gnuplot for plot/graph)
     - Added tabbed layout to GUI with 'Status' and 'Monitor' windows
     - Added 'Stop' button to GUI to halt execution
