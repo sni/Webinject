@@ -173,6 +173,8 @@ sub gui_initial {   #this runs when engine is first loaded
     $totalruncount = '';
     $failedcount = '';
     $passedcount = '';
+    $casefailedcount = '';
+    $casepassedcount = '';
     $totalruntime = '';
 
     $out_window->delete('0.0','end');    #clear window before starting
@@ -223,7 +225,7 @@ sub gui_final {
     $out_window->insert("end", "Execution Finished... see results.html file for detailed output"); $out_window->see("end");
     
     $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime  seconds\n");
-    $status_window->insert("end", "\nTest Cases Run: $totalruncount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
+    $status_window->insert("end", "\nTest Cases Run: $totalruncount\nTest Cases Passed: $casepassedcount\nTest Cases Failed: $casefailedcount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
     $status_window->see("end");
 
     if ($failedcount > 0) {  #change status color to reflect failure or all tests passed
