@@ -19,106 +19,20 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-
 use LWP;
 use HTTP::Cookies;
 use Crypt::SSLeay;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
-use Tk;
-use Tk::Stderr;
-use Tk::ROText;
-use Tk::Compound;
-use Tk::ProgressBar::Mac;
-#use Data::Dumper;  #to dump hashes for debugging   
+use Data::Dumper;  #to dump hashes for debugging   
 
 
 $| = 1; #don't buffer output to STDOUT
 
-
- 
-$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
-                      -width  => '650', 
-                      -height => '650', 
-                      -bg     => '#666699',
-                      );
-$mw->InitStderr; #redirect all STDERR to a window
-$mw->raise; #put application in front at startup
-
- 
-$mw->update();
-$icon = $mw->Photo(-file => 'icon.gif');
-$mw->iconimage($icon);
-
-
-$mw->Photo('logogif', -file => "logo.gif");    
-$mw->Label(-image => 'logogif', 
-            -bg    => '#666699'
-            )->place(qw/-x 235 -y 12/); $mw->update();
-
-
-$mw->Label(-text  => 'Engine Status:',
-            -bg    => '#666699'
-            )->place(qw/-x 25 -y 110/); $mw->update();
-
-
-$out_window = $mw->Scrolled(ROText,  #engine status window 
-                   -scrollbars  => 'e',
-                   -background  => '#EFEFEF',
-                   -width       => '85',
-                   -height      => '7',
-                  )->place(qw/-x 25 -y 128/); $mw->update(); 
-
-
-$mw->Label(-text  => 'Test Case Status:',
-           -bg    => '#666699'
-           )->place(qw/-x 25 -y 238/); $mw->update(); 
-
-
-$status_window = $mw->Scrolled(ROText,  #test case status window 
-                   -scrollbars  => 'e',
-                   -background  => '#EFEFEF',
-                   -width       => '85',
-                   -height      => '26',
-                  )->place(qw/-x 25 -y 256/); $mw->update();
-
-
-$rtc_button = $mw->Button->Compound;
-$rtc_button->Text(-text => "Run Test Cases");
-$rtc_button = $mw->Button(-width              => '85',
-                          -height             => '13',
-                          -background         => '#EFEFEF',
-                          -activebackground   => '#666699',
-                          -foreground         => '#000000',
-                          -activeforeground   => '#FFFFFF',
-                          -borderwidth        => '3',
-                          -image              => $rtc_button,
-                          -command            => sub{engine();}
-                          )->place(qw/-x 25 -y 75/); $mw->update();
-
-
-$exit_button = $mw->Button->Compound;
-$exit_button->Text(-text => "Exit");
-$exit_button = $mw->Button(-width              => '40',
-                           -height             => '13',
-                           -background         => '#EFEFEF',
-                           -activebackground   => '#666699',
-                           -foreground         => '#000000',
-                           -activeforeground   => '#FFFFFF',
-                           -borderwidth        => '3',
-                           -image              => $exit_button,
-                           -command            => sub{exit;}
-                           )->place(qw/-x 596 -y 5/); $mw->update();
-
-
-$progressbar = $mw->ProgressBar(-width  => '420', 
-                                -bg     => '#666699'
-                                )->place(qw/-x 150 -y 75/); $mw->update();
-
-
-
-MainLoop;
-
+if ($0 eq 'webinject.pl')  #set flag so we know if it is running standalone or from webinjectgui
+    {$gui = 0; engine();}
+else
+    {$gui = 1;}
 
 
 
@@ -126,27 +40,18 @@ MainLoop;
 #------------------------------------------------------------------
 sub engine 
 {   
-    $out_window->delete('0.0','end');    #clear window before starting
-    $status_window->delete('0.0','end'); #clear window before starting
+    if ($gui == 1){gui_initial();}
     
-    $rtc_button->configure(-state       => 'disabled',  #disable button while running
-                           -background  => '#666699',
-                           );
-    
-
     $startruntimer = time();  #timer for entire test run
-    
     $currentdatetime = localtime time;  #get current date and time for results report
 
-    $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
-    
     open(HTTPLOGFILE, ">http.log") || die "\nERROR: Failed to open http.log file\n\n";   
 
     open(RESULTS, ">results.html") || die "\nERROR: Failed to open results.html file\n\n";    
       
     writeinitialhtml();
        
-    processconfigfile();
+    processcasefile();
     
     #contsruct objects
     $useragent = LWP::UserAgent->new;
@@ -166,78 +71,28 @@ sub engine
         
         $testnum = 1;
         
-        $out_window->insert("end", "processing test case file:\n$currentcasefile\n\n"); $out_window->see("end");
-     
+        if ($gui == 1){gui_processing_msg();}
+        
         convtestcases();
+        
+        fixsinglecase();
         
         $xmltestcases = XMLin("./$currentcasefile"); #slurp test case file to parse
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #print keys from dereferenced hash
         
-        
-     
-        #special handling for when only one test case exists (hash is referenced different than with multiples due to how the parser formats the hash)
-        if ($casecount == 1)
-        {  
-            $percentcomplete = ($testnum/$casecount)*100;  
-            $progressbar->set($percentcomplete);  #update progressbar with current status
-            
-            $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
-            
-            #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
-            $description1 = $xmltestcases->{case}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;
-                $status_window->insert("end", "- $description1\n"); $status_window->see("end");}  
-            $description2 = $xmltestcases->{case}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $method = $xmltestcases->{case}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $url = $xmltestcases->{case}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g;}  
-            $postbody = $xmltestcases->{case}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $verifypositive = $xmltestcases->{case}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $verifynegative = $xmltestcases->{case}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $logrequest = $xmltestcases->{case}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $logresponse = $xmltestcases->{case}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-                       
-            print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
-            if ($description1) {print RESULTS "$description1 <br>\n";}
-            if ($description2) {print RESULTS "$description2 <br>\n";}
-            print RESULTS "<br>\n";
-            if ($verifypositive) {print RESULTS "Verify: \"$verifypositive\" <br> \n";}
-            if ($verifynegative) {print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";}
-            
-            if($method)
-            {
-                if ($method eq "get")
-                {   httpget();  }
-                elsif ($method eq "post")
-                {   httppost(); }
-                else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
-                }
-            else
-            {   
-                httpget(); #use "get" if no method is specified  
-            }  
-                
-            verify();  #verify result from http response
-            
-            print RESULTS "Response Time = $latency s<br>\n";
-            print RESULTS "<br>\n-------------------------------------------------------<br>\n\n";
-            
-            $testnum++;
-            $totalruncount++;
-        }
-        
+        cleancases();
         
         while ($testnum <= $casecount) #make any changes here to special case above
         {             
-            $percentcomplete = ($testnum/$casecount)*100;  
-            $progressbar->set($percentcomplete);  #update progressbar with current status
+            if ($gui == 1){gui_statusbar();}
             
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
             if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
             
             #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
-            $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;
-                $status_window->insert("end", "- $description1\n"); $status_window->see("end");}  
+            $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g; if ($gui == 1){gui_tc_descript();}}
             $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
             $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g;}  
@@ -250,13 +105,39 @@ sub engine
             $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
                          
             print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
-            if ($description1) {print RESULTS "$description1 <br>\n";}
-            if ($description2) {print RESULTS "$description2 <br>\n";}
+            print STDOUT "<b>Test:  $currentcasefile - $testnum </b><br>\n";
+            if ($description1) 
+            {
+                print RESULTS "$description1 <br>\n"; 
+                print STDOUT "$description1 <br>\n";
+            }
+            if ($description2) 
+            {
+                print RESULTS "$description2 <br>\n"; 
+                print STDOUT "$description2 <br>\n";
+            }
             print RESULTS "<br>\n";
-            if ($verifypositive) {print RESULTS "Verify: \"$verifypositive\" <br> \n";}
-            if ($verifynegative) {print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";}
-            if ($verifypositivenext) {print RESULTS "Verify On Next Case: \"$verifypositivenext\" <br> \n";}
-            if ($verifynegativenext) {print RESULTS "Verify Negative On Next Case: \"$verifynegativenext\" <br> \n";}
+            print STDOUT "<br>\n";
+            if ($verifypositive) 
+            {
+                print RESULTS "Verify: \"$verifypositive\" <br> \n";
+                print STDOUT "Verify: \"$verifypositive\" <br> \n";
+            }
+            if ($verifynegative) 
+            {
+                print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";
+                print STDOUT "Verify Negative: \"$verifynegative\" <br> \n";
+            }
+            if ($verifypositivenext) 
+            {
+                print RESULTS "Verify On Next Case: \"$verifypositivenext\" <br> \n";
+                print STDOUT "Verify On Next Case: \"$verifypositivenext\" <br> \n";
+            }
+            if ($verifynegativenext) 
+            {
+                print RESULTS "Verify Negative On Next Case: \"$verifynegativenext\" <br> \n";
+                print STDOUT "Verify Negative On Next Case: \"$verifynegativenext\" <br> \n";
+            }
             
             if($method)
             {
@@ -265,7 +146,7 @@ sub engine
                 elsif ($method eq "post")
                 {   httppost(); }
                 else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
-                }
+            }
             else
             {   
                 httpget(); #use "get" if no method is specified  
@@ -274,7 +155,9 @@ sub engine
             verify();  #verify result from http response
             
             print RESULTS "Response Time = $latency s<br>\n";
+            print STDOUT "Response Time = $latency s<br>\n";
             print RESULTS "<br>\n-------------------------------------------------------<br>\n\n";
+            print STDOUT "<br>\n-------------------------------------------------------<br>\n\n";
                         
             $testnum++;
             $totalruncount++;
@@ -286,21 +169,15 @@ sub engine
     $endruntimer = time();
     $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
 
-    $out_window->insert("end", "Execution Finished... see results.html file for detailed output"); $out_window->see("end");
-    
-    $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime  seconds\n");
-    $status_window->insert("end", "\nTest Cases Run: $totalruncount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
-    $status_window->see("end");
 
+    if ($gui == 1){gui_final();}
+    
+    
     writefinalhtml();
     
     close(RESULTS);
     close(HTTPLOGFILE);
     
-    $rtc_button->configure(-state       => 'normal',  #re-enable button after finish
-                           -background  => '#EFEFEF',
-                           );
-
 
 }
 
@@ -395,13 +272,15 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
         if ($response->as_string() =~ /$verifypositive/i)  #verify existence of string in response
         {
             print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
-            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
+            print STDOUT "<b><font color=green>PASSED</font></b><br>\n";
+            if ($gui == 1){gui_status_passed();}
             $passedcount++;
         }
         else
         {
             print RESULTS "<b><font color=red>FAILED</font></b><br>\n";
-            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
+            print STDOUT "<b><font color=red>FAILED</font></b><br>\n";
+            if ($gui == 1){gui_status_failed();}          
             $failedcount++;                
         }
     }
@@ -413,13 +292,15 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
         if ($response->as_string() =~ /$verifynegative/i)  #verify existence of string in response
         {
             print RESULTS "<b><font color=red>FAILED</font></b><br>\n";
-            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
+            print STDOUT "<b><font color=red>FAILED</font></b><br>\n";
+            if ($gui == 1){gui_status_failed();}             
             $failedcount++;  
         }
         else
         {
             print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
-            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
+            print STDOUT "<b><font color=green>PASSED</font></b><br>\n";
+            if ($gui == 1){gui_status_passed();}
             $passedcount++;                
         }
     }
@@ -431,13 +312,15 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
         if ($response->as_string() =~ /$verifylater/i)  #verify existence of string in response
         {
             print RESULTS "<b><font color=green>PASSED</font></b> (verification set in previous test case)<br>\n";
-            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
+            print STDOUT "<b><font color=green>PASSED</font></b> (verification set in previous test case)<br>\n";
+            if ($gui == 1){gui_status_passed();}
             $passedcount++;
         }
         else
         {
             print RESULTS "<b><font color=red>FAILED</font></b> (verification set in previous test case)<br>\n";
-            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
+            print STDOUT "<b><font color=red>FAILED</font></b> (verification set in previous test case)<br>\n";
+            if ($gui == 1){gui_status_failed();}             
             $failedcount++;                
         }
         
@@ -451,13 +334,15 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
         if ($response->as_string() =~ /$verifylaterneg/i)  #verify existence of string in response
         {
             print RESULTS "<b><font color=red>FAILED</font></b> (negative verification set in previous test case)<br>\n";
-            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
+            print STDOUT "<b><font color=red>FAILED</font></b> (negative verification set in previous test case)<br>\n";
+            if ($gui == 1){gui_status_failed();}            
             $failedcount++;  
         }
         else
         {
             print RESULTS "<b><font color=green>PASSED</font></b> (negative verification set in previous test case)<br>\n";
-            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
+            print STDOUT "<b><font color=green>PASSED</font></b> (negative verification set in previous test case)<br>\n";
+            if ($gui == 1){gui_status_passed();}
             $passedcount++;                   
         }
         
@@ -473,17 +358,68 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
     }
     else
     {
-        print RESULTS "<b><font color=red>FAILED</font></b>";
-        $response->as_string() =~ /(HTTP\/1.)(.*)/i;
-        print RESULTS " ($1$2)<br>\n";  #print http response code to report if failed
-        $status_window->insert("end", "FAILED ($1$2)\n"); $status_window->see("end");            
+        $response->as_string() =~ /(HTTP\/1.)(.*)/i;  
+        print RESULTS "<b><font color=red>FAILED </font></b>($1$2)<br>\n"; #($1$2) is http response code if failed
+        print STDOUT "<b><font color=red>FAILED </font></b>($1$2)<br>\n"; #($1$2) is http response code if failed
+        if ($gui == 1){gui_status_failed();}      
         $failedcount++;            
     }
         
 }
 #------------------------------------------------------------------
+sub processcasefile {  #get test case files to run (from command line or config file) and evaluate constants
+    
+    undef @casefilelist; #empty the array
+
+    if ($#ARGV < 0) #if testcase filename is not passed on the command line, use config.xml
+    {
+        open(CONFIG, "config.xml") || die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
+        @configfile = <CONFIG>;  #Read the file into an array
+        
+        #parse test case file names from config.xml and build array
+        foreach (@configfile)
+        {
+            if (/<testcasefile>/)
+            {   
+                $firstparse = $';  #print "$' \n\n";
+                $firstparse =~ /<\/testcasefile>/;
+                $filename = $`;  #string between tags will be in $filename
+                #print "$filename \n\n";
+                push @casefilelist, $filename;  #add next filename we grab to end of array
+            }
+        }    
+        
+        if ($casefilelist[0])
+        {
+        }
+        else
+        {
+            push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
+        }
+    }
+    else # use testcase filename passed on command line 
+    {
+         push @casefilelist, $ARGV[0];  #if no file specified in config.xml, default to testcases.xml
+    }
+    
+    #print "testcase file list: @casefilelist\n\n";
+    
+    #grab value for constant: baseurl
+    foreach (@configfile)
+    {
+        if (/<baseurl>/)
+        {   
+            $firstparse = $';  #print "$' \n\n";
+            $firstparse =~ /<\/baseurl>/;
+            $baseurl = $`;  #string between tags will be in $baseurl
+            #print "$baseurl \n\n";
+        }
+    }  
+    
+    close(CONFIG);
+}
+#------------------------------------------------------------------
 sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml parser doesn't puke
-#this is a riduclous kluge but works
 
     open(XMLTOCONVERT, "$currentcasefile") || die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
@@ -502,54 +438,48 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
 
     close(XMLTOCONVERT);   
 
-
     open(XMLTOCONVERT, ">$currentcasefile") || die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
-sub processconfigfile {  #get test case files to run and evaluate constants
+sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.  
+                   #I add a dummy testcase in this instance to fix this
     
-    undef @casefilelist; #empty the array
-    
-    open(CONFIG, "config.xml") || die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
-    @configfile = <CONFIG>;  #Read the file into an array
+    if ($casecount == 1) 
+    {
+        open(XMLTOCONVERT, "$currentcasefile") || die "\nError: Failed to open test case file\n\n";  #open file handle   
+        @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
+        
+        for(@xmltoconvert)
+        { 
+            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/g;  #add dummy test case to end of file   
+        }       
+        close(XMLTOCONVERT);
+        
+        open(XMLTOCONVERT, ">$currentcasefile") || die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+        print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
+        close(XMLTOCONVERT);
+    }
 
-    #parse test case file names from config.xml and build array
-    foreach (@configfile)
-    {
-        if (/<testcasefile>/)
-        {   
-            $firstparse = $';  #print "$' \n\n";
-            $firstparse =~ /<\/testcasefile>/;
-            $filename = $`;  #string between tags will be in $filename
-            #print "$filename \n\n";
-            push @casefilelist, $filename;  #add next filename we grab to end of array
-        }
-    }    
+}
+#------------------------------------------------------------------
+sub cleancases {  #cleanup conversions made to file for ampersands and single testcase instance
+
+    open(XMLTOCONVERT, "$currentcasefile") || die "\nError: Failed to open test case file\n\n";  #open file handle   
+    @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
     
-    if ($casefilelist[0])
-    {
-    }
-    else
-    {
-        push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
-    }
-    
-    #print "testcase file list: @casefilelist\n\n";
-    
-    #grab value for constant: baseurl
-    foreach (@configfile)
-    {
-        if (/<baseurl>/)
-        {   
-            $firstparse = $';  #print "$' \n\n";
-            $firstparse =~ /<\/baseurl>/;
-            $baseurl = $`;  #string between tags will be in $baseurl
-            #print "$baseurl \n\n";
-        }
+    foreach (@xmltoconvert)
+    { 
+        s/{AMPERSAND}/&/g;  #convert ampersands (&) &'s are malformed XML
+        
+        s/<case id="2" description1="dummy test case"\/><\/testcases>/<\/testcases>/g;  #add dummy test case to end of file
     }  
-    
-    close(CONFIG);
+
+    close(XMLTOCONVERT);   
+
+    open(XMLTOCONVERT, ">$currentcasefile") || die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+    print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
+    close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
