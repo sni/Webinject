@@ -103,7 +103,7 @@ sub engine
             
             
         foreach ( 1 .. $repeat ) {
-            
+                
             while ($testnum <= $casecount) {
                     
                 if ($xnode) {  #if an XPath Node is defined, only process the single Node 
@@ -697,22 +697,24 @@ sub processcasefile {  #get test case files to run (from command line or config 
             push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
         }
     }
-    else {  # use testcase filename passed on command line
+    else {  # use testcase filename passed on command line (config.xml is not used at all, even for other things)
             
         undef $xnode; #reset xnode
+        undef $xpath; #reset xpath
             
-        $cmdlntcfile = $ARGV[0];
+        $xpath = $ARGV[1];
             
-        if ($cmdlntcfile =~ /\/(.*)\[/) {    #if the filename contains a "/" and "[", it contains an XPath  
-            $cmdlntcfile =~ /(.*)\/(.*)\[(.*?)\]/;  #if it contains XPath info, just grab the file name
-            $cmdlntcfile = $1;               #example:  for testcases.xml/case[2], just grab testcases.xml
+        if ($xpath =~ /\/(.*)\[/) {    #if the parameter contains a "/" and "[", it is really an XPath  
+            $xpath =~ /(.*)\/(.*)\[(.*?)\]/;  #if it contains XPath info, just grab the file name
             $xnode = $3;  #grab the XPath Node value.. (from inside the "[]")
             #print "\nxpath node is: $xnode \n";
         }
+        else {
+            print STDERR "\nSorry, $xpath is not in the XPath format I was excpecting, I'm ingoring it...\n"; 
+        }
             
-        #print "\ntestcase file passed from commandline is: $cmdlntcfile \n";
             
-        push @casefilelist, $cmdlntcfile;
+        push @casefilelist, $ARGV[0];  #first commandline parameter is the test case file, put this on the array for processing
     }
         
     #print "\ntestcase file list: @casefilelist\n\n";
@@ -739,7 +741,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $firstparse = $';  #print "$' \n\n";
             $firstparse =~ /<\/globalhttplog>/;
             $globalhttplog = $`;  #string between tags will be in $globalhttplog
-            #print "\n$globalhttplog \n\n";
+            print "\n$globalhttplog \n\n";
         }
     }  
         
