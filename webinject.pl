@@ -38,10 +38,10 @@ $| = 1; #don't buffer output to STDOUT
 
 $mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
                       -width  => '635', 
-                      -height => '525', 
+                      -height => '700', 
                       -bg     => '#666699'
                       );
-$mw->InitStderr; #redirect all STDOUT to a window
+$mw->InitStderr; #redirect all STDERR to a window
 
 
 $mw -> Photo('logogif', -file => "logo.gif");
@@ -54,8 +54,16 @@ $out_window = $mw->Scrolled(ROText,
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
                    -width       => '80',
-                   -height      => '25',
+                   -height      => '12',
                   )->place(qw/-x 25 -y 144/); #output window
+
+
+$status_window = $mw->Scrolled(ROText, 
+                   -scrollbars  => 'e',
+                   -background  => '#EFEFEF',
+                   -width       => '80',
+                   -height      => '25',
+                  )->place(qw/-x 25 -y 330/); #status window
 
 
 $rtc_button = $mw->Button->Compound;
@@ -106,7 +114,7 @@ sub engine
     
     $currentdatetime = localtime time;  #get current date and time for results report
 
-    $out_window->insert("end", "\nStarting Webinject Engine...  see results.html file for output \n\n\n"); $out_window->update();
+    $out_window->insert("end", "\nStarting Webinject Engine...  see results.html file for output \n\n\n"); $out_window->see("end");
     
     open(HTTPLOGFILE, ">http.log") || die "\nERROR: Failed to open http.log file\n\n";   
 
@@ -138,7 +146,7 @@ sub engine
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #print keys from dereferenced hash
         
-        $out_window->insert("end", "completed preprocessing test case file:\n$currentcasefile\nbeginning execution \n"); $out_window->update();
+        $out_window->insert("end", "completed preprocessing test case file:\n$currentcasefile\nbeginning execution \n\n"); $out_window->see("end");
      
      
         #special handling for when only one test case exists (hash is referenced different than with multiples due to how the parser formats the hash)
@@ -150,7 +158,8 @@ sub engine
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             
             #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
-            $description1 = $xmltestcases->{case}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $description1 = $xmltestcases->{case}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;
+                $status_window->insert("end", "- $description1\n"); $status_window->see("end");}  
             $description2 = $xmltestcases->{case}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $method = $xmltestcases->{case}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
             $url = $xmltestcases->{case}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g;}  
@@ -200,7 +209,8 @@ sub engine
             if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
             
             #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
-            $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;
+                $status_window->insert("end", "- $description1\n"); $status_window->see("end");}  
             $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
             $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g;}  
@@ -241,13 +251,11 @@ sub engine
                         
             $testnum++;
             $totalruncount++;
-        }
-        
-        $out_window->insert("end", "\n"); $out_window->update();
+        }       
     }
     
     
-    $out_window->insert("end", "\n\nExecution Finished\n\n"); $out_window->update();
+    $out_window->insert("end", "\nExecution Finished\n\n"); $out_window->see("end");
 
     $endruntimer = time();
     $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
@@ -284,7 +292,6 @@ qq(
 <hr>
 -------------------------------------------------------<br>
 ); 
-
 }
 #------------------------------------------------------------------
 sub writefinalhtml {
@@ -305,7 +312,6 @@ Verifications Failed: $failedcount <br>
 </body>
 </html>
 ); 
-
 }
 #------------------------------------------------------------------
 sub httpget {  #send http request and read response
@@ -318,10 +324,11 @@ sub httpget {  #send http request and read response
     $response = $useragent->simple_request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
-    
+      
     if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
-    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
+    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
+    #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
 sub httppost {  #send http request and read response
@@ -336,25 +343,27 @@ sub httppost {  #send http request and read response
     $response = $useragent->simple_request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
-    
+     
     if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
-    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
+    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
-    #print $cookie_jar->as_string; print "\n\n"; 
+    #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
-sub verify {  #do verification of http response
+sub verify {  #do verification of http response and print PASSED/FAILED to report and UI
 
     if ($verifypositive)
     {
         if ($response->as_string() =~ /$verifypositive/i)  #verify existence of string in response
         {
             print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
+            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
             $passedcount++;
         }
         else
         {
-            print RESULTS "<b><font color=red>FAILED</font></b><br>\n"; 
+            print RESULTS "<b><font color=red>FAILED</font></b><br>\n";
+            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
             $failedcount++;                
         }
     }
@@ -365,12 +374,14 @@ sub verify {  #do verification of http response
     {
         if ($response->as_string() =~ /$verifynegative/i)  #verify existence of string in response
         {
-            print RESULTS "<b><font color=red>FAILED</font></b><br>\n"; 
+            print RESULTS "<b><font color=red>FAILED</font></b><br>\n";
+            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
             $failedcount++;  
         }
         else
         {
             print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
+            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
             $passedcount++;                
         }
     }
@@ -382,11 +393,13 @@ sub verify {  #do verification of http response
         if ($response->as_string() =~ /$verifylater/i)  #verify existence of string in response
         {
             print RESULTS "<b><font color=green>PASSED</font></b> (verification set in previous test case)<br>\n";
+            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
             $passedcount++;
         }
         else
         {
-            print RESULTS "<b><font color=red>FAILED</font></b> (verification set in previous test case)<br>\n"; 
+            print RESULTS "<b><font color=red>FAILED</font></b> (verification set in previous test case)<br>\n";
+            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
             $failedcount++;                
         }
         
@@ -399,12 +412,14 @@ sub verify {  #do verification of http response
     {
         if ($response->as_string() =~ /$verifylaterneg/i)  #verify existence of string in response
         {
-            print RESULTS "<b><font color=red>FAILED</font></b> (negative verification set in previous test case)<br>\n"; 
+            print RESULTS "<b><font color=red>FAILED</font></b> (negative verification set in previous test case)<br>\n";
+            $status_window->insert("end", "FAILED\n"); $status_window->see("end");            
             $failedcount++;  
         }
         else
         {
             print RESULTS "<b><font color=green>PASSED</font></b> (negative verification set in previous test case)<br>\n";
+            $status_window->insert("end", "PASSED\n"); $status_window->see("end");
             $passedcount++;                   
         }
         
@@ -420,9 +435,10 @@ sub verify {  #do verification of http response
     }
     else
     {
-        print RESULTS "<b><font color=red>FAILED</font></b>"; 
+        print RESULTS "<b><font color=red>FAILED</font></b>";
         $response->as_string() =~ /(HTTP\/1.)(.*)/i;
-        print RESULTS " ($1$2)<br>\n";  #print http response code to report if failed         
+        print RESULTS " ($1$2)<br>\n";  #print http response code to report if failed
+        $status_window->insert("end", "FAILED ($1$2)\n"); $status_window->see("end");            
         $failedcount++;            
     }
         
