@@ -24,7 +24,7 @@ use Tk::Stderr;
 use Tk::ROText;
 use Tk::Compound;
 use Tk::ProgressBar::Mac;
-  
+
 require('webinject.pl');
 
 $| = 1; #don't buffer output to STDOUT
