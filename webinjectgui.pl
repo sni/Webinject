@@ -66,14 +66,14 @@ $menubar->place(qw/-x 0 -y 0/);
 $menubar->configure(-background => '#666699');  #menu outline
 
 $filemenu = $menubar->Menubutton(-text              => 'File',
-                                 -underline         => '0',
+                                 #-underline         => '0',
                                  -foreground        => 'white',
                                  -background        => '#666699',
                                  -activebackground  => '#666699',
                                  -activeforeground  => 'black',
                                  -tearoff           => '0',
                                  )->pack(qw/-side left/);
-                                 
+                            
 $filemenu->command(-label               => 'Restart', 
                    -background          => '#666699',
                    -activebackground    => '#EFEFEF',
@@ -91,25 +91,31 @@ $filemenu->command(-label               => 'Exit',
                   );                  
 
 $viewmenu = $menubar->Menubutton(-text              => 'View',
-                             -underline         => '0',
-                             -foreground        => 'white',
-                             -background        => '#666699',
-                             -activebackground  => '#666699',
-                             -activeforeground  => 'black',
-                             -tearoff           => '0',
-                             )->pack(qw/-side left/);
+                                 #-underline         => '0',
+                                 -foreground        => 'white',
+                                 -background        => '#666699',
+                                 -activebackground  => '#666699',
+                                 -activeforeground  => 'black',
+                                 -tearoff           => '0',
+                                )->pack(qw/-side left/);
 
 $aboutmenu = $menubar->Menubutton(-text              => 'About',
-                                  -underline         => '0',
+                                  #-underline         => '0',
                                   -foreground        => 'white',
                                   -background        => '#666699',
                                   -activebackground  => '#666699',
                                   -activeforeground  => 'black',
                                   -tearoff           => '0',
                                  )->pack(qw/-side left/);
-                             
-                             
-
+                                 
+                                 
+$aboutmenu->command(-label               => 'About WebInject', 
+                    -background          => '#666699',
+                    -activebackground    => '#EFEFEF',
+                    -foreground          => 'white',
+                    -activeforeground    => 'black',
+                    -command             => sub{about();}
+                   );
       
       
       
@@ -449,3 +455,31 @@ sub cleargraph {  #remove graph
     $montab_plotcanvas->placeForget;
     $plotclear = 'yes';  #set value so engine knows to truncate plot log
 }
+#------------------------------------------------------------------
+sub about {
+
+    $about = MainWindow->new(-title      => 'About WebInject',
+                             -bg         => '#666699',
+                             -takefocus  => '1',  #start on top
+                            );
+    $about->raise; #put in front at startup
+    $about->geometry("300x200+200+200");  #size and screen placement
+    if (-e "logo.gif") {  #if icon graphic exists, use it
+        $about->update();
+        $icon = $about->Photo(-file => 'icon.gif');
+        $about->iconimage($icon);
+    }   
+       
+    $about_text = $about->ROText(-width       => '60',
+                                 -height      => '20',
+                                 -background  => '#666699',
+                                 -foreground  => 'white',
+                                )->pack;
+                                
+    $about_text->insert("end", qq| 
+WebInject
+©2004 Corey Goldberg    
+    |);
+
+}
+#------------------------------------------------------------------
