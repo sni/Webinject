@@ -133,7 +133,6 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         $currentcasefile = $_;
         #print "\n$currentcasefile\n\n";
             
-        $testnum = 1;
         $casefilecheck = ' ';
             
         if ($gui == 1){gui_processing_msg();}
@@ -154,7 +153,9 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         foreach (1 .. $repeat) {
                 
-            while ($testnum <= $casecount) {
+	    foreach (sort {$a<=>$b} keys %{$xmltestcases->{case}}) {  #process cases in sorted order
+                    
+		$testnum = $_;
                     
                 if ($xnode) {  #if an XPath Node is defined, only process the single Node 
                     $testnum = $xnode; 
@@ -333,19 +334,11 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     print STDOUT qq|------------------------------------------------------- \n|;
                 }
                     
-                    
-                    
                 $casefilecheck = $currentcasefile;  #set this so <testcases> xml is only closed after each file is done processing
-                    
-                if ($xnode) {  #if an XPath Node is defined, only process the single Node 
-                    $testnum = ($casecount + 1); 
-                }
-                    
-                    
+                   
                 $endruntimer = time();
                 $totalruntime = (int(1000 * ($endruntimer - $startruntimer)) / 1000);  #elapsed time rounded to thousandths 
                     
-                $testnum++;
                 $totalruncount++;
                     
                 if ($latency > $maxresponse) {$maxresponse = $latency;}  #set max response time
@@ -364,7 +357,11 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($sleep) {  #if a sleep value is set in the test case, sleep that amount
                     sleep($sleep)
-                }                    
+                }
+                    
+                if ($xnode) {  #if an XPath Node is defined, only process the single Node 
+                    last;
+                }
                     
             }
                 
