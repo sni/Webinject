@@ -15,7 +15,6 @@
 #    GNU General Public License for more details.
 
 
-
 use Tk;
 use Tk::Stderr;
 use Tk::ROText;
@@ -24,17 +23,15 @@ use Tk::ProgressBar::Mac;
 use Tk::NoteBook;
 use Tk::PNG;
 
-
-
-
 $| = 1; #don't buffer output to STDOUT
 
 
- 
-$mw = MainWindow->new(-title            => 'WebInject - HTTP Test Tool    (version 1.30)',
-                      -bg               => '#666699',
-                      -takefocus        => '1',  #start on top
-                      );
+$mw = MainWindow->new(
+        -title            => 'WebInject - HTTP Test Tool    (version 1.30)',
+        -bg               => '#666699',
+        -takefocus        => '1',  #start on top
+        );
+        
 $mw->geometry("750x650+0+0");  #size and screen placement
 $mw->InitStderr; #redirect all STDERR to a window
 $mw->raise; #put application in front at startup
@@ -50,9 +47,10 @@ if (-e "icon.gif") {  #if icon graphic exists, use it
 
 if (-e "logo.gif") {  #if logo graphic exists, use it
     $mw->Photo('logogif', -file => "logo.gif");    
-    $mw->Label(-image => 'logogif', 
-               -bg    => '#666699',
-              )->place(qw/-x 305 -y 12/); $mw->update();
+    $mw->Label(
+            -image => 'logogif', 
+            -bg    => '#666699',
+            )->place(qw/-x 305 -y 12/); $mw->update();
 }
 
 
@@ -60,201 +58,222 @@ $menubar = $mw->Frame(qw/-relief flat -borderwidth 2/);
 $menubar->place(qw/-x 0 -y 0/);
 $menubar->configure(-background => '#666699');  #menu outline
 
-$filemenu = $menubar->Menubutton(-text              => 'File',
-                                 -foreground        => 'white',
-                                 -background        => '#666699',
-                                 -activebackground  => '#666699',
-                                 -activeforeground  => 'black',
-                                 -tearoff           => '0',
-                                 )->pack(qw/-side left/);
+$filemenu = $menubar->Menubutton(
+        -text              => 'File',
+        -foreground        => 'white',
+        -background        => '#666699',
+        -activebackground  => '#666699',
+        -activeforeground  => 'black',
+        -tearoff           => '0',
+        )->pack(qw/-side left/);
 
 
-$filemenu->command(-label               => 'Restart', 
-                   -background          => '#666699',
-                   -activebackground    => '#EFEFEF',
-                   -foreground          => 'white',
-                   -activeforeground    => 'black',
-                   -command             => sub{gui_restart();}
-                  );
+$filemenu->command(
+        -label               => 'Restart', 
+        -background          => '#666699',
+        -activebackground    => '#EFEFEF',
+        -foreground          => 'white',
+        -activeforeground    => 'black',
+        -command             => sub{gui_restart();}
+        );
 
 
-$filemenu->command(-label               => 'Exit', 
-                   -background          => '#666699',
-                   -activebackground    => '#EFEFEF',
-                   -foreground          => 'white',
-                   -activeforeground    => 'black',
-                   -command             => sub{exit;}
-                  );                  
+$filemenu->command(
+        -label               => 'Exit', 
+        -background          => '#666699',
+        -activebackground    => '#EFEFEF',
+        -foreground          => 'white',
+        -activeforeground    => 'black',
+        -command             => sub{exit;}
+        );                  
 
 
-$viewmenu = $menubar->Menubutton(-text              => 'View',
-                                 -foreground        => 'white',
-                                 -background        => '#666699',
-                                 -activebackground  => '#666699',
-                                 -activeforeground  => 'black',
-                                 -tearoff           => '0',
-                                )->pack(qw/-side left/);
+$viewmenu = $menubar->Menubutton(
+        -text              => 'View',
+        -foreground        => 'white',
+        -background        => '#666699',
+        -activebackground  => '#666699',
+        -activeforeground  => 'black',
+        -tearoff           => '0',
+        )->pack(qw/-side left/);
 
 
-$viewmenu->command(-label               => 'config.xml', 
-                   -background          => '#666699',
-                   -activebackground    => '#EFEFEF',
-                   -foreground          => 'white',
-                   -activeforeground    => 'black',
-                   -command             => sub{viewconfig();}
-                  );
+$viewmenu->command(
+        -label               => 'config.xml', 
+        -background          => '#666699',
+        -activebackground    => '#EFEFEF',
+        -foreground          => 'white',
+        -activeforeground    => 'black',
+        -command             => sub{viewconfig();}
+        );
 
 
-$aboutmenu = $menubar->Menubutton(-text              => 'About',
-                                  -foreground        => 'white',
-                                  -background        => '#666699',
-                                  -activebackground  => '#666699',
-                                  -activeforeground  => 'black',
-                                  -tearoff           => '0',
-                                 )->pack(qw/-side left/);
+$aboutmenu = $menubar->Menubutton(
+        -text              => 'About',
+        -foreground        => 'white',
+        -background        => '#666699',
+        -activebackground  => '#666699',
+        -activeforeground  => 'black',
+        -tearoff           => '0',
+        )->pack(qw/-side left/);
 
 
-$aboutmenu->command(-label               => 'About WebInject', 
-                    -background          => '#666699',
-                    -activebackground    => '#EFEFEF',
-                    -foreground          => 'white',
-                    -activeforeground    => 'black',
-                    -command             => sub{about();}
-                   );
+$aboutmenu->command(
+        -label               => 'About WebInject', 
+        -background          => '#666699',
+        -activebackground    => '#EFEFEF',
+        -foreground          => 'white',
+        -activeforeground    => 'black',
+        -command             => sub{about();}
+        );
 
 
-$mw->Label(-text  => 'Engine Status:',
-           -bg    => '#666699',
-           -fg    => '#FFFFFF',
-          )->place(qw/-x 12 -y 100/); $mw->update();
+$mw->Label(
+        -text  => 'Engine Status:',
+        -bg    => '#666699',
+        -fg    => '#FFFFFF',
+        )->place(qw/-x 12 -y 100/); $mw->update();
 
 
 $out_window = $mw->Scrolled(ROText,  #engine status window 
-                   -scrollbars  => 'e',
-                   -background  => '#EFEFEF',
-                   -width       => '103',
-                   -height      => '7',
-                  )->place(qw/-x 12 -y 118/); $mw->update();
+        -scrollbars  => 'e',
+        -background  => '#EFEFEF',
+        -width       => '103',
+        -height      => '7',
+        )->place(qw/-x 12 -y 118/); $mw->update();
 
 
-$tabs = $mw->NoteBook(-backpagecolor       => '#666699',
-                      -background          => '#EFEFEF', #color for active tab
-                      -foreground          => 'black', #text color for active tab
-                      -inactivebackground  => '#BFBFBF', #color for inactive tabs
-                     )->place(qw/-x 12 -y 240/);  #outer notebook object
+$tabs = $mw->NoteBook(
+        -backpagecolor       => '#666699',
+        -background          => '#EFEFEF', #color for active tab
+        -foreground          => 'black', #text color for active tab
+        -inactivebackground  => '#BFBFBF', #color for inactive tabs
+        )->place(qw/-x 12 -y 240/);  #outer notebook object
 
 
 $status_tab = $tabs->add('statustab', -label => 'Status'); $mw->update();
 
 
-$statustab_canvas = $status_tab->Canvas(-width          => '719',  
-                                        -height         => '365',
-                                        -highlightcolor => '#CCCCCC',
-                                        -background     => '#EFEFEF',
-                                       )->pack(); $mw->update();  #canvas to fill tab (to place widgets into)
+$statustab_canvas = $status_tab->Canvas(
+        -width          => '719',  
+        -height         => '365',
+        -highlightcolor => '#CCCCCC',
+        -background     => '#EFEFEF',
+        )->pack(); $mw->update();  #canvas to fill tab (to place widgets into)
 
 
-$statustab_buttoncanvas = $statustab_canvas->Canvas(-width        => '700',  
-                                                    -height       => '24',
-                                                    -background   => '#666699',
-                                                   )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
+$statustab_buttoncanvas = $statustab_canvas->Canvas(
+        -width        => '700',  
+        -height       => '24',
+        -background   => '#666699',
+        )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
 
 
 $minimalcheckbx = 'minimal_off';  #give it a default value
-$statustab_buttoncanvas->Label(-text  => 'Minimal Output',
-                               -bg    => '#666699',
-                               -fg    => 'white',
-                              )->place(qw/-x 49 -y 4/); $mw->update();
-$statustab_buttoncanvas->Checkbutton(-text                   => '',  #using a text widget instead 
-                                     -onvalue                => 'minimal_on',
-                                     -offvalue               => 'minimal_off',
-                                     -variable               => \$minimalcheckbx,
-                                     -background             => '#666699',
-                                     -activebackground       => '#666699',
-                                     -highlightbackground    => '#666699',
-                                    )->place(qw/-x 20 -y 2/); $mw->update();
+$statustab_buttoncanvas->Label(
+        -text  => 'Minimal Output',
+        -bg    => '#666699',
+        -fg    => 'white',
+        )->place(qw/-x 49 -y 4/); $mw->update();
+$statustab_buttoncanvas->Checkbutton(
+        -text                   => '',  #using a text widget instead 
+        -onvalue                => 'minimal_on',
+        -offvalue               => 'minimal_off',
+        -variable               => \$minimalcheckbx,
+        -background             => '#666699',
+        -activebackground       => '#666699',
+        -highlightbackground    => '#666699',
+        )->place(qw/-x 20 -y 2/); $mw->update();
 
 
 $timercheckbx = 'timer_off';  #give it a default value
-$statustab_buttoncanvas->Label(-text  => 'Response Timer Output',
-                               -bg    => '#666699',
-                               -fg    => 'white',
-                              )->place(qw/-x 199 -y 4/); $mw->update();
-$statustab_buttoncanvas->Checkbutton(-text                   => '',  #using a text widget instead 
-                                     -onvalue                => 'timer_on',
-                                     -offvalue               => 'timer_off',
-                                     -variable               => \$timercheckbx,
-                                     -background             => '#666699',
-                                     -activebackground       => '#666699',
-                                     -highlightbackground    => '#666699',
-                                    )->place(qw/-x 170 -y 2/); $mw->update();
+$statustab_buttoncanvas->Label(
+        -text  => 'Response Timer Output',
+        -bg    => '#666699',
+        -fg    => 'white',
+        )->place(qw/-x 199 -y 4/); $mw->update();
+$statustab_buttoncanvas->Checkbutton(
+        -text                   => '',  #using a text widget instead 
+        -onvalue                => 'timer_on',
+        -offvalue               => 'timer_off',
+        -variable               => \$timercheckbx,
+        -background             => '#666699',
+        -activebackground       => '#666699',
+        -highlightbackground    => '#666699',
+        )->place(qw/-x 170 -y 2/); $mw->update();
 
 
 $status_window = $statustab_canvas->Scrolled(ROText,  #test case status monitor window 
-                   -scrollbars  => 'e',
-                   -background  => '#EFEFEF',
-                   -width       => '102', 
-                   -height      => '23', 
-                  )->place(qw/-x 0 -y 0/); $mw->update();
+        -scrollbars  => 'e',
+        -background  => '#EFEFEF',
+        -width       => '102', 
+        -height      => '23', 
+        )->place(qw/-x 0 -y 0/); $mw->update();
 $status_window->tagConfigure('red', -foreground => '#FF3333');  #define tag for font color
 $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for font color
 
 
 $monitorenabledchkbx = 'monitor_on';  #give it a default value
-$mw->Label(-text  => 'Disable Monitor',
-           -bg    => '#666699',
-           -fg    => 'white',
-          )->place(qw/-x 189 -y 242/); $mw->update();
-$monitor_enabledchkbx = $mw->Checkbutton(-text                   => '',  #using a text widget instead 
-                                         -onvalue                => 'monitor_off',
-                                         -offvalue               => 'monitor_on',
-                                         -variable               => \$monitorenabledchkbx,
-                                         -background             => '#666699',
-                                         -activebackground       => '#666699',
-                                         -highlightbackground    => '#666699',
-                                         -command                => sub{monitor_enable_disable();},
-                                        )->place(qw/-x 160 -y 240/); $mw->update();
+$mw->Label(
+        -text  => 'Disable Monitor',
+        -bg    => '#666699',
+        -fg    => 'white',
+        )->place(qw/-x 189 -y 242/); $mw->update();
+$monitor_enabledchkbx = $mw->Checkbutton(
+        -text                   => '',  #using a text widget instead 
+        -onvalue                => 'monitor_off',
+        -offvalue               => 'monitor_on',
+        -variable               => \$monitorenabledchkbx,
+        -background             => '#666699',
+        -activebackground       => '#666699',
+        -highlightbackground    => '#666699',
+        -command                => sub{monitor_enable_disable();},
+        )->place(qw/-x 160 -y 240/); $mw->update();
 monitor_enable_disable();  #call sub to enable and create monitor
 
 
 $stop_button = $mw->Button->Compound;
 $stop_button->Text(-text => "Stop");
-$stop_button = $mw->Button(-width              => '50',
-                           -height             => '13',
-                           -background         => '#EFEFEF',
-                           -activebackground   => '#666699',
-                           -foreground         => '#000000',
-                           -activeforeground   => '#FFFFFF',
-                           -borderwidth        => '3',
-                           -image              => $stop_button,
-                           -command            => sub{$stop = 'yes';}
-                          )->place; $mw->update();  #create this button but don't place it yet
+$stop_button = $mw->Button(
+        -width              => '50',
+        -height             => '13',
+        -background         => '#EFEFEF',
+        -activebackground   => '#666699',
+        -foreground         => '#000000',
+        -activeforeground   => '#FFFFFF',
+        -borderwidth        => '3',
+        -image              => $stop_button,
+        -command            => sub{$stop = 'yes';}
+        )->place; $mw->update();  #create this button but don't place it yet
 
 
 $rtc_button = $mw->Button->Compound;
 $rtc_button->Text(-text => "Run");
-$rtc_button = $mw->Button(-width              => '50',
-                          -height             => '13',
-                          -background         => '#EFEFEF',
-                          -activebackground   => '#666699',
-                          -foreground         => '#000000',
-                          -activeforeground   => '#FFFFFF',
-                          -borderwidth        => '3',
-                          -image              => $rtc_button,
-                          -command            => sub{engine();}
-                          )->place(qw/-x 110 -y 65/); $mw->update();
+$rtc_button = $mw->Button(
+        -width              => '50',
+        -height             => '13',
+        -background         => '#EFEFEF',
+        -activebackground   => '#666699',
+        -foreground         => '#000000',
+        -activeforeground   => '#FFFFFF',
+        -borderwidth        => '3',
+        -image              => $rtc_button,
+        -command            => sub{engine();}
+        )->place(qw/-x 110 -y 65/); $mw->update();
 $rtc_button->focus();
 
 
-$progressbar = $mw->ProgressBar(-width  => '420', 
-                                -bg     => '#666699'
-                               )->place(qw/-x 176 -y 65/); $mw->update();
+$progressbar = $mw->ProgressBar(
+        -width  => '420', 
+        -bg     => '#666699'
+        )->place(qw/-x 176 -y 65/); $mw->update();
 
 
-$status_ind = $mw->Canvas(-width       => '28',  #engine status indicator 
-                          -height      => '9',                   
-                          -background  => '#666699',
-                          )->place(qw/-x 621 -y 69/); $mw->update();
+$status_ind = $mw->Canvas(
+        -width       => '28',  #engine status indicator 
+        -height      => '9',                   
+        -background  => '#666699',
+        )->place(qw/-x 621 -y 69/); $mw->update();
 
 
 #load the Engine
@@ -279,10 +298,9 @@ MainLoop;
 
 #------------------------------------------------------------------
 sub gui_initial {   #this runs when engine is first loaded
-    
+        
     #vars set in test engine
     $currentcasefile = ''; 
-    $testnum = '';
     $latency = '';    
     $casecount = '';
     $description1 = '';
@@ -294,20 +312,21 @@ sub gui_initial {   #this runs when engine is first loaded
     $totalruntime = '';
     $stop = 'no';
     $plotclear = 'no';
-    
-
+        
+        
     $out_window->delete('0.0','end');  #clear window before starting
-    
+        
     $status_window->delete('0.0','end');  #clear window before starting
-    
+        
     $status_ind->configure(-background  => '#FF9900');  #change status color amber while running
-
+        
     $rtc_button->placeForget;  #remove the run button
     $stop_button->place(qw/-x 110 -y 65/);  #place the stop button
-    
+        
     $monitor_enabledchkbx->configure(-state  => 'disabled');  #disable button while running
-
-    $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
+        
+    $out_window->insert("end", "Starting Webinject Engine... \n\n"); 
+    $out_window->see("end");
 }
 #------------------------------------------------------------------
 sub gui_restart {  #kill the entire app and restart it
@@ -320,42 +339,49 @@ sub gui_restart {  #kill the entire app and restart it
 }
 #------------------------------------------------------------------
 sub gui_processing_msg {
-    $out_window->insert("end", "processing test case file:\n$currentcasefile\n\n", 'bold'); $out_window->see("end");
+    $out_window->insert("end", "processing test case file:\n$currentcasefile\n\n", 'bold'); 
+    $out_window->see("end");
 }
 #------------------------------------------------------------------
 sub gui_statusbar {
-    $percentcomplete = ($testnum/$casecount)*100;  
+    $percentcomplete = ($totalruncount/$casecount)*100; 
     $progressbar->set($percentcomplete);  #update progressbar with current status
 }
 #------------------------------------------------------------------
 sub gui_tc_descript {
     unless ($minimalcheckbx  eq "minimal_on") {
-        $status_window->insert("end", "- $description1\n"); $status_window->see("end");
+        $status_window->insert("end", "- $description1\n"); 
+        $status_window->see("end");
     }
 }
 #------------------------------------------------------------------
 sub gui_status_passed {
-    $status_window->insert("end", "PASSED\n", 'green'); $status_window->see("end");
+    $status_window->insert("end", "PASSED\n", 'green'); 
+    $status_window->see("end");
 } 
 #------------------------------------------------------------------
 sub gui_status_failed {
     if ($1 and $2) {
-        $status_window->insert("end", "FAILED ($1$2)\n", 'red'); $status_window->see("end");
+        $status_window->insert("end", "FAILED ($1$2)\n", 'red'); 
+        $status_window->see("end");
     } 
     else {
-        $status_window->insert("end", "FAILED\n", 'red'); $status_window->see("end");
+        $status_window->insert("end", "FAILED\n", 'red'); 
+        $status_window->see("end");
     }
 }
 #------------------------------------------------------------------
 sub gui_timer_output {
     if ($timercheckbx  eq "timer_on") {
-        $status_window->insert("end", "$latency s\n"); $status_window->see("end");
+        $status_window->insert("end", "$latency s\n"); 
+        $status_window->see("end");
     }
 }    
 #------------------------------------------------------------------
 sub gui_final {
         
-    $out_window->insert("end", "Execution Finished... see results.html file for detailed output report"); $out_window->see("end");
+    $out_window->insert("end", "Execution Finished... see results.html file for detailed output report"); 
+    $out_window->see("end");
     
     $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime seconds\n");
     $status_window->insert("end", "\nTest Cases Run: $totalruncount\nTest Cases Passed: $casepassedcount\nTest Cases Failed: $casefailedcount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
@@ -415,10 +441,11 @@ sub gui_cleargraph {  #remove graph
         
     $montab_plotcanvas->destroy;   #destroy the canvas
       
-    $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
-                                                -height       => '240',
-                                                -background   => '#EFEFEF',
-                                               )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to place graph into
+    $montab_plotcanvas = $montab_canvas->Canvas(
+            -width        => '718',  
+            -height       => '240',
+            -background   => '#EFEFEF',
+            )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to place graph into
 }
 #------------------------------------------------------------------
 sub gui_cleargraph_button {  #remove graph then set value to truncate log
@@ -430,10 +457,11 @@ sub gui_cleargraph_button {  #remove graph then set value to truncate log
 #------------------------------------------------------------------
 sub about {
         
-    $about = MainWindow->new(-title      => 'About WebInject',
-                             -bg         => '#666699',
-                             -takefocus  => '1',  #start on top
-                            );
+    $about = MainWindow->new(
+            -title      => 'About WebInject',
+            -bg         => '#666699',
+            -takefocus  => '1',  #start on top
+            );
     $about->raise; #put in front
     $about->geometry("320x200+200+200");  #size and screen placement
     if (-e "icon.gif") {  #if icon graphic exists, use it
@@ -443,11 +471,12 @@ sub about {
     }   
     
     
-    $about_text = $about->ROText(-width       => '100',  #make these big.  window size is controlled by geometry instead
-                                 -height      => '100',
-                                 -background  => '#666699',
-                                 -foreground  => 'white',
-                                )->pack;
+    $about_text = $about->ROText(
+            -width       => '100',  #make these big.  window size is controlled by geometry instead
+            -height      => '100',
+            -background  => '#666699',
+            -foreground  => 'white',
+            )->pack;
                                 
     $about_text->insert("end", qq| 
 WebInject
@@ -464,10 +493,11 @@ Licensed under the terms of the GNU GPL
 #------------------------------------------------------------------
 sub viewconfig {
 
-    $viewconfig = MainWindow->new(-title      => 'config.xml',
-                                  -bg         => '#666699',
-                                  -takefocus  => '1',  #start on top
-                            );
+    $viewconfig = MainWindow->new(
+            -title      => 'config.xml',
+            -bg         => '#666699',
+            -takefocus  => '1',  #start on top
+            );
     $viewconfig->raise; #put in front
     $viewconfig->geometry("500x400+200+200");  #size and screen placement
     if (-e "logo.gif") {  #if icon graphic exists, use it
@@ -477,11 +507,12 @@ sub viewconfig {
     }   
     
     
-    $config_text = $viewconfig->ROText(-width       => '100',  #make these big.  window size is controlled by geometry instead
-                                       -height      => '100',
-                                       -background  => '#666699',
-                                       -foreground  => 'white',
-                                      )->pack;
+    $config_text = $viewconfig->ROText(
+            -width       => '100',  #make these big.  window size is controlled by geometry instead
+            -height      => '100',
+            -background  => '#666699',
+            -foreground  => 'white',
+            )->pack;
     
     
     open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
@@ -499,162 +530,180 @@ sub monitor_enable_disable {
         $mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();  #add the notebook tab
         
         
-        $montab_canvas = $mon_tab->Canvas(-width        => '719',
-                                          -height       => '365',                   
-                                          -background   => '#EFEFEF',
-                                         )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to fill tab (to place widgets into)
+        $montab_canvas = $mon_tab->Canvas(
+                -width        => '719',
+                -height       => '365',                   
+                -background   => '#EFEFEF',
+                )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to fill tab (to place widgets into)
+
         
-        
-        $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
-                                                    -height       => '240',
-                                                    -background   => '#EFEFEF',
-                                                   )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to place graph into
-        
+        $montab_plotcanvas = $montab_canvas->Canvas(
+                -width        => '718',  
+                -height       => '240',
+                -background   => '#EFEFEF',
+                )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to place graph into
+
         
         $clear_graph = $mon_tab->Button->Compound;
         $clear_graph->Text(-text => "Clear Graph");
-        $clear_graph = $mon_tab->Button(-width         => '70',
-                                   -height             => '13',
-                                   -background         => '#EFEFEF',
-                                   -activebackground   => '#666699',
-                                   -foreground         => '#000000',
-                                   -activeforeground   => '#FFFFFF',
-                                   -borderwidth        => '3',
-                                   -image              => $clear_graph,
-                                   -command            => sub{gui_cleargraph_button();}
-                                  )->place(qw/-x 630 -y 310/); $mw->update();
+        $clear_graph = $mon_tab->Button(
+                -width         => '70',
+                -height             => '13',
+                -background         => '#EFEFEF',
+                -activebackground   => '#666699',
+                -foreground         => '#000000',
+                -activeforeground   => '#FFFFFF',
+                -borderwidth        => '3',
+                -image              => $clear_graph,
+                -command            => sub{gui_cleargraph_button();}
+                )->place(qw/-x 630 -y 310/); $mw->update();
         
         
-        $montab_buttoncanvas = $montab_canvas->Canvas(-width        => '700',  
-                                                      -height       => '24',
-                                                      -background   => '#666699',
-                                                     )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
+        $montab_buttoncanvas = $montab_canvas->Canvas(
+                -width        => '700',  
+                -height       => '24',
+                -background   => '#666699',
+                )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
         
         
-        $montab_buttoncanvas->Label(-text  => 'Line Graph',
-                                    -bg    => '#666699',
-                                    -fg    => 'white',
-                                   )->place(qw/-x 49 -y 4/); $mw->update();
-        $radiolinegraph = $montab_buttoncanvas->Radiobutton(-value                  => 'lines',
-                                                            -variable               => \$graphtype,
-                                                            -indicatoron            => 'true',
-                                                            -background             => '#666699',
-                                                            -activebackground       => '#666699',
-                                                            -highlightbackground    => '#666699',
-                                                            )->place(qw/-x 20 -y 2/); $mw->update();
-        
-        
+        $montab_buttoncanvas->Label(
+                -text  => 'Line Graph',
+                -bg    => '#666699',
+                -fg    => 'white',
+                )->place(qw/-x 49 -y 4/); $mw->update();
+        $radiolinegraph = $montab_buttoncanvas->Radiobutton(
+                -value                  => 'lines',
+                -variable               => \$graphtype,
+                -indicatoron            => 'true',
+                -background             => '#666699',
+                -activebackground       => '#666699',
+                -highlightbackground    => '#666699',
+                )->place(qw/-x 20 -y 2/); $mw->update();
+            
+            
         $radiolinegraph->select;  #select as default
-        
-        
-        $montab_buttoncanvas->Label(-text  => 'Impulse Graph',
-                                    -bg    => '#666699',
-                                    -fg    => 'white',
-                                   )->place(qw/-x 199 -y 4/); $mw->update();
-        $montab_buttoncanvas->Radiobutton(-value                  => 'impulses',
-                                          -variable               => \$graphtype,
-                                          -background             => '#666699',
-                                          -activebackground       => '#666699',
-                                          -highlightbackground    => '#666699',
-                                         )->place(qw/-x 170 -y 2/); $mw->update();
-        
-        
-        $montab_buttoncanvas->Label(-text  => 'No Graph',
-                                    -bg    => '#666699',
-                                    -fg    => 'white',
-                                   )->place(qw/-x 349 -y 4/); $mw->update();
-        $montab_buttoncanvas->Radiobutton(-value                  => 'nograph',
-                                          -variable               => \$graphtype,
-                                          -background             => '#666699',
-                                          -activebackground       => '#666699',
-                                          -highlightbackground    => '#666699',
-                                          -command                => sub{gui_cleargraph();}  #remove graph from view
-                                         )->place(qw/-x 320 -y 2/); $mw->update();
-        
-        
-        $resptime_label = $montab_canvas->Label(-width       => '25',
-                                                -height      => '1',
-                                                -background  => '#EFEFEF',
-                                                -foreground  => 'black',
-                                                -relief      => 'flat',
-                                                -anchor      => 'w',
-                                               )->place(qw/-x 12 -y 245/); $mw->update();                    
+            
+            
+        $montab_buttoncanvas->Label(
+                -text  => 'Impulse Graph',
+                -bg    => '#666699',
+                -fg    => 'white',
+                )->place(qw/-x 199 -y 4/); $mw->update();
+        $montab_buttoncanvas->Radiobutton(
+                -value                  => 'impulses',
+                -variable               => \$graphtype,
+                -background             => '#666699',
+                -activebackground       => '#666699',
+                -highlightbackground    => '#666699',
+                )->place(qw/-x 170 -y 2/); $mw->update();
+            
+            
+        $montab_buttoncanvas->Label(
+                -text  => 'No Graph',
+                -bg    => '#666699',
+                -fg    => 'white',
+                )->place(qw/-x 349 -y 4/); $mw->update();
+        $montab_buttoncanvas->Radiobutton(
+                -value                  => 'nograph',
+                -variable               => \$graphtype,
+                -background             => '#666699',
+                -activebackground       => '#666699',
+                -highlightbackground    => '#666699',
+                -command                => sub{gui_cleargraph();}  #remove graph from view
+                )->place(qw/-x 320 -y 2/); $mw->update();
+            
+            
+        $resptime_label = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 12 -y 245/); $mw->update();                    
         $resptime_label->configure(-text => 'Response Times:');
-        
-        
+            
+            
         $minresponse = 'N/A';  #set initial value for timer display
-        $mintime_text = $montab_canvas->Label(-width       => '25',
-                                              -height      => '1',
-                                              -background  => '#EFEFEF',
-                                              -foreground  => 'black',
-                                              -relief      => 'flat',
-                                              -anchor      => 'w',
-                                             )->place(qw/-x 12 -y 265/); $mw->update();                    
+        $mintime_text = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 12 -y 265/); $mw->update();                    
         $mintime_text->configure(-text => "Min:  $minresponse sec");
         
         
         $maxresponse = 'N/A';  #set initial value for timer display
-        $maxtime_text = $montab_canvas->Label(-width       => '25',
-                                              -height      => '1',
-                                              -background  => '#EFEFEF',
-                                              -foreground  => 'black',
-                                              -relief      => 'flat',
-                                              -anchor      => 'w',
-                                             )->place(qw/-x 12 -y 280/); $mw->update();                    
+        $maxtime_text = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 12 -y 280/); $mw->update();                    
         $maxtime_text->configure(-text => "Max:  $maxresponse sec");
-        
-        
+            
+            
         $avgresponse = 'N/A';  #set initial value for timer display
-        $avgtime_text = $montab_canvas->Label(-width       => '25',
-                                              -height      => '1',
-                                              -background  => '#EFEFEF',
-                                              -foreground  => 'black',
-                                              -relief      => 'flat',
-                                              -anchor      => 'w',
-                                             )->place(qw/-x 12 -y 295/); $mw->update();                    
+        $avgtime_text = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 12 -y 295/); $mw->update();                    
         $avgtime_text->configure(-text => "Avg:  $avgresponse sec");
-        
-        
-        $runcount_label = $montab_canvas->Label(-width       => '25',
-                                                -height      => '1',
-                                                -background  => '#EFEFEF',
-                                                -foreground  => 'black',
-                                                -relief      => 'flat',
-                                                -anchor      => 'w',
-                                               )->place(qw/-x 250 -y 245/); $mw->update();                    
+            
+            
+        $runcount_label = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 250 -y 245/); $mw->update();                    
         $runcount_label->configure(-text => 'Runtime Counts:');
-       
-       
+           
+           
         $totalruncount = 'N/A';  #set initial value for count display
-        $runcounttotal_text = $montab_canvas->Label(-width       => '25',
-                                                    -height      => '1',
-                                                    -background  => '#EFEFEF',
-                                                    -foreground  => 'black',
-                                                    -relief      => 'flat',
-                                                    -anchor      => 'w',
-                                                   )->place(qw/-x 250 -y 265/); $mw->update();                    
+        $runcounttotal_text = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 250 -y 265/); $mw->update();                    
         $runcounttotal_text->configure(-text => "Total:  $totalruncount");
-        
-        
+            
+            
         $casepassedcount = 'N/A';  #set initial value for count display
-        $runcountcasespassed_text = $montab_canvas->Label(-width       => '25',
-                                                          -height      => '1',
-                                                          -background  => '#EFEFEF',
-                                                          -foreground  => 'black',
-                                                          -relief      => 'flat',
-                                                          -anchor      => 'w',
-                                                         )->place(qw/-x 250 -y 280/); $mw->update();                    
+        $runcountcasespassed_text = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 250 -y 280/); $mw->update();                    
         $runcountcasespassed_text->configure(-text => "Passed:  $casepassedcount");
-        
-        
+            
+            
         $casefailedcount = 'N/A';  #set initial value for count display
-        $runcountcasespfailed_text = $montab_canvas->Label(-width       => '25',
-                                                           -height      => '1',
-                                                           -background  => '#EFEFEF',
-                                                           -foreground  => 'black',
-                                                           -relief      => 'flat',
-                                                           -anchor      => 'w',
-                                                          )->place(qw/-x 250 -y 295/); $mw->update();                    
+        $runcountcasespfailed_text = $montab_canvas->Label(
+                -width       => '25',
+                -height      => '1',
+                -background  => '#EFEFEF',
+                -foreground  => 'black',
+                -relief      => 'flat',
+                -anchor      => 'w',
+                )->place(qw/-x 250 -y 295/); $mw->update();                    
         $runcountcasespfailed_text->configure(-text => "Failed:  $casefailedcount");
         
         
@@ -663,7 +712,6 @@ sub monitor_enable_disable {
         
         
     if ($monitorenabledchkbx eq 'monitor_off') { #delete the tab when disabled
-        
         $mon_tab = $tabs->delete('montab', -label => 'Monitor'); $mw->update();
     }
         
@@ -671,10 +719,11 @@ sub monitor_enable_disable {
 #------------------------------------------------------------------
 sub gui_no_plotter_found {  #if gnuplot not specified, notify on gui
         
-    $montab_plotcanvas->Label(-text  => "Sorry, I can't display the graph.\nMake sure you have gnuplot on your system and it's location is specified in config.xml. ",
-                              -bg    => '#EFEFEF',
-                              -fg    => 'black',
-                             )->place(qw/-x 95 -y 100/); $mw->update();
+    $montab_plotcanvas->Label(
+            -text  => "Sorry, I can't display the graph.\nMake sure you have gnuplot on your system and it's location is specified in config.xml. ",
+            -bg    => '#EFEFEF',
+            -fg    => 'black',
+            )->place(qw/-x 95 -y 100/); $mw->update();
 }
   
 #------------------------------------------------------------------
