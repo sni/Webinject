@@ -378,7 +378,7 @@ sub gui_timer_output {
 #------------------------------------------------------------------
 sub gui_final {
         
-    $out_window->insert("end", "Execution Finished... see results.html file for detailed output"); $out_window->see("end");
+    $out_window->insert("end", "Execution Finished... see results.html file for detailed output report"); $out_window->see("end");
     
     $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime seconds\n");
     $status_window->insert("end", "\nTest Cases Run: $totalruncount\nTest Cases Passed: $casepassedcount\nTest Cases Failed: $casefailedcount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
