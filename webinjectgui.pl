@@ -53,14 +53,15 @@ if (-e "logo.gif") {  #if icon graphic exists, use it
 if (-e "logo.gif") {  #if logo graphic exists, use it
     $mw->Photo('logogif', -file => "logo.gif");    
     $mw->Label(-image => 'logogif', 
-                -bg    => '#666699'
-                )->place(qw/-x 255 -y 12/); $mw->update();
+               -bg    => '#666699'
+              )->place(qw/-x 255 -y 12/); $mw->update();
 }
 
 
 $mw->Label(-text  => 'Engine Status:',
-            -bg    => '#666699'
-            )->place(qw/-x 25 -y 110/); $mw->update();
+           -bg    => '#666699',
+           -fg    => '#FFFFFF'
+          )->place(qw/-x 25 -y 110/); $mw->update();
 
 
 $out_window = $mw->Scrolled(ROText,  #engine status window 
@@ -72,7 +73,8 @@ $out_window = $mw->Scrolled(ROText,  #engine status window
 
 
 $mw->Label(-text  => 'Test Case Status:',
-           -bg    => '#666699'
+           -bg    => '#666699',
+           -fg    => '#FFFFFF'
            )->place(qw/-x 25 -y 238/); $mw->update(); 
 
 
@@ -129,6 +131,7 @@ $exit_button = $mw->Button(-width              => '40',
                            )->place(qw/-x 596 -y 5/); $mw->update();
 
 
+
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
                                 )->place(qw/-x 146 -y 75/); $mw->update();
@@ -137,10 +140,37 @@ $progressbar = $mw->ProgressBar(-width  => '420',
 $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator 
                           -height      => '9',                   
                           -background  => '#666699',
-                          )->place(qw/-x 591 -y 79/); $mw->update(); 
+                          )->place(qw/-x 591 -y 79/); $mw->update();
 
 
 
+$mw->Label(-text  => 'Verbose Output',
+           -bg    => '#666699',
+           -fg    => '#FFFFFF'
+          )->place(qw/-x 45 -y 628/); $mw->update();
+$verbose_checkbx = $mw->Checkbutton(-text       => '', 
+                        -onvalue                => 'Verbose',
+                        -offvalue               => '',
+                        -background             => '#666699',
+                        -activebackground       => '#666699',
+                        )->place(qw/-x 20 -y 627/); $mw->update();
+
+
+
+$mw->Label(-text  => 'Response Timer Output',
+           -bg    => '#666699',
+           -fg    => '#FFFFFF'
+          )->place(qw/-x 174 -y 628/); $mw->update();
+$timers_checkbx = $mw->Checkbutton(-text        => '', 
+                        -onvalue                => 'Timer_ON',
+                        -offvalue               => '',
+                        -background             => '#666699',
+                        -activebackground       => '#666699'
+                        )->place(qw/-x 150 -y 627/); $mw->update();
+                        
+                        
+                        
+                        
 
 #load the Engine
 if (-e "./webinject.pl") {
@@ -186,8 +216,12 @@ sub gui_initial {   #this runs when engine is first loaded
 
     $rtc_button->configure(-state       => 'disabled',  #disable button while running
                            -background  => '#666699',
-                           );
+                          );
     
+    $verbose_checkbx->configure(-state       => 'disabled' );  #disable button while running
+
+    $timers_checkbx->configure(-state       => 'disabled'  );  #disable button while running
+   
     $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
 }
 #------------------------------------------------------------------
@@ -229,15 +263,19 @@ sub gui_final {
     $status_window->see("end");
 
     if ($failedcount > 0) {  #change status color to reflect failure or all tests passed
-            $status_ind->configure(-background  => '#FF3333');  #red
+        $status_ind->configure(-background  => '#FF3333');  #red
     } 
     else {
-            $status_ind->configure(-background  => '#009900');  #green
+        $status_ind->configure(-background  => '#009900');  #green
     }
      
      
     $rtc_button->configure(-state       => 'normal',  #re-enable button after finish
                            -background  => '#EFEFEF',
-                           );
+                          );
+    
+    $verbose_checkbx->configure(-state  => 'normal');  #re-enable button after finish
+
+    $timers_checkbx->configure(-state  => 'normal');  #re-enable button after finish
 }
 #------------------------------------------------------------------
