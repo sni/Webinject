@@ -86,7 +86,7 @@ $status_window = $mw->Scrolled(ROText,  #test case status window
 
 $rtc_button = $mw->Button->Compound;
 $rtc_button->Text(-text => "Run Test Cases");
-$rtc_button = $mw->Button(-width              => '85',
+$rtc_button = $mw->Button(-width              => '100',
                           -height             => '13',
                           -background         => '#EFEFEF',
                           -activebackground   => '#666699',
@@ -115,7 +115,7 @@ $exit_button = $mw->Button(-width              => '40',
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
-                                )->place(qw/-x 138 -y 75/); $mw->update();
+                                )->place(qw/-x 146 -y 75/); $mw->update();
 
 
 $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator 
