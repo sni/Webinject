@@ -1,14 +1,14 @@
 Webinject
----------------------------------
+
+Copyright 2004 Corey Goldberg (corey@test-tools.net)
 For information and documentation, visit the website at http://www.webinject.org
 
 ---------------------------------
 Release History:
 
-
-Version 0.90 - Date TBD
+Version 0.90 - 02/19/2004
     -Initial public beta release
-    -Contains ssl support using OpenSSL
+    -Contains SSL/TLS support
     -Perl/Tk GUI
 
 ---------------------------------
