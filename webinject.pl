@@ -15,6 +15,7 @@
 #    GNU General Public License for more details.
 
 
+use strict;
 use LWP;
 use HTTP::Cookies;
 use XML::Simple;
@@ -22,8 +23,23 @@ use Time::HiRes 'time','sleep';
 use Crypt::SSLeay;
 #use Data::Dumper;  #to dump hashes for debugging   
 
-
 $| = 1; #don't buffer output to STDOUT
+
+
+our ($parseresponse,$parseresponse1, $parseresponse2, $parseresponse3, $parseresponse4, $parseresponse5,  
+        $parsedresult, $parsedresult1, $parsedresult2, $parsedresult3, $parsedresult4, $parsedresult5);
+our ($logresponse , $logrequest);
+our ($useragent, $request, $response);
+our ($gui, $monitorenabledchkbx, $latency);
+our ($cookie_jar, $proxy);
+our ($xnode, $graphtype, $plotclear, $stop);
+our ($totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
+our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
+our (@casefilelist, $currentcasefile, $casecount, $isfailure);
+our ($verifypositive,  $verifylater, $verifynegative, $verifylaterneg);
+our ($url, $baseurl, $postbody);
+our ($gnuplot, $standaloneplot, $globalhttplog);
+our ($currentdatetime, $totalruntime, $starttimer, $endtimer);
 
 
 if (($0 eq 'webinject.pl') or ($0 eq 'webinject.exe')) {  #set flag so we know if it is running standalone or from webinjectgui
@@ -31,18 +47,19 @@ if (($0 eq 'webinject.pl') or ($0 eq 'webinject.exe')) {  #set flag so we know i
 }
 else {
     $gui = 1;
-    
     whackoldfiles(); #delete files leftover from previous run (do this here so they are whacked on startup when running from gui)
 }
 
 
 
-
-
-
 #------------------------------------------------------------------
-sub engine  #wrap the whole engine in a subroutine so it can be integrated with the gui 
-{   
+sub engine {   #wrap the whole engine in a subroutine so it can be integrated with the gui 
+      
+    our ($sleep, $startruntimer, $endruntimer, $repeat, $timestamp);
+    our ($curgraphtype);
+    our ($casefilecheck, $testnum, $xmltestcases);
+    our ($verifypositivenext, $verifynegativenext, $description1, $description2, $method);
+        
     if ($gui == 1) {gui_initial();}
         
     $startruntimer = time();  #timer for entire test run
@@ -51,7 +68,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     open(HTTPLOGFILE, ">http.log") or die "\nERROR: Failed to open http.log file\n\n";   
     open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
     open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
-    
+        
     #delete files leftover from previous run (do this here so they are whacked each run)
     whackoldfiles();
       
@@ -127,7 +144,6 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                  
                 $isfailure = 0;
                     
-                    
                 if ($gui == 1){
                     gui_statusbar();  #update the statusbar
                         
@@ -138,8 +154,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                         }
                     }
                 }
-                    
-                    
+                      
                 $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
                 if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
                 if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
@@ -445,7 +460,6 @@ sub httppost {  #send http request and read response
     $request->content($postbody);
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
-        
     $starttimer = time();
     $response = $useragent->simple_request($request);
     $endtimer = time();
@@ -574,6 +588,10 @@ sub verify {  #do verification of http response and print status to HTML/XML and
 #------------------------------------------------------------------
 sub parseresponse {  #parse values from responses for use in future request (for session id's, dynamic URL rewriting, etc)
         
+    our ($resptoparse, @parseargs);
+    our ($leftboundary, $rightboundary, $escape);
+     
+     
     if ($parseresponse) {
            
         @parseargs = split (/\|/, $parseresponse);
@@ -697,6 +715,12 @@ sub parseresponse {  #parse values from responses for use in future request (for
 #------------------------------------------------------------------
 sub processcasefile {  #get test case files to run (from command line or config file) and evaluate constants
         
+    my @configfile;
+    my $firstparse;
+    my $filename;
+    my $xpath;
+    my $setuseragent;
+        
     undef @casefilelist; #empty the array
         
     if ($#ARGV < 0) {  #if testcase filename is not passed on the command line, use config.xml
@@ -791,6 +815,8 @@ sub processcasefile {  #get test case files to run (from command line or config 
 #------------------------------------------------------------------
 sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml parser doesn't puke
         
+    my @xmltoconvert;        
+        
     open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
         
@@ -816,6 +842,8 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
 sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
                    #add a dummy testcase to fix this situation
         
+    my @xmltoconvert;
+        
     if ($casecount == 1) {
         
         open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
@@ -833,6 +861,8 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
 }
 #------------------------------------------------------------------
 sub cleancases {  #cleanup conversions made to file for ampersands and single testcase instance
+        
+    my @xmltoconvert;
         
     open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
@@ -854,7 +884,8 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
 sub url_escape {  #escapes difficult characters with %hexvalue
     #LWP handles url encoding already, but use this to escape valid chars that LWP won't convert (like +)
         
-    my @a = @_;  # make a copy of the arguments
+    my @a = @_;  #make a copy of the arguments
+        
     map { s/[^-\w.,!~'()\/ ]/sprintf "%%%02x", ord $&/eg } @a;
     return wantarray ? @a : $a[0];
 }
@@ -882,13 +913,15 @@ sub httplog {  #write requests and responses to http.log file
 #------------------------------------------------------------------
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
         
+    our (%months, $date, $time, $mon, $mday, $hours, $min, $sec, $year);
+        
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
     unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
         
         %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
                    "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
             
-        local ($value) = @_; 
+        my $value = @_; 
         $date = scalar localtime; 
         ($mon, $mday, $hours, $min, $sec, $year) = $date =~ 
             /\w+ (\w+) +(\d+) (\d\d):(\d\d):(\d\d) (\d\d\d\d)/;
@@ -909,7 +942,7 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
 }
 #------------------------------------------------------------------
 sub gnuplotcfg {  #create gnuplot config file
-    
+        
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
     unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
     
