@@ -378,7 +378,7 @@ sub parseresponse {  #parse value from response for use in future request (for s
             }
         }
         
-        print "\n\nParsed String: $parsedresult\n\n";
+        #print "\n\nParsed String: $parsedresult\n\n";
     }
 }
 #------------------------------------------------------------------
