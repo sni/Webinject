@@ -49,24 +49,29 @@ sub engine
     $currentdatetime = localtime time;  #get current date and time for results report
 
     open(HTTPLOGFILE, ">http.log") or die "\nERROR: Failed to open http.log file\n\n";   
-
     open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
-      
+    open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";   
+    
+    print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
+    
     writeinitialhtml();
-       
+    
     processcasefile();
     
     #contsruct objects
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
-    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy)}; #add proxy support if its set in config.xml
+    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy)}; #add proxy support if it is set in config.xml
 
 
     $totalruncount = 0;
+    $casepassedcount = 0;
+    $casefailedcount = 0;
     $passedcount = 0;
     $failedcount = 0;
-   
+
+
     
     foreach (@casefilelist) { #process test case files named in config.xml
 
@@ -74,6 +79,7 @@ sub engine
         #print "\n$currentcasefile\n\n";
         
         $testnum = 1;
+        $casefilecheck = ' ';
         
         if ($gui == 1){gui_processing_msg();}
         
@@ -87,7 +93,10 @@ sub engine
         
         cleancases();
         
-        while ($testnum <= $casecount) {        
+        
+        while ($testnum <= $casecount) {
+            
+            $isfailure = 0;
             
             if ($gui == 1){gui_statusbar();}
             
@@ -120,33 +129,56 @@ sub engine
             $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
             $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
             
-            print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
-            print STDOUT "<b>Test:  $currentcasefile - $testnum </b><br>\n";
+            
+            print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
+            print STDOUT qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
+            
+            unless ($casefilecheck eq $currentcasefile) {
+                unless ($currentcasefile eq $casefilelist[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
+                    print RESULTSXML qq|    </testcases>\n\n|;
+                }
+                print RESULTSXML qq|    <testcases file="$currentcasefile">\n\n|;
+            }
+            
+            print RESULTSXML qq|        <testcase id="$testnum">\n|;
+            
             if ($description1) {
-                print RESULTS "$description1 <br>\n"; 
-                print STDOUT "$description1 <br>\n";
+                print RESULTS qq|$description1 <br>\n|; 
+                print STDOUT qq|$description1 <br>\n|;
+                print RESULTSXML qq|            <description1>$description1</description1>\n|; 
             }
+            
             if ($description2) {
-                print RESULTS "$description2 <br>\n"; 
-                print STDOUT "$description2 <br>\n";
+                print RESULTS qq|$description2 <br>\n|; 
+                print STDOUT qq|$description2 <br>\n|;
+                print RESULTSXML qq|            <description2>$description2</description2>\n|; 
             }
-            print RESULTS "<br>\n";
-            print STDOUT "<br>\n";
+            
+            print RESULTS qq|<br>\n|;
+            print STDOUT qq|<br>\n|;
+            
             if ($verifypositive) {
-                print RESULTS "Verify: \"$verifypositive\" <br> \n";
-                print STDOUT "Verify: \"$verifypositive\" <br> \n";
+                print RESULTS qq|Verify: "$verifypositive" <br>\n|;
+                print STDOUT qq|Verify: "$verifypositive" <br>\n|;
+                print RESULTSXML qq|            <verifypositive>$verifypositive</verifypositive>\n|; 
             }
+            
             if ($verifynegative) { 
-                print RESULTS "Verify Negative: \"$verifynegative\" <br> \n";
-                print STDOUT "Verify Negative: \"$verifynegative\" <br> \n";
+                print RESULTS qq|Verify Negative: "$verifynegative" <br>\n|;
+                print STDOUT qq|Verify Negative: "$verifynegative" <br>\n|;
+                print RESULTSXML qq|            <verifynegative>$verifynegative</verifynegative>\n|; 
             }
+            
             if ($verifypositivenext) { 
-                print RESULTS "Verify On Next Case: \"$verifypositivenext\" <br> \n";
-                print STDOUT "Verify On Next Case: \"$verifypositivenext\" <br> \n";
+                print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
+                print STDOUT qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
+                print RESULTSXML qq|            <verifypositivenext>$verifypositivenext</verifypositivenext>\n|; 
             }
+            
             if ($verifynegativenext) { 
-                print RESULTS "Verify Negative On Next Case: \"$verifynegativenext\" <br> \n";
-                print STDOUT "Verify Negative On Next Case: \"$verifynegativenext\" <br> \n";
+                print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
+                print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
+                print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|; 
             }
             
             
@@ -155,7 +187,7 @@ sub engine
                 elsif ($method eq "post") {httppost();}
                 else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
             }
-            else{   
+            else {   
                 httpget(); #use "get" if no method is specified  
             }  
             
@@ -167,11 +199,33 @@ sub engine
             parseresponse();  #grab string from response to send later
             
             
-            print RESULTS "Response Time = $latency s<br>\n";
-            print STDOUT "Response Time = $latency s<br>\n";
-            print RESULTS "<br>\n-------------------------------------------------------<br>\n\n";
-            print STDOUT "<br>\n-------------------------------------------------------<br>\n\n";
-              
+            if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
+                print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
+                print STDOUT qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
+                print RESULTSXML qq|            <success>false</success>\n|;
+                if ($gui == 1){gui_status_failed();}
+                $casefailedcount++;
+            }
+            else {
+                print RESULTS qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
+                print STDOUT qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
+                print RESULTSXML qq|            <success>true</success>\n|;
+                if ($gui == 1){gui_status_passed();}
+                $casepassedcount++;
+            }
+            
+            
+            print RESULTS qq|Response Time = $latency s <br>\n|;
+            print STDOUT qq|Response Time = $latency s <br>\n|;
+            print RESULTSXML qq|            <responsetime>$latency</responsetime>\n|;
+            
+            print RESULTSXML qq|        </testcase>\n\n|;
+            
+            print RESULTS qq|<br>\n------------------------------------------------------- <br>\n\n|;
+            print STDOUT qq|<br>\n------------------------------------------------------- <br>\n\n|;
+            
+            $casefilecheck = $currentcasefile;  #set this so <testcases> xml is only closed after each file is done processing
+            
             $testnum++;
             $totalruncount++;
         }       
@@ -185,12 +239,13 @@ sub engine
 
     if ($gui == 1){gui_final();}
     
-    
     writefinalhtml();
     
-    close(RESULTS);
-    close(HTTPLOGFILE);
+    print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
     
+    close(HTTPLOGFILE);
+    close(RESULTS);
+    close(RESULTSXML);
 
 }
 
@@ -232,6 +287,8 @@ Start Time: $currentdatetime <br>
 Total Run Time: $totalruntime  seconds <br>
 <br>
 Test Cases Run: $totalruncount <br>
+Test Cases Passed: $casepassedcount <br>
+Test Cases Failed: $casefailedcount <br>
 Verifications Passed: $passedcount <br>
 Verifications Failed: $failedcount <br>
 </b>
@@ -277,20 +334,19 @@ sub httppost {  #send http request and read response
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
-sub verify {  #do verification of http response and print PASSED/FAILED to report and UI
+sub verify {  #do verification of http response and print status to HTML/XML and UI
 
     if ($verifypositive) {
         if ($response->as_string() =~ /$verifypositive/i) {  #verify existence of string in response
-            print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
-            print STDOUT "<b><font color=green>PASSED</font></b><br>\n";
-            if ($gui == 1){gui_status_passed();}
+            print RESULTS "<font color=green>Passed Positive Verification</font><br>\n";
+            print STDOUT "<font color=green>Passed Positive Verification</font><br>\n";
             $passedcount++;
         }
         else {
-            print RESULTS "<b><font color=red>FAILED</font></b><br>\n";
-            print STDOUT "<b><font color=red>FAILED</font></b><br>\n";
-            if ($gui == 1){gui_status_failed();}          
-            $failedcount++;                
+            print RESULTS "<font color=red>Failed Positive Verification</font><br>\n";
+            print STDOUT "<font color=red>Failed Positive Verification</font><br>\n";         
+            $failedcount++;
+            $isfailure++;
         }
     }
 
@@ -299,15 +355,14 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
     if ($verifynegative)
     {
         if ($response->as_string() =~ /$verifynegative/i) {  #verify existence of string in response
-            print RESULTS "<b><font color=red>FAILED</font></b><br>\n";
-            print STDOUT "<b><font color=red>FAILED</font></b><br>\n";
-            if ($gui == 1){gui_status_failed();}             
-            $failedcount++;  
+            print RESULTS "<font color=red>Failed Negative Verification</font><br>\n";
+            print STDOUT "<font color=red>Failed Negative Verification</font><br>\n";            
+            $failedcount++;
+            $isfailure++;
         }
         else {
-            print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
-            print STDOUT "<b><font color=green>PASSED</font></b><br>\n";
-            if ($gui == 1){gui_status_passed();}
+            print RESULTS "<font color=green>Passed Negative Verification</font><br>\n";
+            print STDOUT "<font color=green>Passed Negative Verification</font><br>\n";
             $passedcount++;                
         }
     }
@@ -316,16 +371,15 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
     
     if ($verifylater) {
         if ($response->as_string() =~ /$verifylater/i) {  #verify existence of string in response
-            print RESULTS "<b><font color=green>PASSED</font></b> (verification set in previous test case)<br>\n";
-            print STDOUT "<b><font color=green>PASSED</font></b> (verification set in previous test case)<br>\n";
-            if ($gui == 1){gui_status_passed();}
+            print RESULTS "<font color=green>Passed Positive Verification (verification set in previous test case)</font><br>\n";
+            print STDOUT "<font color=green>Passed Positive Verification (verification set in previous test case)</font><br>\n";
             $passedcount++;
         }
         else {
-            print RESULTS "<b><font color=red>FAILED</font></b> (verification set in previous test case)<br>\n";
-            print STDOUT "<b><font color=red>FAILED</font></b> (verification set in previous test case)<br>\n";
-            if ($gui == 1){gui_status_failed();}             
-            $failedcount++;                
+            print RESULTS "<font color=red>Failed Positive Verification (verification set in previous test case)</font><br>\n";
+            print STDOUT "<font color=red>Failed Positive Verification (verification set in previous test case)</font><br>\n";            
+            $failedcount++;
+            $isfailure++;            
         }
         
         $verifylater = '';  #set to null after verification
@@ -335,15 +389,14 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
     
     if ($verifylaterneg) {
         if ($response->as_string() =~ /$verifylaterneg/i) {  #verify existence of string in response
-            print RESULTS "<b><font color=red>FAILED</font></b> (negative verification set in previous test case)<br>\n";
-            print STDOUT "<b><font color=red>FAILED</font></b> (negative verification set in previous test case)<br>\n";
-            if ($gui == 1){gui_status_failed();}            
-            $failedcount++;  
+            print RESULTS "<font color=red>Failed Negative Verification (negative verification set in previous test case)</font><br>\n";
+            print STDOUT "<font color=red>Failed Negative Verification (negative verification set in previous test case)</font><br>\n";     
+            $failedcount++;
+            $isfailure++;
         }
         else {
-            print RESULTS "<b><font color=green>PASSED</font></b> (negative verification set in previous test case)<br>\n";
-            print STDOUT "<b><font color=green>PASSED</font></b> (negative verification set in previous test case)<br>\n";
-            if ($gui == 1){gui_status_passed();}
+            print RESULTS "<font color=green>Passed Negative Verification (negative verification set in previous test case)</font><br>\n";
+            print STDOUT "<font color=green>Passed Negative Verification (negative verification set in previous test case)</font><br>\n";
             $passedcount++;                   
         }
         
@@ -354,14 +407,17 @@ sub verify {  #do verification of http response and print PASSED/FAILED to repor
 
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
-        #don't print anything for succesful response codes (100-399) 
+        print RESULTS "<font color=green>Passed HTTP Response Code Verification (not in error range)</font><br>\n"; 
+        print STDOUT "<font color=green>Passed HTTP Response Code Verification (not in error range)</font><br>\n"; 
+        #succesful response codes (100-399)
+        $passedcount++;         
     }
     else {
         $response->as_string() =~ /(HTTP\/1.)(.*)/i;  
-        print RESULTS "<b><font color=red>FAILED </font></b>($1$2)<br>\n"; #($1$2) is http response code if failed
-        print STDOUT "<b><font color=red>FAILED </font></b>($1$2)<br>\n"; #($1$2) is http response code if failed
-        if ($gui == 1){gui_status_failed();}      
-        $failedcount++;            
+        print RESULTS "<font color=red>Failed HTTP Response Code Verification ($1$2)</font><br>\n"; #($1$2) is http response code
+        print STDOUT "<font color=red>Failed HTTP Response Code Verification ($1$2)</font><br>\n"; #($1$2) is http response code   
+        $failedcount++;
+        $isfailure++;
     }
         
 }
@@ -516,8 +572,8 @@ sub processcasefile {  #get test case files to run (from command line or config 
             }
         }    
         
-        if ($casefilelist[0]){}
-        else{
+        if ($casefilelist[0]) {}
+        else {
             push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
         }
     }
@@ -572,8 +628,8 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
-sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.  
-                   #I add a dummy testcase in this instance to fix this
+sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
+                   #add a dummy testcase to fix this situation
     
     if ($casecount == 1) {
         
