@@ -41,7 +41,7 @@ $| = 1; #don't buffer output to STDOUT
       
     writeinitialhtml();
        
-    configtestcasefiles();
+    processconfigfile();
     
     #contsruct objects
     $useragent = LWP::UserAgent->new;
@@ -77,7 +77,7 @@ $| = 1; #don't buffer output to STDOUT
             $description1 = $xmltestcases->{case}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $description2 = $xmltestcases->{case}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $method = $xmltestcases->{case}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $url = $xmltestcases->{case}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $url = $xmltestcases->{case}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g;}  
             $postbody = $xmltestcases->{case}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifypositive = $xmltestcases->{case}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifynegative = $xmltestcases->{case}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
@@ -125,7 +125,7 @@ $| = 1; #don't buffer output to STDOUT
             $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
             $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
-            $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g;}  
             $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
             $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
@@ -374,11 +374,12 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
-sub configtestcasefiles {  #parse test case file names from config.xml and build array
+sub processconfigfile {  #get test case files to run and evaluate constants
 
     open(CONFIG, "config.xml") || die "\nFailed to open config.xml file\n";  #open file handle   
     @configfile = <CONFIG>;  #Read the file into an array
 
+    #parse test case file names from config.xml and build array
     foreach (@configfile)
     {
         if (/<testcasefile>/)
@@ -398,8 +399,20 @@ sub configtestcasefiles {  #parse test case file names from config.xml and build
     {
         push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
     }
-    
     #print "testcase file list: @casefilelist\n\n";
+    
+    #grab value for constant: baseurl
+    foreach (@configfile)
+    {
+        if (/<baseurl>/)
+        {   
+            $firstparse = $';  #print "$' \n\n";
+            $firstparse =~ /<\/baseurl>/;
+            $baseurl = $`;  #string between tags will be in $baseurl
+            #print "$baseurl \n\n";
+        }
+    }  
+    
     close(CONFIG);
 }
 #------------------------------------------------------------------
