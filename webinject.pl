@@ -29,10 +29,9 @@ use Data::Dumper;
 
 $| = 1; #don't buffer output to STDOUT
 
-
-#construct objects:
-$useragent = LWP::UserAgent->new;
-$cookie_jar = HTTP::Cookies->new;
+    $startruntimer = time();  #timer for entire test run
+    
+    $currentdatetime = localtime time;  #get current date and time for results report
 
     print "\nWebInject is running ...  see results.html file for output \n\n\n";
 
@@ -44,6 +43,9 @@ $cookie_jar = HTTP::Cookies->new;
        
     configtestcasefiles();
     
+    #contsruct objects
+    $useragent = LWP::UserAgent->new;
+    $cookie_jar = HTTP::Cookies->new;
 
     $totalruncount = 0;
     $passedcount = 0;
@@ -157,12 +159,14 @@ $cookie_jar = HTTP::Cookies->new;
     
     
     print "\n\nexecution completed\n\n";
-    
+
+    $endruntimer = time();
+    $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
+
     writefinalhtml();
     
     close(RESULTS);
-    close(HTTPLOGFILE);      
-
+    close(HTTPLOGFILE);
 
 
 
@@ -196,12 +200,16 @@ sub writefinalhtml {
 
     print RESULTS
 qq(    
-<br><br><hr><br>
+<br><hr><br>
 <b>
+Start Time: $currentdatetime <br>
+Total Run Time: $totalruntime  seconds <br>
+<br>
 Test Cases Run: $totalruncount <br>
 Verifications Passed: $passedcount <br>
-Verifications Failed: $failedcount <br>      
-</b><br>
+Verifications Failed: $failedcount <br>
+</b>
+<br>
 
 </body>
 </html>
