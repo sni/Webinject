@@ -7,16 +7,27 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 1.20 - ???, 2004
+    - Added real-time response time monitoring (stats display and integration with gnuplot for plot/graph)
+    - Added tabbed layout to GUI with 'Status' and 'Monitor' windows
+    - Added 'Stop' button to GUI to halt execution
+    - Added new testcase parameter 'sleep', to throttle execution
+    - Added timer summary to HTML report
+    - Removed HTML tags from STDOUT display and cleaned up formatting
+    - Added new config.xml parameter to define a path for the gnuplot executable
+    - GUI enhancements
+    - Code refactoring
+    
 Version 1.12 - July 28, 2004
     -Added test case file parameter 'repeat', to run a test case file multiple times
-    -GUI options added for Minimal Output and Response Timer Output
-    -Option added to config.xml to define a custome User-Agent string to be sent in HTTP headers
-    -XPath Node selection option added to optional command line parameters
+    -Added GUI options for Minimal Output and Response Timer Output
+    -Added new config.xml parameter to define a custom User-Agent string to be sent in HTTP headers
+    -Added XPath Node selection to optional command line parameters
     -Bug fix for GUI Restart button
     
 Version 1.10 - June 23, 2004
     -Added XML formatted output (results.xml is created each run)
-    -Added new config.xml parameter (<globalhttplog>) for HTTP logging (always, or on failure)
+    -Added new config.xml parameter for HTTP logging
     -Added more detailed pass/fail status to HTML report
     -Redefined criteria for test case pass/pail
     -Added results summary and additional formatting to STDOUT (for standalone mode)
@@ -29,17 +40,17 @@ Version 0.95 - May 17, 2004
     
 Version 0.94 - April 29, 2004
     -Bug fix for malformed HTTP Post
-    -Color added to status window text
+    -Added colors to status window text
     
 Version 0.93 - March 22, 2004
-    -Dynamic response parsing added to support cookieless session handling
-    -Version number added to GUI window title bar
+    -Added dynamic response parsing support cookieless session handling
+    -Added version number to GUI window title bar
     
 Version 0.92 - March 05, 2004
     -Minor bug fixes
-    -Status light added to GUI
-    -HTTP proxy support
-    -Baseurl constant added to config options
+    -Added status light to GUI
+    -Added new config.xml parameter for HTTP proxy support
+    -Added new config.xml parameter for Baseurl constant
     
 Version 0.91 - Feb 23, 2004
     -Decoupled GUI (webinjectgui) from Test Engine (webinject) so engine can run standalone
