@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 #    Copyright 2004 Corey Goldberg (corey@goldb.org)
 #
