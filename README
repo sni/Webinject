@@ -12,7 +12,7 @@ Version 1.35 - April 4, 2005
     - Nagios plugin performance data support
     - Allows multiple 'httpauth' elements in config files to support multiple sets of HTTP Authentication credentials
     - New 'verifyresponsecode' test case parameter for HTTP Response Code verification
-    - Additional baseurl elements supported in the config file
+    - Additional 'baseurl' elements supported in the config file
     - Additional verification parameters supported in test cases
     - Added -V command line option (same as -v) to print version info (necessary for it to run with Moodss)
     - Code refactoring
