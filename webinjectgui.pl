@@ -95,13 +95,6 @@ $mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();
 
 
 
-#$mw->Label(-text  => 'Test Case Status:',
-#           -bg    => '#666699',
-#           -fg    => '#FFFFFF'
-#           )->place(qw/-x 105 -y 238/); $mw->update();
-
-
-
 $status_window = $status_tab->Scrolled(ROText,  #test case status monitor window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
@@ -119,17 +112,11 @@ $montab_canvas = $mon_tab->Canvas(-width        => '719',
                                       -background  => '#EFEFEF'
                                      )->pack(); $mw->update();  #canvas to fill tab to place widgets into
 
+
 if (-e "plot.gif") {  #if plot graphic exists, put it in canvas
     $montab_canvas->Photo('plotgraph', -file => "plot.gif");    
     $montab_canvas->Label(-image => 'plotgraph', )->place(qw/-x 1 -y 1/);
 }
-
-
-
-
-
-
-
 
 
 $restart_button = $mw->Button->Compound;
@@ -146,6 +133,7 @@ $restart_button = $mw->Button(-width          => '50',
                           )->place(qw/-x 5 -y 5/); $mw->update();
 
 
+
 $exit_button = $mw->Button->Compound;
 $exit_button->Text(-text => "Exit");
 $exit_button = $mw->Button(-width              => '50',
@@ -160,6 +148,23 @@ $exit_button = $mw->Button(-width              => '50',
                            )->place(qw/-x 687 -y 5/); $mw->update();
 
 
+
+
+$stop_button = $mw->Button->Compound;
+$stop_button->Text(-text => "Stop");
+$stop_button = $mw->Button(-width              => '50',
+                           -height             => '13',
+                           -background         => '#EFEFEF',
+                           -activebackground   => '#666699',
+                           -foreground         => '#000000',
+                           -activeforeground   => '#FFFFFF',
+                           -borderwidth        => '3',
+                           -image              => $stop_button,
+                           -command            => sub {$STOP = 'YES';}
+                           )->place; $mw->update();  #create this button but don't place it yet
+                           
+                           
+                           
 
 
 $rtc_button = $mw->Button->Compound;
@@ -217,9 +222,9 @@ $timers_checkbx = $mw->Checkbutton(-text        => '',  #using a text widget ins
                         -activebackground       => '#666699',
                         -highlightbackground    => '#666699'
                         )->place(qw/-x 170 -y 627/); $mw->update();
-                        
-                        
- 
+
+
+
 
 #load the Engine
 if (-e "./webinject.pl") {
@@ -256,6 +261,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $casefailedcount = '';
     $casepassedcount = '';
     $totalruntime = '';
+    $STOP = 'NO';
 
 
     $out_window->delete('0.0','end');  #clear window before starting
@@ -263,12 +269,12 @@ sub gui_initial {   #this runs when engine is first loaded
     $status_window->delete('0.0','end');  #clear window before starting
     
     $status_ind->configure(-background  => '#FF9900');  #change status color amber while running
-                           
 
-    $rtc_button->configure(-state       => 'disabled',  #disable button while running
-                           -background  => '#666699',
-                          );
-    
+
+    $rtc_button->placeForget;  #remove the run botton
+    $stop_button->place(qw/-x 110 -y 65/);  #place the stop button
+
+
     $minimal_checkbx->configure(-state  => 'disabled' );  #disable button while running
 
     $timers_checkbx->configure(-state   => 'disabled'  );  #disable button while running
@@ -333,11 +339,7 @@ sub gui_final {
         $status_ind->configure(-background  => '#009900');  #green
     }
      
-     
-    $rtc_button->configure(-state       => 'normal',  #re-enable button after finish
-                           -background  => '#EFEFEF',
-                          );
-    
+        
     $minimal_checkbx->configure(-state  => 'normal');  #re-enable button after finish
 
     $timers_checkbx->configure(-state  => 'normal');  #re-enable button after finish
@@ -350,3 +352,12 @@ sub gui_updatemontab {
     }
 }    
 #------------------------------------------------------------------
+sub gui_stop {  #flip button and do cleanup when user clicks Stop
+
+    $stop_button->placeForget;  #remove the stop botton
+    $rtc_button->place(qw/-x 110 -y 65/);  #place the stop button
+    
+    $progressbar->set(-1);  #update progressbar back to zero
+    
+    gui_final();
+}
