@@ -23,9 +23,11 @@ use Time::HiRes 'time','sleep';
 use Crypt::SSLeay;
 #use Data::Dumper;  #to dump hashes for debugging   
 
+
 $| = 1; #don't buffer output to STDOUT
 
 
+our ($timestamp);
 our ($parseresponse,$parseresponse1, $parseresponse2, $parseresponse3, $parseresponse4, $parseresponse5,  
         $parsedresult, $parsedresult1, $parsedresult2, $parsedresult3, $parsedresult4, $parsedresult5);
 our ($logresponse , $logrequest);
@@ -56,7 +58,7 @@ else {
 #------------------------------------------------------------------
 sub engine {   #wrap the whole engine in a subroutine so it can be integrated with the gui 
       
-    our ($sleep, $startruntimer, $endruntimer, $repeat, $timestamp);
+    our ($sleep, $startruntimer, $endruntimer, $repeat);
     our ($curgraphtype);
     our ($casefilecheck, $testnum, $xmltestcases);
     our ($verifypositivenext, $verifynegativenext, $description1, $description2, $method);
@@ -171,37 +173,38 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         }
                     }
                 }
-                      
+                    
                 $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
-                if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
-                if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
                     
-                #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
-                $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g; if ($gui == 1){gui_tc_descript();}}
-                $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g; $url =~ s/{BASEURL}/$baseurl/g; 
-                    $url =~ s/{PARSEDRESULT}/$parsedresult/g; $url =~ s/{PARSEDRESULT1}/$parsedresult1/g; $url =~ s/{PARSEDRESULT2}/$parsedresult2/g; $url =~ s/{PARSEDRESULT3}/$parsedresult3/g; 
-                    $url =~ s/{PARSEDRESULT4}/$parsedresult4/g; $url =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
-                $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g; 
-                    $postbody =~ s/{PARSEDRESULT}/$parsedresult/g; $postbody =~ s/{PARSEDRESULT1}/$parsedresult1/g; $postbody =~ s/{PARSEDRESULT2}/$parsedresult2/g; 
-                    $postbody =~ s/{PARSEDRESULT3}/$parsedresult3/g; $postbody =~ s/{PARSEDRESULT4}/$parsedresult4/g; $postbody =~ s/{PARSEDRESULT5}/$parsedresult5/g;}  
-                $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; 
-                    $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; 
-                    $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) {$verifypositivenext =~ s/{AMPERSAND}/&/g; $verifypositivenext =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $verifynegativenext = $xmltestcases->{case}->{$testnum}->{verifynegativenext}; if ($verifynegativenext) {$verifynegativenext =~ s/{AMPERSAND}/&/g; $verifynegativenext =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $parseresponse = $xmltestcases->{case}->{$testnum}->{parseresponse}; if ($parseresponse) {$parseresponse =~ s/{AMPERSAND}/&/g; $parseresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $parseresponse1 = $xmltestcases->{case}->{$testnum}->{parseresponse1}; if ($parseresponse1) {$parseresponse1 =~ s/{AMPERSAND}/&/g; $parseresponse1 =~ s/{TIMESTAMP}/$timestamp/g;}
-                $parseresponse2 = $xmltestcases->{case}->{$testnum}->{parseresponse2}; if ($parseresponse2) {$parseresponse2 =~ s/{AMPERSAND}/&/g; $parseresponse2 =~ s/{TIMESTAMP}/$timestamp/g;} 
-                $parseresponse3 = $xmltestcases->{case}->{$testnum}->{parseresponse3}; if ($parseresponse3) {$parseresponse3 =~ s/{AMPERSAND}/&/g; $parseresponse3 =~ s/{TIMESTAMP}/$timestamp/g;} 
-                $parseresponse4 = $xmltestcases->{case}->{$testnum}->{parseresponse4}; if ($parseresponse4) {$parseresponse4 =~ s/{AMPERSAND}/&/g; $parseresponse4 =~ s/{TIMESTAMP}/$timestamp/g;} 
-                $parseresponse5 = $xmltestcases->{case}->{$testnum}->{parseresponse5}; if ($parseresponse5) {$parseresponse5 =~ s/{AMPERSAND}/&/g; $parseresponse5 =~ s/{TIMESTAMP}/$timestamp/g;} 
-                $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-                $sleep = $xmltestcases->{case}->{$testnum}->{sleep}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}
+                if ($verifypositivenext) { $verifylater = $verifypositivenext; }  #grab $verifypositivenext string from previous test case (if it exists)
+                if ($verifynegativenext) { $verifylaterneg = $verifynegativenext; }  #grab $verifynegativenext string from previous test case (if it exists)
                     
+                #populate variables with values from testcase file, do substitutions, and revert converted values back
+                $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) { convertbackxml($description1); } if ($gui == 1){ gui_tc_descript(); }
+                $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) { convertbackxml($description2); }  
+                $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) { convertbackxml($method); }  
+                $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) { convertbackxml($url); }  
+                $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) { convertbackxml($postbody); }  
+                $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) { convertbackxml($verifypositive); }  
+                $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) { convertbackxml($verifynegative); }  
+                $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) { convertbackxml($verifypositivenext); }  
+                $verifynegativenext = $xmltestcases->{case}->{$testnum}->{verifynegativenext}; if ($verifynegativenext) { convertbackxml($verifynegativenext); }  
+                $parseresponse = $xmltestcases->{case}->{$testnum}->{parseresponse}; if ($parseresponse) { convertbackxml($parseresponse); }  
+                $parseresponse1 = $xmltestcases->{case}->{$testnum}->{parseresponse1}; if ($parseresponse1) { convertbackxml($parseresponse1); }
+                $parseresponse2 = $xmltestcases->{case}->{$testnum}->{parseresponse2}; if ($parseresponse2) { convertbackxml($parseresponse2); } 
+                $parseresponse3 = $xmltestcases->{case}->{$testnum}->{parseresponse3}; if ($parseresponse3) { convertbackxml($parseresponse3); } 
+                $parseresponse4 = $xmltestcases->{case}->{$testnum}->{parseresponse4}; if ($parseresponse4) { convertbackxml($parseresponse4); } 
+                $parseresponse5 = $xmltestcases->{case}->{$testnum}->{parseresponse5}; if ($parseresponse5) { convertbackxml($parseresponse5); } 
+                $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) { convertbackxml($logrequest); }  
+                $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) { convertbackxml($logresponse); }  
+                $sleep = $xmltestcases->{case}->{$testnum}->{sleep}; if ($logresponse) { convertbackxml($logresponse); }
+                    
+                    
+                if ($description1) {  #if we hit a dummy record, skip it
+                    if ($description1 =~ /dummy test case/) {
+                        next;
+                    }
+                }
                     
                 print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
                 unless ($xnode) { #if using XPath, skip regular STDOUT output 
@@ -925,9 +928,9 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
         
     foreach (@xmltoconvert) { 
-        
-        s/{AMPERSAND}/&/g;  #convert ampersands (&) &'s are malformed XML
-        
+            
+        s/{AMPERSAND}/&/g;  #convert ampersands, &'s are malformed XML
+            
         s/<case id="2" description1="dummy test case"\/><\/testcases>/<\/testcases>/g;  #add dummy test case to end of file
     }  
         
@@ -936,6 +939,18 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
     open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
     close(XMLTOCONVERT);
+}
+#------------------------------------------------------------------
+sub convertbackxml() {  #converts replaced xml with substitutions
+    $_[0] =~ s/{AMPERSAND}/&/g; 
+    $_[0] =~ s/{TIMESTAMP}/$timestamp/g;
+    $_[0] =~ s/{BASEURL}/$baseurl/g;
+    $_[0] =~ s/{PARSEDRESULT}/$parsedresult/g; 
+    $_[0] =~ s/{PARSEDRESULT1}/$parsedresult1/g; 
+    $_[0] =~ s/{PARSEDRESULT2}/$parsedresult2/g; 
+    $_[0] =~ s/{PARSEDRESULT3}/$parsedresult3/g; 
+    $_[0] =~ s/{PARSEDRESULT4}/$parsedresult4/g; 
+    $_[0] =~ s/{PARSEDRESULT5}/$parsedresult5/g;
 }
 #------------------------------------------------------------------
 sub url_escape {  #escapes difficult characters with %hexvalue
