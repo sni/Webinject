@@ -99,6 +99,15 @@ $viewmenu = $menubar->Menubutton(-text              => 'View',
                                  -tearoff           => '0',
                                 )->pack(qw/-side left/);
 
+$viewmenu->command(-label               => 'config.xml', 
+                   -background          => '#666699',
+                   -activebackground    => '#EFEFEF',
+                   -foreground          => 'white',
+                   -activeforeground    => 'black',
+                   -command             => sub{viewconfig();}
+                  );
+                   
+                   
 $aboutmenu = $menubar->Menubutton(-text              => 'About',
                                   #-underline         => '0',
                                   -foreground        => 'white',
@@ -330,6 +339,7 @@ unless (defined &engine){
 
 
 
+
 MainLoop;
 
 
@@ -447,6 +457,8 @@ sub gui_stop {  #flip button and do cleanup when user clicks Stop
     
     $progressbar->set(-1);  #update progressbar back to zero
     
+    $mw->update();
+    
     gui_final();
 }
 #------------------------------------------------------------------
@@ -462,7 +474,7 @@ sub about {
                              -bg         => '#666699',
                              -takefocus  => '1',  #start on top
                             );
-    $about->raise; #put in front at startup
+    $about->raise; #put in front
     $about->geometry("300x200+200+200");  #size and screen placement
     if (-e "logo.gif") {  #if icon graphic exists, use it
         $about->update();
@@ -470,16 +482,50 @@ sub about {
         $about->iconimage($icon);
     }   
        
-    $about_text = $about->ROText(-width       => '60',
-                                 -height      => '20',
+    $about_text = $about->ROText(-width       => '100',  #make these big.  window size is controlled by geometry instead
+                                 -height      => '100',
                                  -background  => '#666699',
                                  -foreground  => 'white',
                                 )->pack;
                                 
     $about_text->insert("end", qq| 
 WebInject
-©2004 Corey Goldberg    
+©2004 Corey Goldberg
+
+please visit www.webinject.org
+for information and documentation.
+
+WebInject is Free and Open Source.
+Licensed under the GNU GPL.
     |);
 
+}
+#------------------------------------------------------------------
+sub viewconfig {
+
+    $viewconfig = MainWindow->new(-title      => 'config.xml',
+                                  -bg         => '#666699',
+                                  -takefocus  => '1',  #start on top
+                            );
+    $viewconfig->raise; #put in front
+    $viewconfig->geometry("500x400+200+200");  #size and screen placement
+    if (-e "logo.gif") {  #if icon graphic exists, use it
+        $viewconfig->update();
+        $icon = $viewconfig->Photo(-file => 'icon.gif');
+        $viewconfig->iconimage($icon);
+    }   
+       
+    $config_text = $viewconfig->ROText(-width       => '100',  #make these big.  window size is controlled by geometry instead
+                                       -height      => '100',
+                                       -background  => '#666699',
+                                       -foreground  => 'white',
+                                      )->pack;
+        
+    open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
+    @configfile = <CONFIG>;  #read the file into an array
+        
+    $config_text->insert("end", @configfile);
+
+    close(CONFIG);
 }
 #------------------------------------------------------------------
