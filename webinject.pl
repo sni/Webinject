@@ -54,7 +54,8 @@ sub engine
     
     print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
     
-    writeinitialhtml();
+    writeinitialhtml();  #write opening tags for results file
+    writeinitialstdout();  #write opening tags for STDOUT
     
     processcasefile();
     
@@ -239,7 +240,8 @@ sub engine
 
     if ($gui == 1){gui_final();}
     
-    writefinalhtml();
+    writefinalhtml();  #write summary and closing tags for results file
+    writefinalstdout();  #write summary and closing tags for STDOUT
     
     print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
     
@@ -254,7 +256,7 @@ sub engine
 #------------------------------------------------------------------
 #  SUBROUTINES
 #------------------------------------------------------------------
-sub writeinitialhtml {
+sub writeinitialhtml {  #write opening tags for results file
 
     print RESULTS 
 qq(    
@@ -277,9 +279,54 @@ qq(
 ); 
 }
 #------------------------------------------------------------------
-sub writefinalhtml {
+sub writeinitialstdout {  #write opening tags for STDOUT
+
+    print STDOUT 
+qq(    
+<html>
+<head>
+    <title>WebInject Test Results</title>
+    <style type="text/css">
+        .title{FONT: 12px verdana, arial, helvetica, sans-serif; font-weight: bold}
+        .text{FONT: 10px verdana, arial, helvetica, sans-serif}
+        body {background-color: #F5F5F5;
+              font-family: verdana, arial, helvetica, sans-serif;
+              font-size: 10px;
+              scrollbar-base-color: #999999;
+              color: #000000;}
+    </style>
+</head>
+<body>
+<hr>
+-------------------------------------------------------<br>
+); 
+}
+#------------------------------------------------------------------
+sub writefinalhtml {  #write summary and closing tags for results file
 
     print RESULTS
+qq(    
+<br><hr><br>
+<b>
+Start Time: $currentdatetime <br>
+Total Run Time: $totalruntime  seconds <br>
+<br>
+Test Cases Run: $totalruncount <br>
+Test Cases Passed: $casepassedcount <br>
+Test Cases Failed: $casefailedcount <br>
+Verifications Passed: $passedcount <br>
+Verifications Failed: $failedcount <br>
+</b>
+<br>
+
+</body>
+</html>
+); 
+}
+#------------------------------------------------------------------
+sub writefinalstdout {  #write summary and closing tags for STDOUT
+
+    print STDOUT
 qq(    
 <br><hr><br>
 <b>
