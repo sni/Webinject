@@ -315,10 +315,18 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                     
                 if ($isfailure > 0) {  #if any verification fails, test case is considered a failure
-                    print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
-                    unless ($nooutput) { #skip regular STDOUT output 
-                        print STDOUT qq|TEST CASE FAILED \n|;
+                    if ($errormessage) { #Add defined error message to the output 
+                        print RESULTS qq|<b><font color=red>TEST CASE FAILED : $errormessage</font></b><br>\n|;
+                        unless ($nooutput) { #skip regular STDOUT output 
+                            print STDOUT qq|TEST CASE FAILED : $errormessage\n|;
+                        }
                     }
+                    else { # Print regular error output
+                        print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
+                        unless ($nooutput) { #skip regular STDOUT output 
+                            print STDOUT qq|TEST CASE FAILED\n|;
+                        }
+                    }    
                     unless ($returnmessage) {  #(used for plugin compatibility) if it's the first error message, set it to variable
                         if ($errormessage) { 
                             $returnmessage = $errormessage; 
@@ -775,10 +783,10 @@ sub processcasefile {  #get test case files to run (from command line or config 
         
     #process the config file
     if ($opt_configfile) {  #if -c option was set on command line, use specified config file
-        open(CONFIG, "$dirname" . "$opt_configfile") or die "\nERROR: Failed to open $opt_configfile file\n\n";
+        open(CONFIG, "$dirname"."$opt_configfile") or die "\nERROR: Failed to open $opt_configfile file\n\n";
         $configexists = 1;  #flag we are going to use a config file
     }
-    elsif (-e "config.xml") {  #if config.xml exists, read it
+    elsif (-e "$dirname"."config.xml") {  #if config.xml exists, read it
         open(CONFIG, "$dirname"."config.xml") or die "\nERROR: Failed to open config.xml file\n\n";
         $configexists = 1;  #flag we are going to use a config file
     } 
@@ -816,8 +824,8 @@ sub processcasefile {  #get test case files to run (from command line or config 
         }    
             
         unless ($casefilelist[0]) {
-            if (-e "testcases.xml") {
-                push @casefilelist, "testcases.xml";  #if no files are specified in config.xml, default to testcases.xml
+            if (-e "$dirname"."testcases.xml") {
+                push @casefilelist, "$dirname"."testcases.xml";  #if no files are specified in config.xml, default to testcases.xml
             }
             else {
                 die "\nERROR: I can't any test case files to run.\nYou must either use a config file or pass a filename " . 
