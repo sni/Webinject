@@ -27,11 +27,13 @@ use Tk::ProgressBar::Mac;
 
 
 
+
+
 $| = 1; #don't buffer output to STDOUT
 
 
  
-$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool     (version .92)',
+$mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool    (version .92)',
                       -width  => '650', 
                       -height => '650', 
                       -bg     => '#666699',
@@ -124,12 +126,19 @@ $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator
 
 
 
-if (-e "webinject.pl") {
-    do "webinject.pl";  #load the engine  
+#load the Engine
+if (-e "./webinject.pl") {
+    do "./webinject.pl"   
 } 
-else {
-    print STDERR "I can not find the test engine (webinject.pl) and I need this to run.";
+#test if the Engine was loaded
+unless (defined &engine){
+        print STDERR "Error: I can not load the test engine (webinject.pl)!\n\n";
+        print STDERR "Check to make sure webinject.pl exists.\n";
+        print STDERR "If it is not missing, you are most likely missing some Perl modules it requires.\n";
+        print STDERR "Try running the engine by itself and see what modules it complains about.\n\n";
 }
+
+
 
 
 MainLoop;
