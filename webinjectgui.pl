@@ -30,7 +30,6 @@ use Tk::PNG;
 
 
 
-
 $| = 1; #don't buffer output to STDOUT
 
 
@@ -60,21 +59,19 @@ if (-e "logo.gif") {  #if logo graphic exists, use it
 }
 
 
-
-
 $menubar = $mw->Frame(qw/-relief flat -borderwidth 2/);
 $menubar->place(qw/-x 0 -y 0/);
 $menubar->configure(-background => '#666699');  #menu outline
 
 $filemenu = $menubar->Menubutton(-text              => 'File',
-                                 #-underline         => '0',
                                  -foreground        => 'white',
                                  -background        => '#666699',
                                  -activebackground  => '#666699',
                                  -activeforeground  => 'black',
                                  -tearoff           => '0',
                                  )->pack(qw/-side left/);
-                            
+
+
 $filemenu->command(-label               => 'Restart', 
                    -background          => '#666699',
                    -activebackground    => '#EFEFEF',
@@ -82,7 +79,8 @@ $filemenu->command(-label               => 'Restart',
                    -activeforeground    => 'black',
                    -command             => sub{gui_restart();}
                   );
-                  
+
+
 $filemenu->command(-label               => 'Exit', 
                    -background          => '#666699',
                    -activebackground    => '#EFEFEF',
@@ -91,14 +89,15 @@ $filemenu->command(-label               => 'Exit',
                    -command             => sub{exit;}
                   );                  
 
+
 $viewmenu = $menubar->Menubutton(-text              => 'View',
-                                 #-underline         => '0',
                                  -foreground        => 'white',
                                  -background        => '#666699',
                                  -activebackground  => '#666699',
                                  -activeforeground  => 'black',
                                  -tearoff           => '0',
                                 )->pack(qw/-side left/);
+
 
 $viewmenu->command(-label               => 'config.xml', 
                    -background          => '#666699',
@@ -107,18 +106,17 @@ $viewmenu->command(-label               => 'config.xml',
                    -activeforeground    => 'black',
                    -command             => sub{viewconfig();}
                   );
-                   
-                   
+
+
 $aboutmenu = $menubar->Menubutton(-text              => 'About',
-                                  #-underline         => '0',
                                   -foreground        => 'white',
                                   -background        => '#666699',
                                   -activebackground  => '#666699',
                                   -activeforeground  => 'black',
                                   -tearoff           => '0',
                                  )->pack(qw/-side left/);
-                                 
-                                 
+
+
 $aboutmenu->command(-label               => 'About WebInject', 
                     -background          => '#666699',
                     -activebackground    => '#EFEFEF',
@@ -126,9 +124,7 @@ $aboutmenu->command(-label               => 'About WebInject',
                     -activeforeground    => 'black',
                     -command             => sub{about();}
                    );
-      
-      
-      
+
 
 $mw->Label(-text  => 'Engine Status:',
            -bg    => '#666699',
@@ -150,8 +146,8 @@ $tabs = $mw->NoteBook(-backpagecolor       => '#666699',
                       -inactivebackground  => '#BFBFBF', #color for inactive tabs
                      )->place(qw/-x 12 -y 240/);  #outer notebook object
 
-$status_tab = $tabs->add('statustab', -label => 'Status'); $mw->update();
 
+$status_tab = $tabs->add('statustab', -label => 'Status'); $mw->update();
 
 
 $statustab_canvas = $status_tab->Canvas(-width          => '719',  
@@ -161,13 +157,10 @@ $statustab_canvas = $status_tab->Canvas(-width          => '719',
                                        )->pack(); $mw->update();  #canvas to fill tab (to place widgets into)
 
 
-
-
 $statustab_buttoncanvas = $statustab_canvas->Canvas(-width        => '700',  
                                                     -height       => '24',
                                                     -background   => '#666699',
                                                    )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
-
 
 
 $minimalcheckbx = 'minimal_off';  #give it a default value
@@ -210,9 +203,6 @@ $status_window->tagConfigure('red', -foreground => '#FF3333');  #define tag for 
 $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for font color
 
 
-
-
-
 $monitorenabledchkbx = 'monitor_on';  #give it a default value
 $mw->Label(-text  => 'Disable Monitor',
            -bg    => '#666699',
@@ -230,9 +220,6 @@ $monitor_enabledchkbx = $mw->Checkbutton(-text                   => '',  #using 
 monitor_enable_disable();  #call sub to enable and create monitor
 
 
-
-
-
 $stop_button = $mw->Button->Compound;
 $stop_button->Text(-text => "Stop");
 $stop_button = $mw->Button(-width              => '50',
@@ -245,9 +232,6 @@ $stop_button = $mw->Button(-width              => '50',
                            -image              => $stop_button,
                            -command            => sub{$stop = 'yes';}
                           )->place; $mw->update();  #create this button but don't place it yet
-                           
-                           
-                           
 
 
 $rtc_button = $mw->Button->Compound;
@@ -265,7 +249,6 @@ $rtc_button = $mw->Button(-width              => '50',
 $rtc_button->focus();
 
 
-
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
                                )->place(qw/-x 176 -y 65/); $mw->update();
@@ -275,8 +258,6 @@ $status_ind = $mw->Canvas(-width       => '28',  #engine status indicator
                           -height      => '9',                   
                           -background  => '#666699',
                           )->place(qw/-x 621 -y 69/); $mw->update();
-
-
 
 
 #load the Engine
@@ -290,7 +271,6 @@ unless (defined &engine){
         print STDERR "If it is not missing, you are most likely missing some Perl modules it requires.\n";
         print STDERR "Try running the engine by itself and see what modules it complains about.\n\n";
 }
-
 
 
 
@@ -324,7 +304,6 @@ sub gui_initial {   #this runs when engine is first loaded
     $status_window->delete('0.0','end');  #clear window before starting
     
     $status_ind->configure(-background  => '#FF9900');  #change status color amber while running
-
 
     $rtc_button->placeForget;  #remove the run button
     $stop_button->place(qw/-x 110 -y 65/);  #place the stop button
@@ -394,7 +373,6 @@ sub gui_final {
      
         
     $monitor_enabledchkbx->configure(-state  => 'normal');  #re-enable button after finish
-        
 }
 #------------------------------------------------------------------
 sub gui_updatemontab {
@@ -406,8 +384,7 @@ sub gui_updatemontab {
             $montab_plotcanvas->Photo('plotgraph', -file => "plot.png");    
             $montab_plotcanvas->Label(-image => 'plotgraph')->place(qw/-x 7 -y 0/);
         }
-    }
-    
+    }   
 }    
 #------------------------------------------------------------------
 sub gui_updatemonstats {  #update timers and counts in monitor tab
@@ -439,9 +416,8 @@ sub gui_cleargraph {  #remove graph
         
     if (-e "plot.png") { unlink "plot.png"; }  #delete a plot file if it exists so an old one is never rendered 
         
-        
     $montab_plotcanvas->destroy;   #destroy the canvas
-                
+      
     $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
                                                 -height       => '240',
                                                 -background   => '#EFEFEF',
@@ -449,14 +425,14 @@ sub gui_cleargraph {  #remove graph
 }
 #------------------------------------------------------------------
 sub gui_cleargraph_button {  #remove graph then set value to truncate log
-    
+        
     gui_cleargraph();
-    
+        
     $plotclear = 'yes';  #set value so engine knows to truncate plot log
 }
 #------------------------------------------------------------------
 sub about {
-
+        
     $about = MainWindow->new(-title      => 'About WebInject',
                              -bg         => '#666699',
                              -takefocus  => '1',  #start on top
@@ -468,7 +444,8 @@ sub about {
         $icon = $about->Photo(-file => 'icon.gif');
         $about->iconimage($icon);
     }   
-       
+    
+    
     $about_text = $about->ROText(-width       => '100',  #make these big.  window size is controlled by geometry instead
                                  -height      => '100',
                                  -background  => '#666699',
@@ -501,13 +478,15 @@ sub viewconfig {
         $icon = $viewconfig->Photo(-file => 'icon.gif');
         $viewconfig->iconimage($icon);
     }   
-       
+    
+    
     $config_text = $viewconfig->ROText(-width       => '100',  #make these big.  window size is controlled by geometry instead
                                        -height      => '100',
                                        -background  => '#666699',
                                        -foreground  => 'white',
                                       )->pack;
-        
+    
+    
     open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
     @configfile = <CONFIG>;  #read the file into an array
         
@@ -522,16 +501,19 @@ sub monitor_enable_disable {
         
         $mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();  #add the notebook tab
         
+        
         $montab_canvas = $mon_tab->Canvas(-width        => '719',
                                           -height       => '365',                   
                                           -background   => '#EFEFEF',
                                          )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to fill tab (to place widgets into)
         
+        
         $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
                                                     -height       => '240',
                                                     -background   => '#EFEFEF',
                                                    )->place(qw/-x 0 -y 0/); $mw->update();  #canvas to place graph into
-                   
+        
+        
         $clear_graph = $mon_tab->Button->Compound;
         $clear_graph->Text(-text => "Clear Graph");
         $clear_graph = $mon_tab->Button(-width         => '70',
@@ -545,10 +527,12 @@ sub monitor_enable_disable {
                                    -command            => sub{gui_cleargraph_button();}
                                   )->place(qw/-x 630 -y 310/); $mw->update();
         
+        
         $montab_buttoncanvas = $montab_canvas->Canvas(-width        => '700',  
                                                       -height       => '24',
                                                       -background   => '#666699',
                                                      )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
+        
         
         $montab_buttoncanvas->Label(-text  => 'Line Graph',
                                     -bg    => '#666699',
@@ -561,7 +545,10 @@ sub monitor_enable_disable {
                                                             -activebackground       => '#666699',
                                                             -highlightbackground    => '#666699',
                                                             )->place(qw/-x 20 -y 2/); $mw->update();
+        
+        
         $radiolinegraph->select;  #select as default
+        
         
         $montab_buttoncanvas->Label(-text  => 'Impulse Graph',
                                     -bg    => '#666699',
@@ -573,6 +560,7 @@ sub monitor_enable_disable {
                                           -activebackground       => '#666699',
                                           -highlightbackground    => '#666699',
                                          )->place(qw/-x 170 -y 2/); $mw->update();
+        
         
         $montab_buttoncanvas->Label(-text  => 'No Graph',
                                     -bg    => '#666699',
@@ -587,10 +575,6 @@ sub monitor_enable_disable {
                                          )->place(qw/-x 320 -y 2/); $mw->update();
         
         
-
-
-
-
         $resptime_label = $montab_canvas->Label(-width       => '25',
                                                 -height      => '1',
                                                 -background  => '#EFEFEF',
@@ -632,9 +616,6 @@ sub monitor_enable_disable {
                                               -anchor      => 'w',
                                              )->place(qw/-x 12 -y 295/); $mw->update();                    
         $avgtime_text->configure(-text => "Avg:  $avgresponse sec");
-        
-      
-        
         
         
         $runcount_label = $montab_canvas->Label(-width       => '25',
@@ -678,8 +659,8 @@ sub monitor_enable_disable {
                                                            -anchor      => 'w',
                                                           )->place(qw/-x 250 -y 295/); $mw->update();                    
         $runcountcasespfailed_text->configure(-text => "Failed:  $casefailedcount");
-            
-            
+        
+        
     }  #end monitor create
      
         
