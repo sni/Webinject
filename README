@@ -3,11 +3,12 @@ Webinject
 For information and documentation, visit the website at http://www.webinject.org
 
 ---------------------------------
-Release History
+Release History:
 
 
 Version 0.90 - Date TBD
-    -initial public beta release
-    -contains ssl support
+    -Initial public beta release
+    -Contains ssl support using OpenSSL
+    -Perl/Tk GUI
 
 ---------------------------------
