@@ -78,30 +78,30 @@ $status_window = $mw->Scrolled(ROText,
 
 $rtc_button = $mw->Button->Compound;
 $rtc_button->Text(-text => "Run Test Cases");
-$mw->Button(-width              => '85',
-            -height             => '13',
-            -background         => '#EFEFEF',
-            -activebackground   => '#666699',
-            -foreground         => '#000000',
-            -activeforeground   => '#FFFFFF',
-            -borderwidth        => '3',
-            -image              => $rtc_button,
-            -command            => sub{engine()}
-            )->place(qw/-x 25 -y 85/);
+$rtc_button = $mw->Button(-width              => '85',
+                          -height             => '13',
+                          -background         => '#EFEFEF',
+                          -activebackground   => '#666699',
+                          -foreground         => '#000000',
+                          -activeforeground   => '#FFFFFF',
+                          -borderwidth        => '3',
+                          -image              => $rtc_button,
+                          -command            => sub{engine();}
+                          )->place(qw/-x 25 -y 85/);
 
 
 $exit_button = $mw->Button->Compound;
 $exit_button->Text(-text => "Exit");
-$mw->Button(-width              => '40',
-            -height             => '13',
-            -background         => '#EFEFEF',
-            -activebackground   => '#666699',
-            -foreground         => '#000000',
-            -activeforeground   => '#FFFFFF',
-            -borderwidth        => '3',
-            -image              => $exit_button,
-            -command            => sub{exit;}
-            )->place(qw/-x 580 -y 5/);
+$exit_button = $mw->Button(-width              => '40',
+                           -height             => '13',
+                           -background         => '#EFEFEF',
+                           -activebackground   => '#666699',
+                           -foreground         => '#000000',
+                           -activeforeground   => '#FFFFFF',
+                           -borderwidth        => '3',
+                           -image              => $exit_button,
+                           -command            => sub{exit;}
+                           )->place(qw/-x 580 -y 5/);
 
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
@@ -118,7 +118,14 @@ MainLoop;
 
 #------------------------------------------------------------------
 sub engine 
-{
+{   
+    $out_window->delete('0.0','end');    #clear window before starting
+    $status_window->delete('0.0','end'); #clear window before starting
+    
+    $rtc_button->configure(-state       => 'disabled',  #disable button while running
+                           -background  => '#666699',
+                           );
+    
 
     $startruntimer = time();  #timer for entire test run
     
@@ -146,7 +153,7 @@ sub engine
     foreach (@casefilelist) #process test case files named in config.xml
     {
         $currentcasefile = $_;
-        #print "$currentcasefile\n\n";
+        #print "\n$currentcasefile\n\n";
         
         $testnum = 1;
         
@@ -264,22 +271,33 @@ sub engine
         }       
     }
     
-    
-    $out_window->insert("end", "\nExecution Finished\n\n"); $out_window->see("end");
+
 
     $endruntimer = time();
     $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
+
+    $out_window->insert("end", "\nExecution Finished\n\n"); $out_window->see("end");
+    
+    $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime  seconds\n");
+    $status_window->insert("end", "\nTest Cases Run: $totalruncount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
+    $status_window->see("end");
 
     writefinalhtml();
     
     close(RESULTS);
     close(HTTPLOGFILE);
     
-    
+    $rtc_button->configure(-state       => 'normal',  #re-enable button after finish
+                           -background  => '#EFEFEF',
+                           );
+
+
 }
 
 
 
+#------------------------------------------------------------------
+#  SUBROUTINES
 #------------------------------------------------------------------
 sub writeinitialhtml {
 
