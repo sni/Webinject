@@ -7,7 +7,7 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
-Version 1.30 - Coming Soon!
+Version 1.30 - Jan 05, 2005
     - HTTP Basic Authentication support
     - No longer forced to have test cases in strict incremental numbered order
     - Source code compiles with the "use strict" pragma
