@@ -31,7 +31,7 @@ our ($parseresponse,$parseresponse1, $parseresponse2, $parseresponse3, $parseres
 our ($logresponse , $logrequest);
 our ($useragent, $request, $response);
 our ($gui, $monitorenabledchkbx, $latency);
-our ($cookie_jar, $proxy);
+our ($cookie_jar, $proxy, @httpauth);
 our ($xnode, $graphtype, $plotclear, $stop);
 our ($totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
 our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
@@ -42,8 +42,9 @@ our ($gnuplot, $standaloneplot, $globalhttplog);
 our ($currentdatetime, $totalruntime, $starttimer, $endtimer);
 
 
-if (($0 eq 'webinject.pl') or ($0 eq 'webinject.exe')) {  #set flag so we know if it is running standalone or from webinjectgui
-    $gui = 0; engine();
+if (($0 =~ /webinject.pl/) or ($0 =~ /webinject.exe/)) {  #set flag so we know if it is running standalone or from webinjectgui
+    $gui = 0; 
+    engine();
 }
 else {
     $gui = 1;
@@ -60,7 +61,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     our ($casefilecheck, $testnum, $xmltestcases);
     our ($verifypositivenext, $verifynegativenext, $description1, $description2, $method);
         
-    if ($gui == 1) {gui_initial();}
+    if ($gui == 1) { gui_initial(); }
         
     $startruntimer = time();  #timer for entire test run
     $currentdatetime = localtime time;  #get current date and time for results report
@@ -71,15 +72,24 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     #delete files leftover from previous run (do this here so they are whacked each run)
     whackoldfiles();
-      
+        
+    processcasefile();
+        
     #contsruct objects
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
-    if ($proxy) {$useragent->proxy(['http', 'https'], $proxy)}; #add proxy support if it is set in config.xml
         
+    #add proxy support if it is set in config.xml
+    if ($proxy) {
+        $useragent->proxy(['http', 'https'], $proxy)
+    } 
         
-    processcasefile();
+    #add http basic authentication support
+    if (@httpauth) {
+        $useragent->credentials("$httpauth[0]:$httpauth[1]", $httpauth[2],
+                $httpauth[3] => $httpauth[4]);
+    }
         
     print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
         
@@ -90,9 +100,12 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     }
         
         
-    if ($gui != 1){$graphtype = 'lines';} #default to line graph if not in GUI
+    if ($gui != 1){   
+        $graphtype = 'lines'; #default to line graph if not in GUI
+        $standaloneplot = 'on'; #initialize so we don't get warnings when <standaloneplot>on</standaloneplot> is not set in config         
+    } 
         
-    if ($gui == 1){$curgraphtype = $graphtype;}  #set the initial value so we know if the user changes the graph setting from the gui
+    if ($gui == 1){ $curgraphtype = $graphtype; }  #set the initial value so we know if the user changes the graph setting from the gui
         
     gnuplotcfg(); #create the gnuplot config file
         
@@ -390,7 +403,7 @@ sub writeinitialstdout {  #write opening tags for STDOUT
 
     print STDOUT 
 qq|
-Starting Webinject Engine... 
+Starting WebInject Engine... 
 -------------------------------------------------------
 |; 
 }
@@ -444,7 +457,7 @@ sub httpget {  #send http request and read response
     #print $request->as_string; print "\n\n";
         
     $starttimer = time();
-    $response = $useragent->simple_request($request);
+    $response = $useragent->request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
@@ -461,7 +474,7 @@ sub httppost {  #send http request and read response
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
     $starttimer = time();
-    $response = $useragent->simple_request($request);
+    $response = $useragent->request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
@@ -723,7 +736,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
         
     undef @casefilelist; #empty the array
         
-    if ($#ARGV < 0) {  #if testcase filename is not passed on the command line, use config.xml
+    if ($#ARGV < 1) {  #if testcase filename is not passed on the command line, use config.xml
             
         open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
         @configfile = <CONFIG>;  #read the file into an array
@@ -745,7 +758,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
         }
     }
-    else {  # use testcase filename passed on command line (config.xml is not used at all, even for other things)
+    else {  #use testcase filename passed on command line (config.xml is not used at all, even for other things)
             
         undef $xnode; #reset xnode
         undef $xpath; #reset xpath
@@ -786,7 +799,9 @@ sub processcasefile {  #get test case files to run (from command line or config 
         if (/<useragent>/) {   
             $_ =~ /<useragent>(.*)<\/useragent>/;
             $setuseragent = $1;
-            if ($setuseragent) { $useragent->agent($setuseragent); }  #http useragent that will show up in webserver logs
+            if ($setuseragent) { #http useragent that will show up in webserver logs
+                $useragent->agent($setuseragent);
+            }  
             #print "\n$setuseragent \n\n";
         }
          
@@ -806,6 +821,16 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $_ =~ /<standaloneplot>(.*)<\/standaloneplot>/;
             $standaloneplot = $1;
             #print "\nstandaloneplot \n\n";
+        }
+            
+        if (/<httpauth>/) {        
+            $_ =~ /<httpauth>(.*)<\/httpauth>/;
+            @httpauth = split (/:/, $1);
+            if ($#httpauth != 4) {
+                print STDERR "\nSorry, httpauth should have 5 fields delimited by colons...\n"; 
+                undef @httpauth;
+            }
+            #print "\nhttpauth \n\n";
         }
             
     }  
@@ -914,6 +939,7 @@ sub httplog {  #write requests and responses to http.log file
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
         
     our (%months, $date, $time, $mon, $mday, $hours, $min, $sec, $year);
+    #our (%months, $date, $time, $mon, $mday, $hours, $min, $sec, $year, $value);
         
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
     unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
@@ -921,6 +947,7 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
         %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
                    "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
             
+        #local ($value) = @_; 
         my $value = @_; 
         $date = scalar localtime; 
         ($mon, $mday, $hours, $min, $sec, $year) = $date =~ 
