@@ -166,7 +166,14 @@ sub gui_status_passed {
 } 
 #------------------------------------------------------------------
 sub gui_status_failed {
-    $status_window->insert("end", "FAILED ($1$2)\n"); $status_window->see("end");
+    if ($1 and $2)
+    {
+        $status_window->insert("end", "FAILED ($1$2)\n"); $status_window->see("end");
+    }
+    else
+    {
+        $status_window->insert("end", "FAILED\n"); $status_window->see("end");
+    }
 }
 #------------------------------------------------------------------
 sub gui_final {
