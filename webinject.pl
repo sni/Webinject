@@ -45,9 +45,9 @@ sub engine
     $startruntimer = time();  #timer for entire test run
     $currentdatetime = localtime time;  #get current date and time for results report
 
-    open(HTTPLOGFILE, ">http.log") || die "\nERROR: Failed to open http.log file\n\n";   
+    open(HTTPLOGFILE, ">http.log") or die "\nERROR: Failed to open http.log file\n\n";   
 
-    open(RESULTS, ">results.html") || die "\nERROR: Failed to open results.html file\n\n";    
+    open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
       
     writeinitialhtml();
        
@@ -56,7 +56,7 @@ sub engine
     #contsruct objects
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
-    $useragent->agent('WebInject');  #set http useragent that will show up in webserver logs
+    $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
 
 
     $totalruncount = 0;
@@ -373,7 +373,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
 
     if ($#ARGV < 0) #if testcase filename is not passed on the command line, use config.xml
     {
-        open(CONFIG, "config.xml") || die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
+        open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
         @configfile = <CONFIG>;  #Read the file into an array
         
         #parse test case file names from config.xml and build array
@@ -421,7 +421,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
 #------------------------------------------------------------------
 sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml parser doesn't puke
 
-    open(XMLTOCONVERT, "$currentcasefile") || die "\nError: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
     
     $casecount = 0;
@@ -438,7 +438,7 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
 
     close(XMLTOCONVERT);   
 
-    open(XMLTOCONVERT, ">$currentcasefile") || die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
     close(XMLTOCONVERT);
 }
@@ -448,7 +448,7 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
     
     if ($casecount == 1) 
     {
-        open(XMLTOCONVERT, "$currentcasefile") || die "\nError: Failed to open test case file\n\n";  #open file handle   
+        open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
         @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
         
         for(@xmltoconvert)
@@ -457,7 +457,7 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         }       
         close(XMLTOCONVERT);
         
-        open(XMLTOCONVERT, ">$currentcasefile") || die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+        open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
         print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
         close(XMLTOCONVERT);
     }
@@ -466,7 +466,7 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
 #------------------------------------------------------------------
 sub cleancases {  #cleanup conversions made to file for ampersands and single testcase instance
 
-    open(XMLTOCONVERT, "$currentcasefile") || die "\nError: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
     
     foreach (@xmltoconvert)
@@ -478,7 +478,7 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
 
     close(XMLTOCONVERT);   
 
-    open(XMLTOCONVERT, ">$currentcasefile") || die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
     close(XMLTOCONVERT);
 }
