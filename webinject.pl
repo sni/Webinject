@@ -24,7 +24,7 @@ use HTTP::Cookies;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
 use Getopt::Long;
-use Crypt::SSLeay;
+use Crypt::SSLeay;  #for SSL/HTTPS (you may comment this out if you don't need it)
 #use Data::Dumper;  #to dump hashes for debugging   
 
 
