@@ -36,14 +36,15 @@ use Tk::ProgressBar::Mac;
 $| = 1; #don't buffer output to STDOUT
 
 
+ 
 $mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
-                      -width  => '635', 
-                      -height => '700', 
+                      -width  => '650', 
+                      -height => '650', 
                       -bg     => '#666699',
                       );
 $mw->InitStderr; #redirect all STDERR to a window
-
-
+ 
+ 
 $mw->update();
 $icon = $mw->Photo(-file => 'icon.gif');
 $mw->iconimage($icon);
@@ -55,30 +56,30 @@ $mw ->Label(-image => 'logogif',
             )->place(qw/-x 235 -y 12/); $mw->update();
 
 
-$mw ->Label(-text  => 'Test Case File:',
+$mw ->Label(-text  => 'Engine Status:',
             -bg    => '#666699'
-            )->place(qw/-x 25 -y 120/); $mw->update();
+            )->place(qw/-x 25 -y 110/); $mw->update();
 
 
-$out_window = $mw->Scrolled(ROText,  #output window 
+$out_window = $mw->Scrolled(ROText,  #engine status window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
-                   -width       => '80',
-                   -height      => '12',
-                  )->place(qw/-x 25 -y 138/); $mw->update(); 
+                   -width       => '85',
+                   -height      => '7',
+                  )->place(qw/-x 25 -y 128/); $mw->update(); 
 
 
 $mw ->Label(-text  => 'Test Case Status:',
             -bg    => '#666699'
-            )->place(qw/-x 25 -y 318/); $mw->update(); 
+            )->place(qw/-x 25 -y 238/); $mw->update(); 
 
 
-$status_window = $mw->Scrolled(ROText,  #status window 
+$status_window = $mw->Scrolled(ROText,  #test case status window 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
-                   -width       => '80',
-                   -height      => '24',
-                  )->place(qw/-x 25 -y 336/); $mw->update();
+                   -width       => '85',
+                   -height      => '26',
+                  )->place(qw/-x 25 -y 256/); $mw->update();
 
 
 $rtc_button = $mw->Button->Compound;
@@ -92,7 +93,7 @@ $rtc_button = $mw->Button(-width              => '85',
                           -borderwidth        => '3',
                           -image              => $rtc_button,
                           -command            => sub{engine();}
-                          )->place(qw/-x 25 -y 85/); $mw->update();
+                          )->place(qw/-x 25 -y 75/); $mw->update();
 
 
 $exit_button = $mw->Button->Compound;
@@ -106,12 +107,12 @@ $exit_button = $mw->Button(-width              => '40',
                            -borderwidth        => '3',
                            -image              => $exit_button,
                            -command            => sub{exit;}
-                           )->place(qw/-x 580 -y 5/); $mw->update();
+                           )->place(qw/-x 596 -y 5/); $mw->update();
 
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
-                                )->place(qw/-x 150 -y 85/); $mw->update();
+                                )->place(qw/-x 150 -y 75/); $mw->update();
 
 
 
@@ -136,7 +137,7 @@ sub engine
     
     $currentdatetime = localtime time;  #get current date and time for results report
 
-    $out_window->insert("end", "\nStarting Webinject Engine...  see results.html file for output \n\n\n"); $out_window->see("end");
+    $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
     
     open(HTTPLOGFILE, ">http.log") || die "\nERROR: Failed to open http.log file\n\n";   
 
@@ -162,14 +163,15 @@ sub engine
         
         $testnum = 1;
         
+        $out_window->insert("end", "processing test case file:\n$currentcasefile\n\n"); $out_window->see("end");
+     
         convtestcases();
         
         $xmltestcases = XMLin("./$currentcasefile"); #slurp test case file to parse
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #print keys from dereferenced hash
         
-        $out_window->insert("end", "completed preprocessing test case file:\n$currentcasefile\nbeginning execution \n\n"); $out_window->see("end");
-     
+        
      
         #special handling for when only one test case exists (hash is referenced different than with multiples due to how the parser formats the hash)
         if ($casecount == 1)
@@ -281,7 +283,7 @@ sub engine
     $endruntimer = time();
     $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
 
-    $out_window->insert("end", "\nExecution Finished\n\n"); $out_window->see("end");
+    $out_window->insert("end", "Execution Finished... see results.html file for detailed output"); $out_window->see("end");
     
     $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime  seconds\n");
     $status_window->insert("end", "\nTest Cases Run: $totalruncount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
