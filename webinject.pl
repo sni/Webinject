@@ -164,8 +164,6 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $isfailure = 0;
                     
                 if ($gui == 1){
-                    gui_statusbar();  #update the statusbar
-                        
                     unless ($monitorenabledchkbx eq 'monitor_off') {  #don't do this if monitor is disabled in gui
                         if ("$curgraphtype" ne "$graphtype") {  #check to see if the user changed the graph setting
                             gnuplotcfg();  #create the gnuplot config file since graph setting changed
@@ -271,8 +269,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                     
                 if ($method) {
-                    if ($method eq "get") {httpget();}
-                    elsif ($method eq "post") {httppost();}
+                    if ($method eq "get") { httpget(); }
+                    elsif ($method eq "post") { httppost(); }
                     else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
                 }
                 else {   
@@ -288,7 +286,9 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 plotit();  #call the external plotter to create a graph
                  
-                if ($gui == 1) {gui_updatemontab();}  #update monitor with the newly rendered plot graph 
+                if ($gui == 1) { 
+                    gui_updatemontab();  #update monitor with the newly rendered plot graph 
+                }   
                     
                     
                 parseresponse();  #grab string from response to send later
@@ -303,7 +303,9 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         print STDOUT qq|TEST CASE FAILED \n|;
                     }
                     print RESULTSXML qq|            <success>false</success>\n|;
-                    if ($gui == 1){gui_status_failed();}
+                    if ($gui == 1){ 
+                        gui_status_failed();
+                    }
                     $casefailedcount++;
                 }
                 else {
@@ -315,7 +317,9 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         print STDOUT qq|TEST CASE PASSED \n|;
                     }
                     print RESULTSXML qq|            <success>true</success>\n|;
-                    if ($gui == 1){gui_status_passed();}
+                    if ($gui == 1){
+                        gui_status_passed(); 
+                    }
                     $casepassedcount++;
                 }
                     
@@ -341,18 +345,22 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 $totalruncount++;
                     
+                if ($gui == 1) { 
+                    gui_statusbar();  #update the statusbar
+                }   
+                    
                 if ($latency > $maxresponse) {$maxresponse = $latency;}  #set max response time
                 if ($latency < $minresponse) {$minresponse = $latency;}  #set min response time
                 $totalresponse = ($totalresponse + $latency);  #keep total of response times for calculating avg 
                 $avgresponse = (int(1000 * ($totalresponse / $totalruncount)) / 1000);  #avg response rounded to thousandths
                     
-                if ($gui == 1) {gui_updatemonstats();}  #update timers and counts in monitor tab   
+                if ($gui == 1) { gui_updatemonstats(); }  #update timers and counts in monitor tab   
                     
                 #break from sub if user presses stop button in gui    
                 if ($stop eq 'yes') {
                     finaltasks();
                     $stop = 'no';
-                    return "";  #break from sub
+                    return;  #break from sub
                 }
                     
                 if ($sleep) {  #if a sleep value is set in the test case, sleep that amount
