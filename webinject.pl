@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.31";
+our $version="1.32";
 
 use strict;
 use LWP;
@@ -218,6 +218,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) { convertbackxml($logresponse); }  
                 $sleep = $xmltestcases->{case}->{$testnum}->{sleep}; if ($sleep) { convertbackxml($sleep); }
                 $errormessage = $xmltestcases->{case}->{$testnum}->{errormessage}; if ($errormessage) { convertbackxml($errormessage); }    
+                    
                     
                 if ($description1) {  #if we hit a dummy record, skip it
                     if ($description1 =~ /dummy test case/) {
