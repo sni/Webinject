@@ -175,13 +175,13 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         convtestcases();
             
         fixsinglecase();
-            
-        $xmltestcases = XMLin("$dirname"."$currentcasefile".".tmp"); #slurp test case file to parse
+          
+        $xmltestcases = XMLin("$dirname"."$currentcasefile".".$$".".tmp"); #slurp test case file to parse
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #for debug, print keys from dereferenced hash
             
         #delete the temp file as soon as we are done reading it    
-        if (-e "$dirname"."$currentcasefile".".tmp") { unlink "$dirname"."$currentcasefile".".tmp"; }        
+        if (-e "$dirname"."$currentcasefile".".$$".".tmp") { unlink "$dirname"."$currentcasefile".".$$".".tmp"; }        
             
             
         $repeat = $xmltestcases->{repeat};  #grab the number of times to iterate test case file
@@ -1352,7 +1352,7 @@ sub convtestcases {
         
     close(XMLTOCONVERT);   
         
-    open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle to temp file  
+    open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle to temp file  
     print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
     close(XMLTOCONVERT);
 }
@@ -1364,7 +1364,7 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         
     if ($casecount == 1) {
             
-        open(XMLTOCONVERT, "$dirname"."$currentcasefile".".tmp") or die "\nError: Failed to open temp file\n\n";  #open file handle   
+        open(XMLTOCONVERT, "$dirname"."$currentcasefile".".$$".".tmp") or die "\nError: Failed to open temp file\n\n";  #open file handle   
         @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
             
         for(@xmltoconvert) { 
@@ -1372,7 +1372,7 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         }       
         close(XMLTOCONVERT);
             
-        open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle   
+        open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle   
         print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
         close(XMLTOCONVERT);
     }
