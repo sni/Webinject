@@ -194,11 +194,11 @@ sub gui_final {
 
     if ($failedcount > 0)  #change status color to reflect failure or all tests passed
         {
-            $status_ind->configure(-background  => '#FF0000');  #red
+            $status_ind->configure(-background  => '#FF3333');  #red
         }
     else
         {
-            $status_ind->configure(-background  => '#00FF00');  #green
+            $status_ind->configure(-background  => '#009900');  #green
         }
 
                            
