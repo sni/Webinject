@@ -225,7 +225,9 @@ $montab_canvas = $mon_tab->Canvas(-width        => '719',
 $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
                                             -height       => '240',
                                             -background   => '#EFEFEF',
-                                           )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph
+                                           )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph)
+           
+
                                              
 
 $clear_graph = $mon_tab->Button->Compound;
@@ -238,7 +240,7 @@ $clear_graph = $mon_tab->Button(-width         => '60',
                            -activeforeground   => '#FFFFFF',
                            -borderwidth        => '3',
                            -image              => $clear_graph,
-                           -command            => sub{cleargraph();}
+                           -command            => sub{gui_cleargraph_button();}
                           )->place(qw/-x 630 -y 310/); $mw->update();
 
 
@@ -276,6 +278,20 @@ $montab_buttoncanvas->Radiobutton(-value                  => 'impulses',
                                  )->place(qw/-x 170 -y 2/); $mw->update();
                                  
 
+
+$montab_buttoncanvas->Label(-text  => 'No Graph',
+                            -bg    => '#666699',
+                            -fg    => 'white',
+                           )->place(qw/-x 349 -y 4/); $mw->update();
+$montab_buttoncanvas->Radiobutton(-value                  => 'nograph',
+                                  -variable               => \$graphtype,
+                                  -background             => '#666699',
+                                  -activebackground       => '#666699',
+                                  -highlightbackground    => '#666699',
+                                  -command            => sub{gui_cleargraph();}  #remove graph from view
+                                 )->place(qw/-x 320 -y 2/); $mw->update();
+                                 
+                                 
 
 
 $stop_button = $mw->Button->Compound;
@@ -442,29 +458,44 @@ sub gui_final {
 }
 #------------------------------------------------------------------
 sub gui_updatemontab {
+        
     $montab_plotcanvas->place(qw/-x 0 -y 0/); $mw->update();  #replace the canvas (to place graph into)
         
-    if (-e "plot.gif") {  #if plot graphic exists, put it in canvas
+    if ((-e "plot.gif") and (($graphtype ne 'nograph') or ($plotclear ne 'yes'))) {  #if plot graphic exists, put it in canvas
+        
         $montab_plotcanvas->Photo('plotgraph', -file => "plot.gif");    
         $montab_plotcanvas->Label(-image => 'plotgraph')->place(qw/-x 7 -y 0/);
     }
 }    
 #------------------------------------------------------------------
 sub gui_stop {  #flip button and do cleanup when user clicks Stop
-
+        
     $stop_button->placeForget;  #remove the stop botton
     $rtc_button->place(qw/-x 110 -y 65/);  #place the stop button
-    
+        
     $progressbar->set(-1);  #update progressbar back to zero
-    
+        
     $mw->update();
-    
+        
     gui_final();
 }
 #------------------------------------------------------------------
-sub cleargraph {  #remove graph
+sub gui_cleargraph {  #remove graph
     if (-e "plot.gif") { unlink "plot.gif"; }  #delete a plot file if it exists so an old one is never rendered 
-    $montab_plotcanvas->placeForget;
+    $montab_plotcanvas->placeForget;  #remove it from view
+        
+    $montab_plotcanvas->destroy;   #destroy the canvas
+                
+    $montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
+                                                -height       => '240',
+                                                -background   => '#EFEFEF',
+                                               )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph)
+}
+#------------------------------------------------------------------
+sub gui_cleargraph_button {  #remove graph then set value to truncate log
+    
+    gui_cleargraph();
+    
     $plotclear = 'yes';  #set value so engine knows to truncate plot log
 }
 #------------------------------------------------------------------
@@ -496,7 +527,7 @@ please visit www.webinject.org
 for information and documentation.
 
 WebInject is Free and Open Source.
-Licensed under the GNU GPL.
+Licensed under the terms of the GNU GPL.
     |);
 
 }
