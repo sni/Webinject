@@ -43,7 +43,7 @@ if (-e "plot.log") {  unlink "plot.log"; }
 if (-e "plot.plt") {  unlink "plot.plt"; } 
 if (-e "plot.gif") {  unlink "plot.gif"; }    
 
-print "FOOO";
+
 
 #------------------------------------------------------------------
 sub engine  #wrap the whole engine in a subroutine so it can be integrated with the gui 
@@ -80,14 +80,16 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     }
         
         
-    gnuplotcfg(); #create the gnuplot config file if probe is on
+    if ($gui == 1){$curgraphtype = $graphtype;}  #set the initial value so we know if the user changes the graph setting
+    gnuplotcfg(); #create the gnuplot config file
+    
     
     $totalruncount = 0;
     $casepassedcount = 0;
     $casefailedcount = 0;
     $passedcount = 0;
     $failedcount = 0;
-    $STOP = 'NO';
+    $stop = 'no';
         
         
         
@@ -124,8 +126,17 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 }
                     
                 $isfailure = 0;
+                
+                
+                if ($gui == 1){
+                    gui_statusbar();  #update the statusbar
                     
-                if ($gui == 1){gui_statusbar();}
+                    if ("$curgraphtype" ne "$graphtype") {  #check to see if the user changed the graph setting
+                        gnuplotcfg(); #create the gnuplot config file setting changed
+                        $curgraphtype = $graphtype;
+                    }
+                }
+                    
                     
                 $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
                 if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
@@ -303,8 +314,8 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 $totalruncount++;
                 
                 #break from sub if user presses stop button in gui    
-                if ($STOP eq 'YES'){
-                    $STOP = 'NO';
+                if ($stop eq 'yes'){
+                    $stop = 'no';
                     if ($gui == 1){gui_stop();}
                     return "";
                 }
@@ -900,7 +911,9 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
 }
 #------------------------------------------------------------------
 sub gnuplotcfg {  #create gnuplot config file
-        
+    
+    if ($gui != 1){$graphtype = 'lines';} #default to line graph if not in GUI
+
     open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
     print GNUPLOTPLT 
     qq|
@@ -914,7 +927,7 @@ set yrange [0:]
 set bmargin 2
 set tmargin 2
 set timefmt \"%m %d %H %M %S %Y\"
-plot \"plot.log\" using 1:7 title \"Response Times" w lines
+plot \"plot.log\" using 1:7 title \"Response Times" w $graphtype
 |;      
     close(GNUPLOTPLT);
         
