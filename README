@@ -8,10 +8,10 @@ Release History:
 
 
 Version 1.12 - July 28, 2004
-    -Added test case file parameter for repeat
+    -Added test case file parameter 'repeat', to run a test case file multiple times
     -GUI options added for Minimal Output and Response Timer Output
     -Option added to config.xml to define a custome User-Agent string to be sent in HTTP headers
-    -XPath Node selection option added to optional commandline parameters
+    -XPath Node selection option added to optional command line parameters
     -Bug fix for GUI Restart button
     
 Version 1.10 - June 23, 2004
