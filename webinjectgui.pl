@@ -173,8 +173,7 @@ $timers_checkbx = $mw->Checkbutton(-text        => '',  #using a text widget ins
                         )->place(qw/-x 170 -y 627/); $mw->update();
                         
                         
-                        
-                        
+ 
 
 #load the Engine
 if (-e "./webinject.pl") {
@@ -231,8 +230,13 @@ sub gui_initial {   #this runs when engine is first loaded
     $out_window->insert("end", "Starting Webinject Engine... \n\n"); $out_window->see("end");
 }
 #------------------------------------------------------------------
-sub gui_restart {
-    exec 'perl ./webinjectgui.pl';  # kill the entire app and restart it
+sub gui_restart { # kill the entire app and restart it
+    if ($0 =~ /webinjectgui.pl/) {
+        exec 'perl ./webinjectgui.pl';
+    }
+    if ($0 =~ /webinjectgui.exe/) {
+        exec './webinjectgui.exe';
+    }
 }
 #------------------------------------------------------------------
 sub gui_processing_msg {
