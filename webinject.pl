@@ -226,7 +226,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     }
                 }
                     
-                print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
+                print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br />\n|;
                 unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT qq|Test:  $currentcasefile - $testnum \n|;
                 }
@@ -241,7 +241,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 print RESULTSXML qq|        <testcase id="$testnum">\n|;
                     
                 if ($description1) {
-                    print RESULTS qq|$description1 <br>\n|; 
+                    print RESULTS qq|$description1 <br />\n|; 
                     unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|$description1 \n|;
                     }
@@ -249,17 +249,17 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                     
                 if ($description2) {
-                    print RESULTS qq|$description2 <br>\n|;
+                    print RESULTS qq|$description2 <br />\n|;
                     unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|$description2 \n|;
                     }
                     print RESULTSXML qq|            <description2>$description2</description2>\n|; 
                 }
                     
-                print RESULTS qq|<br>\n|;
+                print RESULTS qq|<br />\n|;
                     
                 if ($verifypositive) {
-                    print RESULTS qq|Verify: "$verifypositive" <br>\n|;
+                    print RESULTS qq|Verify: "$verifypositive" <br />\n|;
                     unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|Verify: "$verifypositive" \n|;
                     }
@@ -267,7 +267,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                     
                 if ($verifynegative) { 
-                    print RESULTS qq|Verify Negative: "$verifynegative" <br>\n|;
+                    print RESULTS qq|Verify Negative: "$verifynegative" <br />\n|;
                     unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|Verify Negative: "$verifynegative" \n|;
                     }
@@ -275,7 +275,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                     
                 if ($verifypositivenext) { 
-                    print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
+                    print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br />\n|;
                     unless ($nooutput) { #skip regular STDOUT output  
                         print STDOUT qq|Verify On Next Case: "$verifypositivenext" \n|;
                     }
@@ -283,7 +283,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                     
                 if ($verifynegativenext) { 
-                    print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
+                    print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br />\n|;
                     unless ($nooutput) { #skip regular STDOUT output  
                         print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" \n|;
                     }
@@ -319,13 +319,13 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($isfailure > 0) {  #if any verification fails, test case is considered a failure
                     if ($errormessage) { #Add defined error message to the output 
-                        print RESULTS qq|<b><font color=red>TEST CASE FAILED : $errormessage</font></b><br>\n|;
+                        print RESULTS qq|<b><span class="fail">TEST CASE FAILED : $errormessage</span></b><br />\n|;
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|TEST CASE FAILED : $errormessage\n|;
                         }
                     }
                     else { #print regular error output
-                        print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
+                        print RESULTS qq|<b><span class="fail">TEST CASE FAILED</span></b><br />\n|;
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|TEST CASE FAILED\n|;
                         }
@@ -346,7 +346,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     $casefailedcount++;
                 }
                 else {
-                    print RESULTS qq|<b><font color=green>TEST CASE PASSED</font></b><br>\n|;
+                    print RESULTS qq|<b><span class="pass">TEST CASE PASSED</span></b><br />\n|;
                     unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|TEST CASE PASSED \n|;
                     }
@@ -358,7 +358,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                     
                     
-                print RESULTS qq|Response Time = $latency sec <br>\n|;
+                print RESULTS qq|Response Time = $latency sec <br />\n|;
                 if ($gui == 1) { gui_timer_output(); } 
                 unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT qq|Response Time = $latency sec \n|;
@@ -367,7 +367,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 print RESULTSXML qq|        </testcase>\n\n|;
                     
-                print RESULTS qq|<br>\n------------------------------------------------------- <br>\n\n|;
+                print RESULTS qq|<br />\n------------------------------------------------------- <br />\n\n|;
                     
                 unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set   
                     print STDOUT qq|------------------------------------------------------- \n|;
@@ -425,23 +425,27 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 sub writeinitialhtml {  #write opening tags for results file
         
     print RESULTS 
-qq|    
-<html>
+qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title>WebInject Test Results</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
     <style type="text/css">
-        .title{FONT: 12px verdana, arial, helvetica, sans-serif; font-weight: bold}
-        .text{FONT: 10px verdana, arial, helvetica, sans-serif}
-        body {background-color: #F5F5F5;
-              font-family: verdana, arial, helvetica, sans-serif;
-              font-size: 10px;
-              scrollbar-base-color: #999999;
-              color: #000000;}
+        body {
+            background-color: #F5F5F5;
+            color: #000000;
+            font-family: Verdana, Arial, Helvetica, sans-serif; 
+            font-size: 10px;
+        }
+        .pass { color: Green }
+        .fail { color: Red }
     </style>
 </head>
 <body>
-<hr>
--------------------------------------------------------<br>
+<hr />
+-------------------------------------------------------<br />
 |; 
 }
 #------------------------------------------------------------------
@@ -459,22 +463,22 @@ sub writefinalhtml {  #write summary and closing tags for results file
         
     print RESULTS
 qq|    
-<br><hr><br>
+<br /><hr /><br />
 <b>
-Start Time: $currentdatetime <br>
-Total Run Time: $totalruntime seconds <br>
-<br>
-Test Cases Run: $totalruncount <br>
-Test Cases Passed: $casepassedcount <br>
-Test Cases Failed: $casefailedcount <br>
-Verifications Passed: $passedcount <br>
-Verifications Failed: $failedcount <br>
-<br>
-Average Response Time: $avgresponse seconds <br>
-Max Response Time: $maxresponse seconds <br>
-Min Response Time: $minresponse seconds <br>
+Start Time: $currentdatetime <br />
+Total Run Time: $totalruntime seconds <br />
+<br />
+Test Cases Run: $totalruncount <br />
+Test Cases Passed: $casepassedcount <br />
+Test Cases Failed: $casefailedcount <br />
+Verifications Passed: $passedcount <br />
+Verifications Failed: $failedcount <br />
+<br />
+Average Response Time: $avgresponse seconds <br />
+Max Response Time: $maxresponse seconds <br />
+Min Response Time: $minresponse seconds <br />
 </b>
-<br>
+<br />
 
 </body>
 </html>
@@ -535,14 +539,14 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifypositive) {
         if ($response->as_string() =~ /$verifypositive/si) {  #verify existence of string in response
-            print RESULTS "<font color=green>Passed Positive Verification</font><br>\n";
+            print RESULTS qq|<span class="pass">Passed Positive Verification</span><br />\n|;
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Positive Verification \n";
             }
             $passedcount++;
         }
         else {
-            print RESULTS "<font color=red>Failed Positive Verification</font><br>\n";
+            print RESULTS qq|<span class="fail">Failed Positive Verification</span><br />\n|;
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed Positive Verification \n";         
             }
@@ -555,7 +559,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifynegative) {
         if ($response->as_string() =~ /$verifynegative/si) {  #verify existence of string in response
-            print RESULTS "<font color=red>Failed Negative Verification</font><br>\n";
+            print RESULTS qq|<span class="fail">Failed Negative Verification</span><br />\n|;
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Negative Verification \n";            
             }
@@ -563,7 +567,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
         else {
-            print RESULTS "<font color=green>Passed Negative Verification</font><br>\n";
+            print RESULTS qq|<span class="pass">Passed Negative Verification</span><br />\n|;
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Negative Verification \n";
             }
@@ -575,14 +579,14 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifylater) {
         if ($response->as_string() =~ /$verifylater/si) {  #verify existence of string in response
-            print RESULTS "<font color=green>Passed Positive Verification (verification set in previous test case)</font><br>\n";
+            print RESULTS qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
             }
             $passedcount++;
         }
         else {
-            print RESULTS "<font color=red>Failed Positive Verification (verification set in previous test case)</font><br>\n";
+            print RESULTS qq|<span class="fail">Failed Positive Verification (verification set in previous test case)</span><br />\n|;
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Failed Positive Verification (verification set in previous test case) \n";            
             }
@@ -596,7 +600,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifylaterneg) {
         if ($response->as_string() =~ /$verifylaterneg/si) {  #verify existence of string in response
-            print RESULTS "<font color=red>Failed Negative Verification (negative verification set in previous test case)</font><br>\n";
+            print RESULTS qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set  
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";     
             }
@@ -604,7 +608,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
         else {
-            print RESULTS "<font color=green>Passed Negative Verification (negative verification set in previous test case)</font><br>\n";
+            print RESULTS qq|<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span><br />\n|;
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Negative Verification (negative verification set in previous test case) \n";
             }
@@ -617,7 +621,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
-        print RESULTS "<font color=green>Passed HTTP Response Code Verification (not in error range)</font><br>\n"; 
+        print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|; 
         unless ($nooutput) { #skip regular STDOUT output 
             print STDOUT "Passed HTTP Response Code Verification (not in error range) \n"; 
         }
@@ -627,13 +631,13 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
     else {
         $response->as_string() =~ /(HTTP\/1.)(.*)/i;
         if ($1) {  #this is true if an HTTP response returned 
-            print RESULTS "<font color=red>Failed HTTP Response Code Verification ($1$2)</font><br>\n"; #($1$2) is http response code
+            print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification ($1$2)</span><br />\n|; #($1$2) is http response code
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is http response code   
             }
         }
         else {  #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
-            print RESULTS "<font color=red>Failed - No Response</font><br>\n"; #($1$2) is http response code
+            print RESULTS qq|<span class="fail">Failed - No Response</span><br />\n|; #($1$2) is http response code
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed - No Response \n"; #($1$2) is http response code   
             }
