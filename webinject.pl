@@ -143,7 +143,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                         
                     unless ($monitorenabledchkbx eq 'monitor_off') {  #don't do this if monitor is disabled in gui
                         if ("$curgraphtype" ne "$graphtype") {  #check to see if the user changed the graph setting
-                            gnuplotcfg();  #create the gnuplot config file since graphsetting changed
+                            gnuplotcfg();  #create the gnuplot config file since graph setting changed
                             $curgraphtype = $graphtype;
                         }
                     }
@@ -269,6 +269,9 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                         }
                         elsif (($^O eq 'MSWin32') and (-e './wgnupl32.exe')) {  #check for Win32 
                             system "wgnupl32.exe", "plot.plt";  #plot it with gnuplot
+                        }
+                        elsif ($gui == 1) {
+                            gui_no_plotter_found();  #if gnuplot not specified, notify on gui
                         }
                     }
                 }
