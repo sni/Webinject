@@ -334,7 +334,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 $totalresponse = ($totalresponse + $latency);  #keep total of response times for calculating avg 
                 $avgresponse = (int(1000 * ($totalresponse / $totalruncount)) / 1000);  #avg response rounded to thousandths
                     
-                if ($gui == 1) {gui_update_timers();}  ##update timers in monitor tab   
+                if ($gui == 1) {gui_updatemonstats();}  #update timers and counts in monitor tab   
                     
                 #break from sub if user presses stop button in gui    
                 if ($stop eq 'yes') {
