@@ -95,9 +95,10 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     } 
         
     #add http basic authentication support
+    #corresponds to:
+    #$useragent->credentials('servername:portnumber', 'realm-name', 'username' => 'password');
     if (@httpauth) {
-        $useragent->credentials("$httpauth[0]:$httpauth[1]", $httpauth[2],
-                $httpauth[3] => $httpauth[4]);
+        $useragent->credentials("$httpauth[0]:$httpauth[1]", $httpauth[2], $httpauth[3] => $httpauth[4]);
     }
         
     #change response delay timeout in seconds if it is set in config.xml      
