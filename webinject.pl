@@ -44,67 +44,67 @@ else {
 sub engine 
 {   
     if ($gui == 1) {gui_initial();}
-    
+        
     $startruntimer = time();  #timer for entire test run
     $currentdatetime = localtime time;  #get current date and time for results report
-
+        
     open(HTTPLOGFILE, ">http.log") or die "\nERROR: Failed to open http.log file\n\n";   
     open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
     open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";   
-    
+        
     print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
-    
+        
     writeinitialhtml();  #write opening tags for results file
     writeinitialstdout();  #write opening tags for STDOUT
-    
+        
     processcasefile();
-    
+        
     #contsruct objects
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
     if ($proxy) {$useragent->proxy(['http', 'https'], $proxy)}; #add proxy support if it is set in config.xml
-
-
+        
+        
     $totalruncount = 0;
     $casepassedcount = 0;
     $casefailedcount = 0;
     $passedcount = 0;
     $failedcount = 0;
-
-
-    
+        
+        
+        
     foreach (@casefilelist) { #process test case files named in config.xml
-
+        
         $currentcasefile = $_;
         #print "\n$currentcasefile\n\n";
-        
+            
         $testnum = 1;
         $casefilecheck = ' ';
-        
+            
         if ($gui == 1){gui_processing_msg();}
-        
+            
         convtestcases();
-        
+            
         fixsinglecase();
-        
+            
         $xmltestcases = XMLin("./$currentcasefile"); #slurp test case file to parse
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #print keys from dereferenced hash
-        
+            
         cleancases();
-        
-        
+            
+            
         while ($testnum <= $casecount) {
-            
+                
             $isfailure = 0;
-            
+                
             if ($gui == 1){gui_statusbar();}
-            
+                
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             if ($verifypositivenext) {$verifylater = $verifypositivenext;}  #grab $verifypositivenext string from previous test case (if it exists)
             if ($verifynegativenext) {$verifylaterneg = $verifynegativenext;}  #grab $verifynegativenext string from previous test case (if it exists)
-            
+                
             #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
             $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g; if ($gui == 1){gui_tc_descript();}}
             $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
@@ -129,60 +129,60 @@ sub engine
             $parseresponse5 = $xmltestcases->{case}->{$testnum}->{parseresponse5}; if ($parseresponse5) {$parseresponse5 =~ s/{AMPERSAND}/&/g; $parseresponse5 =~ s/{TIMESTAMP}/$timestamp/g;} 
             $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
             $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
-            
-            
+                
+                
             print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
             print STDOUT qq|<b>Test:  $currentcasefile - $testnum </b><br>\n|;
-            
+                
             unless ($casefilecheck eq $currentcasefile) {
                 unless ($currentcasefile eq $casefilelist[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
                     print RESULTSXML qq|    </testcases>\n\n|;
                 }
                 print RESULTSXML qq|    <testcases file="$currentcasefile">\n\n|;
             }
-            
+                
             print RESULTSXML qq|        <testcase id="$testnum">\n|;
-            
+                
             if ($description1) {
                 print RESULTS qq|$description1 <br>\n|; 
                 print STDOUT qq|$description1 <br>\n|;
                 print RESULTSXML qq|            <description1>$description1</description1>\n|; 
             }
-            
+                
             if ($description2) {
                 print RESULTS qq|$description2 <br>\n|; 
                 print STDOUT qq|$description2 <br>\n|;
                 print RESULTSXML qq|            <description2>$description2</description2>\n|; 
             }
-            
+                
             print RESULTS qq|<br>\n|;
             print STDOUT qq|<br>\n|;
-            
+                
             if ($verifypositive) {
                 print RESULTS qq|Verify: "$verifypositive" <br>\n|;
                 print STDOUT qq|Verify: "$verifypositive" <br>\n|;
                 print RESULTSXML qq|            <verifypositive>$verifypositive</verifypositive>\n|; 
             }
-            
+                
             if ($verifynegative) { 
                 print RESULTS qq|Verify Negative: "$verifynegative" <br>\n|;
                 print STDOUT qq|Verify Negative: "$verifynegative" <br>\n|;
                 print RESULTSXML qq|            <verifynegative>$verifynegative</verifynegative>\n|; 
             }
-            
+                
             if ($verifypositivenext) { 
                 print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
                 print STDOUT qq|Verify On Next Case: "$verifypositivenext" <br>\n|;
                 print RESULTSXML qq|            <verifypositivenext>$verifypositivenext</verifypositivenext>\n|; 
             }
-            
+                
             if ($verifynegativenext) { 
                 print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
                 print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" <br>\n|;
                 print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|; 
             }
-            
-            
+                
+                
             if($method) {
                 if ($method eq "get") {httpget();}
                 elsif ($method eq "post") {httppost();}
@@ -191,15 +191,15 @@ sub engine
             else {   
                 httpget();  #use "get" if no method is specified  
             }  
-            
-            
+                
+                
             verify();  #verify result from http response
-            
+                
             httplog();  #write to http.log file            
-            
+                
             parseresponse();  #grab string from response to send later
-            
-            
+                
+                
             if ($isfailure > 0) {  #if any verification fails, testcase is considered a failure
                 print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
                 print STDOUT qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
@@ -214,41 +214,41 @@ sub engine
                 if ($gui == 1){gui_status_passed();}
                 $casepassedcount++;
             }
-            
-            
+                
+                
             print RESULTS qq|Response Time = $latency s <br>\n|;
             print STDOUT qq|Response Time = $latency s <br>\n|;
             print RESULTSXML qq|            <responsetime>$latency</responsetime>\n|;
-            
+                
             print RESULTSXML qq|        </testcase>\n\n|;
-            
+                
             print RESULTS qq|<br>\n------------------------------------------------------- <br>\n\n|;
             print STDOUT qq|<br>\n------------------------------------------------------- <br>\n\n|;
-            
+                
             $casefilecheck = $currentcasefile;  #set this so <testcases> xml is only closed after each file is done processing
-            
+                
             $testnum++;
             $totalruncount++;
         }       
     }
-    
-
-
+        
+        
+        
     $endruntimer = time();
     $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
-
-
+        
+        
     if ($gui == 1){gui_final();}
-    
+        
     writefinalhtml();  #write summary and closing tags for results file
     writefinalstdout();  #write summary and closing tags for STDOUT
-    
+        
     print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
-    
+        
     close(HTTPLOGFILE);
     close(RESULTS);
     close(RESULTSXML);
-
+        
 }
 
 
@@ -257,7 +257,7 @@ sub engine
 #  SUBROUTINES
 #------------------------------------------------------------------
 sub writeinitialhtml {  #write opening tags for results file
-
+        
     print RESULTS 
 qq(    
 <html>
@@ -303,7 +303,7 @@ qq(
 }
 #------------------------------------------------------------------
 sub writefinalhtml {  #write summary and closing tags for results file
-
+        
     print RESULTS
 qq(    
 <br><hr><br>
@@ -325,7 +325,7 @@ Verifications Failed: $failedcount <br>
 }
 #------------------------------------------------------------------
 sub writefinalstdout {  #write summary and closing tags for STDOUT
-
+        
     print STDOUT
 qq(    
 <br><hr><br>
@@ -349,40 +349,40 @@ Verifications Failed: $failedcount <br>
 sub httpget {  #send http request and read response
         
     $request = new HTTP::Request('GET',"$url");
-
+        
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
-    
+        
     $starttimer = time();
     $response = $useragent->simple_request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
-    
+        
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
 sub httppost {  #send http request and read response
-    
+        
     $request = new HTTP::Request('POST',"$url");
     $request->content_type('application/x-www-form-urlencoded');
     $request->content($postbody);
-    #print $request->as_string; print "\n\n";
     $cookie_jar->add_cookie_header($request);
-    
+    #print $request->as_string; print "\n\n";
+        
     $starttimer = time();
     $response = $useragent->simple_request($request);
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
-    
+        
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
 sub verify {  #do verification of http response and print status to HTML/XML and UI
-
+        
     if ($verifypositive) {
         if ($response->as_string() =~ /$verifypositive/i) {  #verify existence of string in response
             print RESULTS "<font color=green>Passed Positive Verification</font><br>\n";
@@ -396,9 +396,9 @@ sub verify {  #do verification of http response and print status to HTML/XML and
             $isfailure++;
         }
     }
-
-
-
+        
+        
+        
     if ($verifynegative)
     {
         if ($response->as_string() =~ /$verifynegative/i) {  #verify existence of string in response
@@ -413,9 +413,9 @@ sub verify {  #do verification of http response and print status to HTML/XML and
             $passedcount++;                
         }
     }
-
-
-    
+        
+        
+        
     if ($verifylater) {
         if ($response->as_string() =~ /$verifylater/i) {  #verify existence of string in response
             print RESULTS "<font color=green>Passed Positive Verification (verification set in previous test case)</font><br>\n";
@@ -431,9 +431,9 @@ sub verify {  #do verification of http response and print status to HTML/XML and
         
         $verifylater = '';  #set to null after verification
     }
-    
-    
-    
+        
+        
+        
     if ($verifylaterneg) {
         if ($response->as_string() =~ /$verifylaterneg/i) {  #verify existence of string in response
             print RESULTS "<font color=red>Failed Negative Verification (negative verification set in previous test case)</font><br>\n";
@@ -449,9 +449,9 @@ sub verify {  #do verification of http response and print status to HTML/XML and
         
         $verifylaterneg = '';  #set to null after verification
     }
-
-
-
+        
+        
+    
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
         print RESULTS "<font color=green>Passed HTTP Response Code Verification (not in error range)</font><br>\n"; 
@@ -470,18 +470,18 @@ sub verify {  #do verification of http response and print status to HTML/XML and
 }
 #------------------------------------------------------------------
 sub parseresponse {  #parse values from responses for use in future request (for session id's, dynamic URL rewriting, etc)
-    
+        
     if ($parseresponse) {
-        
+           
         @parseargs = split (/\|/, $parseresponse);
-        
+            
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
-        
+            
         $resptoparse = $response->as_string;
         if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
             $parsedresult = $1; 
         }
-        
+            
         if ($escape) {
             if ($escape eq 'escape') {
                 $parsedresult = url_escape($parsedresult);
@@ -490,19 +490,19 @@ sub parseresponse {  #parse values from responses for use in future request (for
         
         #print "\n\nParsed String: $parsedresult\n\n";
     }
-    
-    
+        
+        
     if ($parseresponse1) {
-        
+            
         @parseargs = split (/\|/, $parseresponse1);
-        
+            
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
-        
+            
         $resptoparse = $response->as_string;
         if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
             $parsedresult1 = $1; 
         }
-        
+            
         if ($escape) {
             if ($escape eq 'escape') {
                 $parsedresult1 = url_escape($parsedresult1);
@@ -511,19 +511,19 @@ sub parseresponse {  #parse values from responses for use in future request (for
         
         #print "\n\nParsed String: $parsedresult1\n\n";
     }
-    
-    
+        
+        
     if ($parseresponse2) {
-        
+            
         @parseargs = split (/\|/, $parseresponse2);
-        
+            
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
-        
+            
         $resptoparse = $response->as_string;
         if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
             $parsedresult2 = $1; 
         }
-        
+            
         if ($escape) {
             if ($escape eq 'escape') {
                 $parsedresult2 = url_escape($parsedresult2);
@@ -532,19 +532,19 @@ sub parseresponse {  #parse values from responses for use in future request (for
         
         #print "\n\nParsed String: $parsedresult2\n\n";
     }
-    
-    
+        
+        
     if ($parseresponse3) {
-        
+            
         @parseargs = split (/\|/, $parseresponse3);
-        
+            
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
-        
+            
         $resptoparse = $response->as_string;
         if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
             $parsedresult3 = $1; 
         }
-        
+            
         if ($escape) {
             if ($escape eq 'escape') {
                 $parsedresult3 = url_escape($parsedresult3);
@@ -556,11 +556,11 @@ sub parseresponse {  #parse values from responses for use in future request (for
     
     
     if ($parseresponse4) {
-        
+            
         @parseargs = split (/\|/, $parseresponse4);
-        
+            
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
-        
+            
         $resptoparse = $response->as_string;
         if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
             $parsedresult4 = $1; 
@@ -571,42 +571,42 @@ sub parseresponse {  #parse values from responses for use in future request (for
                 $parsedresult4 = url_escape($parsedresult4);
             }
         }
-        
+            
         #print "\n\nParsed String: $parsedresult4\n\n";
     }
-    
-    
+        
+        
     if ($parseresponse5) {
-        
+            
         @parseargs = split (/\|/, $parseresponse5);
-        
+            
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
-        
+            
         $resptoparse = $response->as_string;
         if ($resptoparse =~ /$leftboundary(.*?)$rightboundary/) {
             $parsedresult5 = $1; 
         }
-        
+            
         if ($escape) {
             if ($escape eq 'escape') {
                 $parsedresult5 = url_escape($parsedresult5);
             }
         }
-        
+            
         #print "\n\nParsed String: $parsedresult5\n\n";
     }
-    
+        
 }
 #------------------------------------------------------------------
 sub processcasefile {  #get test case files to run (from command line or config file) and evaluate constants
-    
-    undef @casefilelist; #empty the array
-
-    if ($#ARGV < 0) {  #if testcase filename is not passed on the command line, use config.xml
         
+    undef @casefilelist; #empty the array
+        
+    if ($#ARGV < 0) {  #if testcase filename is not passed on the command line, use config.xml
+            
         open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
         @configfile = <CONFIG>;  #Read the file into an array
-        
+            
         #parse test case file names from config.xml and build array
         foreach (@configfile) {
             
@@ -614,11 +614,11 @@ sub processcasefile {  #get test case files to run (from command line or config 
                 $firstparse = $';  #print "$' \n\n";
                 $firstparse =~ /<\/testcasefile>/;
                 $filename = $`;  #string between tags will be in $filename
-                #print "$filename \n\n";
+                #print "\n$filename \n\n";
                 push @casefilelist, $filename;  #add next filename we grab to end of array
             }
         }    
-        
+            
         if ($casefilelist[0]) {}
         else {
             push @casefilelist, "testcases.xml";  #if no file specified in config.xml, default to testcases.xml
@@ -627,44 +627,44 @@ sub processcasefile {  #get test case files to run (from command line or config 
     else {  # use testcase filename passed on command line 
         push @casefilelist, $ARGV[0];  #if no file specified in config.xml, default to testcases.xml
     }
-    
-    #print "testcase file list: @casefilelist\n\n";
-    
+        
+    #print "\ntestcase file list: @casefilelist\n\n";
+        
     #grab values for constants in config file:
     foreach (@configfile) {
-        
+            
         if (/<baseurl>/) {   
             $firstparse = $';  #print "$' \n\n";
             $firstparse =~ /<\/baseurl>/;
             $baseurl = $`;  #string between tags will be in $baseurl
-            #print "$baseurl \n\n";
+            #print "\n$baseurl \n\n";
         }
-        
+            
         if (/<proxy>/) {   
             $firstparse = $';  #print "$' \n\n";
             $firstparse =~ /<\/proxy>/;
             $proxy = $`;  #string between tags will be in $proxy
-            #print "$proxy \n\n";
+            #print "\n$proxy \n\n";
         }
         
         if (/<globalhttplog>/) {   
             $firstparse = $';  #print "$' \n\n";
             $firstparse =~ /<\/globalhttplog>/;
             $globalhttplog = $`;  #string between tags will be in $globalhttplog
-            #print "$globalhttplog \n\n";
+            #print "\n$globalhttplog \n\n";
         }
     }  
-    
+        
     close(CONFIG);
 }
 #------------------------------------------------------------------
 sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml parser doesn't puke
-
+        
     open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
-    
+        
     $casecount = 0;
-    
+        
     foreach (@xmltoconvert){ 
         
         s/&/{AMPERSAND}/g;  #convert ampersands (&) &'s are malformed XML
@@ -674,9 +674,9 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
             $casecount++; 
         }    
     }  
-
+        
     close(XMLTOCONVERT);   
-
+        
     open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
     close(XMLTOCONVERT);
@@ -684,7 +684,7 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
 #------------------------------------------------------------------
 sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
                    #add a dummy testcase to fix this situation
-    
+        
     if ($casecount == 1) {
         
         open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
@@ -699,23 +699,23 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
         close(XMLTOCONVERT);
     }
-
+        
 }
 #------------------------------------------------------------------
 sub cleancases {  #cleanup conversions made to file for ampersands and single testcase instance
-
+        
     open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
-    
+        
     foreach (@xmltoconvert) { 
         
         s/{AMPERSAND}/&/g;  #convert ampersands (&) &'s are malformed XML
         
         s/<case id="2" description1="dummy test case"\/><\/testcases>/<\/testcases>/g;  #add dummy test case to end of file
     }  
-
+        
     close(XMLTOCONVERT);   
-
+        
     open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
     close(XMLTOCONVERT);
@@ -723,19 +723,19 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
 #------------------------------------------------------------------
 sub url_escape {  #escapes difficult characters with %hexvalue
     #LWP handles url encoding already, but use this to escape valid chars that LWP won't convert (like +)
-    
+        
     my @a = @_;  # make a copy of the arguments
     map { s/[^-\w.,!~'()\/ ]/sprintf "%%%02x", ord $&/eg } @a;
     return wantarray ? @a : $a[0];
-
+        
 }
 #------------------------------------------------------------------
 sub httplog {  #write requests and responses to http.log file
-    
+        
     if ($logrequest && ($logrequest =~ /yes/i)) {  #http request - log setting per test case
         print HTTPLOGFILE $request->as_string, "\n\n";
     } 
-    
+        
     if ($logresponse && ($logresponse =~ /yes/i)) {  #http response - log setting per test case
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
@@ -744,11 +744,11 @@ sub httplog {  #write requests and responses to http.log file
         print HTTPLOGFILE $request->as_string, "\n\n";
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
-    
+        
     if (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0)) { #global http log setting - onfail mode
         print HTTPLOGFILE $request->as_string, "\n\n";
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
-
+        
 }
 #------------------------------------------------------------------
