@@ -48,7 +48,7 @@ if (-e "logo.gif") {  #if icon graphic exists, use it
     $mw->update();
     $icon = $mw->Photo(-file => 'icon.gif');
     $mw->iconimage($icon);
-}
+}       
 
 
 if (-e "logo.gif") {  #if logo graphic exists, use it
@@ -58,6 +58,61 @@ if (-e "logo.gif") {  #if logo graphic exists, use it
               )->place(qw/-x 305 -y 12/); $mw->update();
 }
 
+
+
+
+$menubar = $mw->Frame(qw/-relief flat -borderwidth 2/);
+$menubar->place(qw/-x 0 -y 0/);
+$menubar->configure(-background => '#666699');  #menu outline
+
+$filemenu = $menubar->Menubutton(-text              => 'File',
+                                 -underline         => '0',
+                                 -foreground        => 'white',
+                                 -background        => '#666699',
+                                 -activebackground  => '#666699',
+                                 -activeforeground  => 'black',
+                                 -tearoff           => '0',
+                                 )->pack(qw/-side left/);
+                                 
+$filemenu->command(-label               => 'Restart', 
+                   -background          => '#666699',
+                   -activebackground    => '#EFEFEF',
+                   -foreground          => 'white',
+                   -activeforeground    => 'black',
+                   -command             => sub{gui_restart();}
+                  );
+                  
+$filemenu->command(-label               => 'Exit', 
+                   -background          => '#666699',
+                   -activebackground    => '#EFEFEF',
+                   -foreground          => 'white',
+                   -activeforeground    => 'black',
+                   -command             => sub{exit;}
+                  );                  
+
+$viewmenu = $menubar->Menubutton(-text              => 'View',
+                             -underline         => '0',
+                             -foreground        => 'white',
+                             -background        => '#666699',
+                             -activebackground  => '#666699',
+                             -activeforeground  => 'black',
+                             -tearoff           => '0',
+                             )->pack(qw/-side left/);
+
+$aboutmenu = $menubar->Menubutton(-text              => 'About',
+                                  -underline         => '0',
+                                  -foreground        => 'white',
+                                  -background        => '#666699',
+                                  -activebackground  => '#666699',
+                                  -activeforeground  => 'black',
+                                  -tearoff           => '0',
+                                 )->pack(qw/-side left/);
+                             
+                             
+
+      
+      
+      
 
 $mw->Label(-text  => 'Engine Status:',
            -bg    => '#666699',
@@ -88,7 +143,7 @@ $statustab_canvas = $status_tab->Canvas(-width          => '719',
                                         -height         => '365',
                                         -highlightcolor => '#CCCCCC',
                                         -background     => '#EFEFEF',
-                                       )->pack(); $mw->update();  #canvas to fill tab to place widgets into
+                                       )->pack(); $mw->update();  #canvas to fill tab (to place widgets into)
 
 
 
@@ -149,10 +204,27 @@ $status_window->tagConfigure('green', -foreground => '#009900'); #define tag for
 $montab_canvas = $mon_tab->Canvas(-width        => '719',
                                   -height       => '365',                   
                                   -background   => '#EFEFEF',
-                                 )->pack(); $mw->update();  #canvas to fill tab to place widgets into
+                                 )->pack(); $mw->update();  #canvas to fill tab (to place widgets into)
 
 
+$montab_plotcanvas = $montab_canvas->Canvas(-width        => '718',  
+                                            -height       => '240',
+                                            -background   => '#EFEFEF',
+                                           )->place(); $mw->update();  #canvas to place graph into (don't place it until we render the plot graph
+                                             
 
+$clear_graph = $mon_tab->Button->Compound;
+$clear_graph->Text(-text => "Clear Graph");
+$clear_graph = $mon_tab->Button(-width         => '60',
+                           -height             => '13',
+                           -background         => '#EFEFEF',
+                           -activebackground   => '#666699',
+                           -foreground         => '#000000',
+                           -activeforeground   => '#FFFFFF',
+                           -borderwidth        => '3',
+                           -image              => $clear_graph,
+                           -command            => sub{cleargraph();}
+                          )->place(qw/-x 630 -y 310/); $mw->update();
 
 
 
@@ -160,11 +232,6 @@ $montab_buttoncanvas = $montab_canvas->Canvas(-width        => '700',
                                               -height       => '24',
                                               -background   => '#666699',
                                              )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
-
-
-
-
-
 
 
 $radiolinegraph = $montab_buttoncanvas->Label(-text  => 'Line Graph',
@@ -193,37 +260,6 @@ $montab_buttoncanvas->Radiobutton(-value                  => 'impulses',
                                   -highlightbackground    => '#666699',
                                  )->place(qw/-x 170 -y 2/); $mw->update();
                                  
-                                 
-
-
-$restart_button = $mw->Button->Compound;
-$restart_button->Text(-text => "Restart");
-$restart_button = $mw->Button(-width              => '50',
-                              -height             => '13',
-                              -background         => '#EFEFEF',
-                              -activebackground   => '#666699',
-                              -foreground         => '#000000',
-                              -activeforeground   => '#FFFFFF',
-                              -borderwidth        => '3',
-                              -image              => $restart_button,
-                              -command            => sub{gui_restart();}
-                             )->place(qw/-x 5 -y 5/); $mw->update();
-
-
-
-$exit_button = $mw->Button->Compound;
-$exit_button->Text(-text => "Exit");
-$exit_button = $mw->Button(-width              => '50',
-                           -height             => '13',
-                           -background         => '#EFEFEF',
-                           -activebackground   => '#666699',
-                           -foreground         => '#000000',
-                           -activeforeground   => '#FFFFFF',
-                           -borderwidth        => '3',
-                           -image              => $exit_button,
-                           -command            => sub{exit;}
-                          )->place(qw/-x 687 -y 5/); $mw->update();
-
 
 
 
@@ -309,6 +345,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $casepassedcount = '';
     $totalruntime = '';
     $stop = 'no';
+    $plotclear = 'no';
 
 
     $out_window->delete('0.0','end');  #clear window before starting
@@ -389,9 +426,11 @@ sub gui_final {
 }
 #------------------------------------------------------------------
 sub gui_updatemontab {
+    $montab_plotcanvas->place(qw/-x 0 -y 0/); $mw->update();  #replace the canvas (to place graph into)
+        
     if (-e "plot.gif") {  #if plot graphic exists, put it in canvas
-        $montab_canvas->Photo('plotgraph', -file => "plot.gif");    
-        $montab_canvas->Label(-image => 'plotgraph', )->place(qw/-x 8 -y 0/);
+        $montab_plotcanvas->Photo('plotgraph', -file => "plot.gif");    
+        $montab_plotcanvas->Label(-image => 'plotgraph')->place(qw/-x 7 -y 0/);
     }
 }    
 #------------------------------------------------------------------
@@ -403,4 +442,10 @@ sub gui_stop {  #flip button and do cleanup when user clicks Stop
     $progressbar->set(-1);  #update progressbar back to zero
     
     gui_final();
+}
+#------------------------------------------------------------------
+sub cleargraph {  #remove graph
+    if (-e "plot.gif") { unlink "plot.gif"; }  #delete a plot file if it exists so an old one is never rendered 
+    $montab_plotcanvas->placeForget;
+    $plotclear = 'yes';  #set value so engine knows to truncate plot log
 }
