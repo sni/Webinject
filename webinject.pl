@@ -873,21 +873,45 @@ sub processcasefile {  #get test case files to run (from command line or config 
     close(CONFIG);
 }
 #------------------------------------------------------------------
-sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml parser doesn't puke
+sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
+                   #add a dummy testcase to fix this situation
+        
+    my @xmltoconvert;
+        
+    if ($casecount == 1) {
+            
+        open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
+        @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
+            
+        for(@xmltoconvert) { 
+            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/g;  #add dummy test case to end of file   
+        }       
+        close(XMLTOCONVERT);
+            
+        open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+        print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
+        close(XMLTOCONVERT);
+    }
+}
+#------------------------------------------------------------------
+sub convtestcases {  #convert ampersands and certain escaped chars so xml parser doesn't puke
         
     my @xmltoconvert;        
         
     open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
-    @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
+    @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
         
     $casecount = 0;
         
     foreach (@xmltoconvert){ 
-        
-        s/&/{AMPERSAND}/g;  #convert ampersands (&) &'s are malformed XML
-        
-        if ($_ =~ /<case/) #count test cases based on '<case' tag
-        {
+            
+        #convert escaped chars and certain reserved chars to temporary values that the parser can handle
+        #these are converted back later in processing
+        s/&/{AMPERSAND}/g;  
+        s/\\</{LESSTHAN}/g;      
+            
+        #count cases while we are here    
+        if ($_ =~ /<case/) {  #count test cases based on '<case' tag
             $casecount++; 
         }    
     }  
@@ -895,41 +919,22 @@ sub convtestcases {  #convert ampersands in test cases to {AMPERSAND} so xml par
     close(XMLTOCONVERT);   
         
     open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
-    print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
+    print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
-sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
-                   #add a dummy testcase to fix this situation
-        
-    my @xmltoconvert;
-        
-    if ($casecount == 1) {
-        
-        open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
-        @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
-        
-        for(@xmltoconvert) { 
-            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/g;  #add dummy test case to end of file   
-        }       
-        close(XMLTOCONVERT);
-        
-        open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
-        print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
-        close(XMLTOCONVERT);
-    }
-}
-#------------------------------------------------------------------
-sub cleancases {  #cleanup conversions made to file for ampersands and single testcase instance
+sub cleancases {  #cleanup conversions made to file for converted characters and single testcase instance
+                  #this should leave the test case file exatly like it started
         
     my @xmltoconvert;
         
     open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
-    @xmltoconvert = <XMLTOCONVERT>;  #Read the file into an array
+    @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
         
     foreach (@xmltoconvert) { 
             
-        s/{AMPERSAND}/&/g;  #convert ampersands, &'s are malformed XML
+        s/{AMPERSAND}/&/g;
+        s/{LESSTHAN}/\\</g; 
             
         s/<case id="2" description1="dummy test case"\/><\/testcases>/<\/testcases>/g;  #add dummy test case to end of file
     }  
@@ -937,12 +942,13 @@ sub cleancases {  #cleanup conversions made to file for ampersands and single te
     close(XMLTOCONVERT);   
         
     open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
-    print XMLTOCONVERT @xmltoconvert; #overwrite file with converted array
+    print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
     close(XMLTOCONVERT);
 }
 #------------------------------------------------------------------
 sub convertbackxml() {  #converts replaced xml with substitutions
-    $_[0] =~ s/{AMPERSAND}/&/g; 
+    $_[0] =~ s/{AMPERSAND}/&/g;
+    $_[0] =~ s/{LESSTHAN}/</g;
     $_[0] =~ s/{TIMESTAMP}/$timestamp/g;
     $_[0] =~ s/{BASEURL}/$baseurl/g;
     $_[0] =~ s/{PARSEDRESULT}/$parsedresult/g; 
