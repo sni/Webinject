@@ -41,7 +41,7 @@ else {
 
 
 #------------------------------------------------------------------
-sub engine 
+sub engine  #wrap the whole engine in a subroutine so it can be integrated with the gui 
 {   
     if ($gui == 1) {gui_initial();}
         
@@ -50,8 +50,12 @@ sub engine
         
     open(HTTPLOGFILE, ">http.log") or die "\nERROR: Failed to open http.log file\n\n";   
     open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
-    open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";   
-        
+    open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
+    
+    if (-e "plot.log") {  unlink "plot.log"; }#if there is a plot.log from a previous run, delete it
+    if (-e "plot.plt") {  unlink "plot.plt"; }#if there is a plot.plt from a previous run, delete it
+    if (-e "plot.png") {  unlink "plot.png"; }#if there is a plot.plt from a previous run, delete it    
+      
     #contsruct objects
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
@@ -70,7 +74,8 @@ sub engine
     }
         
         
-        
+    gnuplotcfg(); #create the gnuplot config file if probe is on
+    
     $totalruncount = 0;
     $casepassedcount = 0;
     $casefailedcount = 0;
@@ -225,8 +230,12 @@ sub engine
                     
                 verify();  #verify result from http response
                     
-                httplog();  #write to http.log file            
-                    
+                httplog();  #write to http.log file
+                
+                plotlog($latency);  #send perf data to log file for plotting
+                `wgnupl32.exe plot.plt`;  #plot it with gnuplot
+                if ($gui == 1) {gui_updatemontab();}                
+                
                 parseresponse();  #grab string from response to send later
                     
                     
@@ -285,7 +294,6 @@ sub engine
     }
         
         
-        
     $endruntimer = time();
     $totalruntime = (int(10 * ($endruntimer - $startruntimer)) / 10);  #elapsed time rounded to thousandths 
         
@@ -304,7 +312,7 @@ sub engine
     close(RESULTS);
     close(RESULTSXML);
         
-}
+} #end engine subroutine
 
 
 
@@ -680,7 +688,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
     if ($#ARGV < 0) {  #if testcase filename is not passed on the command line, use config.xml
             
         open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
-        @configfile = <CONFIG>;  #Read the file into an array
+        @configfile = <CONFIG>;  #read the file into an array
             
         #parse test case file names from config.xml and build array
         foreach (@configfile) {
@@ -852,3 +860,40 @@ sub httplog {  #write requests and responses to http.log file
         
 }
 #------------------------------------------------------------------
+sub plotlog {  #write performance results to plot.log in the format gnuplot can use
+               
+    %months = ("Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6, 
+               "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12);
+        
+    local ($value) = @_; 
+    $date = scalar localtime; 
+    ($mon, $mday, $hours, $min, $sec, $year) = $date =~ 
+        /\w+ (\w+) +(\d+) (\d\d):(\d\d):(\d\d) (\d\d\d\d)/;
+        
+    $time = "$months{$mon} $mday $hours $min $sec $year"; 
+        
+    open(PLOTLOG, ">>plot.log") or die "ERROR: Failed to open file plot.log\n";
+    printf PLOTLOG "%s %2.4f\n", $time, $value;
+    close(PLOTLOG); 
+        
+}
+#------------------------------------------------------------------
+sub gnuplotcfg {  #create gnuplot config file
+        
+    open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
+    print GNUPLOTPLT 
+    qq|set term gif 
+set output \"plot.gif\"
+set size 1,0.5
+set pointsize .5
+set xdata time 
+set ylabel \"Response Time (seconds)\"
+set yrange [0:]
+set bmargin 2
+set tmargin 2
+set timefmt \"%m %d %H %M %S %Y\"
+plot \"plot.log\" using 1:7 title \"Response Times" w impulses
+|;      
+    close(GNUPLOTPLT);
+        
+}
