@@ -6,19 +6,19 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
-Version 0.92 - 04/05/2004
+Version 0.92 - March 05, 2004
     -Minor bug fixes
     -Status light added to GUI
     -HTTP proxy support
     -Baseurl constant added to config options
     
-Version 0.91 - 02/23/2004
+Version 0.91 - Feb 23, 2004
     -Decoupled GUI (webinjectgui) from Test Engine (webinject) so engine can run standalone
     -Testcase name can be passed on command line as well as via config.xml
     -Code cleanup
     -Output sent to STDOUT as well as reports
     
-Version 0.90 - 02/19/2004
+Version 0.90 - Feb 19, 2004
     -Initial public beta release
     -Contains SSL/TLS support
     -Perl/Tk GUI
