@@ -73,16 +73,16 @@ $| = 1; #don't buffer output to STDOUT
         {  
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             
-            #populate variables with values from testcase file and revert {AMPERSAND} back to "&"
-            $description1 = $xmltestcases->{case}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g;}
-            $description2 = $xmltestcases->{case}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g;}
-            $method = $xmltestcases->{case}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g;}
-            $url = $xmltestcases->{case}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g;} if ($url =~ /{TIMESTAMP}/) {$url = "$`" . $timestamp . $';}
-            $postbody = $xmltestcases->{case}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g;}
-            $verifypositive = $xmltestcases->{case}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g;} if ($url =~ /{TIMESTAMP}/) {$url = "$`" . $timestamp . $';}
-            $verifynegative = $xmltestcases->{case}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g;} if ($url =~ /{TIMESTAMP}/) {$url = "$`" . $timestamp . $';}
-            $logrequest = $xmltestcases->{case}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g;}
-            $logresponse = $xmltestcases->{case}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g;}
+            #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
+            $description1 = $xmltestcases->{case}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $description2 = $xmltestcases->{case}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $method = $xmltestcases->{case}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $url = $xmltestcases->{case}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $postbody = $xmltestcases->{case}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $verifypositive = $xmltestcases->{case}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $verifynegative = $xmltestcases->{case}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $logrequest = $xmltestcases->{case}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $logresponse = $xmltestcases->{case}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
                        
             print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             if ($description1) {print RESULTS "$description1 <br>\n";}
@@ -120,17 +120,17 @@ $| = 1; #don't buffer output to STDOUT
             $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
             if ($verifynext) {$verifylater = $verifynext;}  #grab $verifynext string from previous test case (if it exists)
             
-            #populate variables with values from testcase file and revert {AMPERSAND} back to "&"
-            $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g;}
-            $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g;}
-            $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g;}
-            $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g;} if ($url =~ /{TIMESTAMP}/) {$url = "$`" . $timestamp . $';}
-            $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g;}
-            $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g;} if ($url =~ /{TIMESTAMP}/) {$url = "$`" . $timestamp . $';}
-            $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g;} if ($url =~ /{TIMESTAMP}/) {$url = "$`" . $timestamp . $';}
-            $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g;}
-            $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g;}
-            $verifynext = $xmltestcases->{case}->{$testnum}->{verifynext}; if ($verifynext) {$verifynext =~ s/{AMPERSAND}/&/g;} if ($url =~ /{TIMESTAMP}/) {$url = "$`" . $timestamp . $';}
+            #populate variables with values from testcase file, do substitutions, and revert {AMPERSAND} back to "&"
+            $description1 = $xmltestcases->{case}->{$testnum}->{description1}; if ($description1) {$description1 =~ s/{AMPERSAND}/&/g; $description1 =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $description2 = $xmltestcases->{case}->{$testnum}->{description2}; if ($description2) {$description2 =~ s/{AMPERSAND}/&/g; $description2 =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) {$method =~ s/{AMPERSAND}/&/g; $method =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) {$url =~ s/{AMPERSAND}/&/g; $url =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) {$postbody =~ s/{AMPERSAND}/&/g; $postbody =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) {$verifypositive =~ s/{AMPERSAND}/&/g; $verifypositive =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) {$verifynegative =~ s/{AMPERSAND}/&/g; $verifynegative =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) {$logrequest =~ s/{AMPERSAND}/&/g; $logrequest =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) {$logresponse =~ s/{AMPERSAND}/&/g; $logresponse =~ s/{TIMESTAMP}/$timestamp/g;}  
+            $verifynext = $xmltestcases->{case}->{$testnum}->{verifynext}; if ($verifynext) {$verifynext =~ s/{AMPERSAND}/&/g; $verifynext =~ s/{TIMESTAMP}/$timestamp/g;}  
                         
             print RESULTS "<b>Test:  $currentcasefile - $testnum </b><br>\n";
             if ($description1) {print RESULTS "$description1 <br>\n";}
@@ -260,7 +260,6 @@ sub httppost {  #send http request and read response
     #print $cookie_jar->as_string; print "\n\n"; 
 }
 #------------------------------------------------------------------
-
 sub verify {  #do verification of http response
 
     if ($verifypositive)
@@ -299,12 +298,12 @@ sub verify {  #do verification of http response
     {
         if ($response->as_string() =~ /$verifylater/i)  #verify existence of string in response
         {
-            print RESULTS "<b><font color=green>PASSED</font></b><br>\n";
+            print RESULTS "<b><font color=green>PASSED</font></b> (verification set in previous test case)<br>\n";
             $passedcount++;
         }
         else
         {
-            print RESULTS "<b><font color=red>FAILED</font></b><br>\n"; 
+            print RESULTS "<b><font color=red>FAILED</font></b> (verification set in previous test case)<br>\n"; 
             $failedcount++;                
         }
         
