@@ -837,15 +837,18 @@ sub processcasefile {  #get test case files to run (from command line or config 
         my @precomment = <CONFIG>;  #read the config file into an array
             
         #remove any commented blocks from config file
-        foreach (@precomment) {
-            if (/<comment>/) {   
-                $comment_mode = 1;
-            } 
-            elsif (m:</comment>:) {   
-                $comment_mode = 0;
-            } 
-            elsif (!$comment_mode) {
-                push(@configfile, $_);
+         foreach (@precomment) {
+            unless (m~<comment>.*</comment>~) {  #single line comment 
+                #multi-line comments
+                if (/<comment>/) {   
+                    $comment_mode = 1;
+                } 
+                elsif (m~</comment>~) {   
+                    $comment_mode = 0;
+                } 
+                elsif (!$comment_mode) {
+                    push(@configfile, $_);
+                }
             }
         }
     }
