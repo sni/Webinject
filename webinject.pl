@@ -188,13 +188,13 @@ sub engine
                 else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
             }
             else {   
-                httpget(); #use "get" if no method is specified  
+                httpget();  #use "get" if no method is specified  
             }  
             
             
             verify();  #verify result from http response
             
-            httplog(); #write to http.log file            
+            httplog();  #write to http.log file            
             
             parseresponse();  #grab string from response to send later
             
@@ -583,7 +583,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
     
     #print "testcase file list: @casefilelist\n\n";
     
-    #grab value for constants: baseurl, proxy
+    #grab values for constants in config file:
     foreach (@configfile) {
         
         if (/<baseurl>/) {   
@@ -598,6 +598,13 @@ sub processcasefile {  #get test case files to run (from command line or config 
             $firstparse =~ /<\/proxy>/;
             $proxy = $`;  #string between tags will be in $proxy
             #print "$proxy \n\n";
+        }
+        
+        if (/<globalhttplog>/) {   
+            $firstparse = $';  #print "$' \n\n";
+            $firstparse =~ /<\/globalhttplog>/;
+            $globalhttplog = $`;  #string between tags will be in $globalhttplog
+            #print "$globalhttplog \n\n";
         }
     }  
     
@@ -677,15 +684,24 @@ sub url_escape {  #escapes difficult characters with %hexvalue
 }
 #------------------------------------------------------------------
 sub httplog {  #write requests and responses to http.log file
-
-    if ($logrequest && $logrequest eq "yes") {
-        print HTTPLOGFILE $request->as_string;
-        print HTTPLOGFILE "\n\n";
+    
+    if ($logrequest && ($logrequest =~ /yes/i)) {  #http request - log setting per test case
+        print HTTPLOGFILE $request->as_string, "\n\n";
     } 
     
-    if ($logresponse && $logresponse eq "yes") {
-        print HTTPLOGFILE $response->as_string;
-        print HTTPLOGFILE "\n\n";} 
+    if ($logresponse && ($logresponse =~ /yes/i)) {  #http response - log setting per test case
+        print HTTPLOGFILE $response->as_string, "\n\n";
+    }
+        
+    if ($globalhttplog && ($globalhttplog =~ /yes/i)) {  #global http log setting
+        print HTTPLOGFILE $request->as_string, "\n\n";
+        print HTTPLOGFILE $response->as_string, "\n\n";
+    }
+    
+    if (($globalhttplog && ($globalhttplog =~ /onerror/i)) && ($isfailure > 0)) { #global http log setting - onerror mode
+        print HTTPLOGFILE $request->as_string, "\n\n";
+        print HTTPLOGFILE $response->as_string, "\n\n";
+    }
 
 }
 #------------------------------------------------------------------
