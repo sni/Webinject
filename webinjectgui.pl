@@ -115,7 +115,13 @@ $exit_button = $mw->Button(-width              => '40',
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
-                                )->place(qw/-x 150 -y 75/); $mw->update();
+                                )->place(qw/-x 138 -y 75/); $mw->update();
+
+
+$status_ind = $mw->Canvas(-width       => '28',  #engine status indicator 
+                          -height      => '9',                   
+                          -background  => '#666699',
+                          )->place(qw/-x 591 -y 79/); $mw->update(); 
 
 
 
@@ -141,6 +147,9 @@ sub gui_initial {
     
     $status_window->delete('0.0','end'); #clear window before starting
     
+    $status_ind->configure(-background  => '#FF9900');  #change status color amber while running
+                           
+
     $rtc_button->configure(-state       => 'disabled',  #disable button while running
                            -background  => '#666699',
                            );
@@ -182,7 +191,17 @@ sub gui_final {
     $status_window->insert("end", "\n\n------------------------------\nTotal Run Time: $totalruntime  seconds\n");
     $status_window->insert("end", "\nTest Cases Run: $totalruncount\nVerifications Passed: $passedcount\nVerifications Failed: $failedcount\n"); 
     $status_window->see("end");
-       
+
+    if ($failedcount > 0)  #change status color to reflect failure or all tests passed
+        {
+            $status_ind->configure(-background  => '#FF0000');  #red
+        }
+    else
+        {
+            $status_ind->configure(-background  => '#00FF00');  #green
+        }
+
+                           
     $rtc_button->configure(-state       => 'normal',  #re-enable button after finish
                            -background  => '#EFEFEF',
                            );
