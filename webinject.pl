@@ -214,8 +214,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $parseresponse5 = $xmltestcases->{case}->{$testnum}->{parseresponse5}; if ($parseresponse5) { convertbackxml($parseresponse5); } 
                 $logrequest = $xmltestcases->{case}->{$testnum}->{logrequest}; if ($logrequest) { convertbackxml($logrequest); }  
                 $logresponse = $xmltestcases->{case}->{$testnum}->{logresponse}; if ($logresponse) { convertbackxml($logresponse); }  
-                $sleep = $xmltestcases->{case}->{$testnum}->{sleep}; if ($logresponse) { convertbackxml($logresponse); }
-                $errormessage = $xmltestcases->{case}->{$testnum}->{errormessage}; if ($logresponse) { convertbackxml($logresponse); }    
+                $sleep = $xmltestcases->{case}->{$testnum}->{sleep}; if ($sleep) { convertbackxml($sleep); }
+                $errormessage = $xmltestcases->{case}->{$testnum}->{errormessage}; if ($errormessage) { convertbackxml($errormessage); }    
                     
                 if ($description1) {  #if we hit a dummy record, skip it
                     if ($description1 =~ /dummy test case/) {
@@ -291,7 +291,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 if ($method) {
                     if ($method eq "get") { httpget(); }
                     elsif ($method eq "post") { httppost(); }
-                    else {print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;}
+                    else { print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|; }
                 }
                 else {   
                     httpget();  #use "get" if no method is specified  
@@ -321,7 +321,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                             print STDOUT qq|TEST CASE FAILED : $errormessage\n|;
                         }
                     }
-                    else { # Print regular error output
+                    else { #print regular error output
                         print RESULTS qq|<b><font color=red>TEST CASE FAILED</font></b><br>\n|;
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|TEST CASE FAILED\n|;
@@ -356,7 +356,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                     
                 print RESULTS qq|Response Time = $latency sec <br>\n|;
-                if ($gui == 1) {gui_timer_output();} 
+                if ($gui == 1) { gui_timer_output(); } 
                 unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT qq|Response Time = $latency sec \n|;
                 }
@@ -381,8 +381,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     gui_statusbar();  #update the statusbar
                 }   
                     
-                if ($latency > $maxresponse) {$maxresponse = $latency;}  #set max response time
-                if ($latency < $minresponse) {$minresponse = $latency;}  #set min response time
+                if ($latency > $maxresponse) { $maxresponse = $latency; }  #set max response time
+                if ($latency < $minresponse) { $minresponse = $latency; }  #set min response time
                 $totalresponse = ($totalresponse + $latency);  #keep total of response times for calculating avg 
                 $avgresponse = (int(1000 * ($totalresponse / $totalruncount)) / 1000);  #avg response rounded to thousandths
                     
