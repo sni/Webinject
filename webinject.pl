@@ -30,10 +30,10 @@ use Crypt::SSLeay;
 $| = 1; #don't buffer output to STDOUT
 
 
-our ($timestamp);
-our ($parseresponse,$parseresponse1, $parseresponse2, $parseresponse3, $parseresponse4, $parseresponse5,  
+our ($timestamp, $dirname);
+our ($parseresponse, $parseresponse1, $parseresponse2, $parseresponse3, $parseresponse4, $parseresponse5,  
         $parsedresult, $parsedresult1, $parsedresult2, $parsedresult3, $parsedresult4, $parsedresult5);
-our ($logresponse , $logrequest);
+our ($logresponse ,$logrequest);
 our ($useragent, $request, $response);
 our ($gui, $monitorenabledchkbx, $latency);
 our ($cookie_jar, $proxy, $timeout, @httpauth);
@@ -41,7 +41,7 @@ our ($xnode, $graphtype, $plotclear, $stop, $nooutput);
 our ($totalruncount, $casepassedcount, $casefailedcount, $passedcount, $failedcount);
 our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
 our (@casefilelist, $currentcasefile, $casecount, $isfailure);
-our ($verifypositive,  $verifylater, $verifynegative, $verifylaterneg);
+our ($verifypositive, $verifylater, $verifynegative, $verifylaterneg);
 our ($url, $baseurl, $postbody);
 our ($gnuplot, $standaloneplot, $globalhttplog);
 our ($currentdatetime, $totalruntime, $starttimer, $endtimer);
@@ -70,14 +70,22 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     if ($gui == 1) { gui_initial(); }
         
+    #get the directory webinject engine is running from   
+    $dirname = $0;    
+    $dirname =~ s|(.*/).*|$1|;  #for nix systems
+    $dirname =~ s|(.*\\).*|$1|; #for windoz systems   
+    if ($dirname eq $0) { 
+        $dirname = './'; 
+    }
+        
     getoptions();  #get command line options
         
     $startruntimer = time();  #timer for entire test run
     $currentdatetime = localtime time;  #get current date and time for results report
         
-    open(HTTPLOGFILE, ">http.log") or die "\nERROR: Failed to open http.log file\n\n";   
-    open(RESULTS, ">results.html") or die "\nERROR: Failed to open results.html file\n\n";    
-    open(RESULTSXML, ">results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
+    open(HTTPLOGFILE, ">$dirname"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
+    open(RESULTS, ">$dirname"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
+    open(RESULTSXML, ">$dirname"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
         
     #delete files leftover from previous run (do this here so they are whacked each run)
     whackoldfiles();
@@ -139,7 +147,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     $plotclear = 'no';
         
         
-    foreach (@casefilelist) { #process test case files named in config.xml
+    foreach (@casefilelist) { #process test case files named in config
         
         $currentcasefile = $_;
         #print "\n$currentcasefile\n\n";
@@ -152,7 +160,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         fixsinglecase();
             
-        $xmltestcases = XMLin("./$currentcasefile"); #slurp test case file to parse
+        $xmltestcases = XMLin("$dirname"."/$currentcasefile"); #slurp test case file to parse
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #for debug, print keys from dereferenced hash
             
@@ -767,17 +775,16 @@ sub processcasefile {  #get test case files to run (from command line or config 
         
     #process the config file
     if ($opt_configfile) {  #if -c option was set on command line, use specified config file
-        open(CONFIG, $opt_configfile) or die "\nERROR: Failed to open $opt_configfile file\n\n";
+        open(CONFIG, "$dirname" . "$opt_configfile") or die "\nERROR: Failed to open $opt_configfile file\n\n";
         $configexists = 1;  #flag we are going to use a config file
     }
     elsif (-e "config.xml") {  #if config.xml exists, read it
-        open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";
+        open(CONFIG, "$dirname"."config.xml") or die "\nERROR: Failed to open config.xml file\n\n";
         $configexists = 1;  #flag we are going to use a config file
     } 
         
-    if ($configexists) {  #if we have a config file, use it
-        #open(CONFIG, "config.xml") or die "\nERROR: Failed to open config.xml file\n\n";  #open file handle   
-        
+    if ($configexists) {  #if we have a config file, use it  
+            
         my @precomment = <CONFIG>;  #read the config file into an array
             
         #remove any commented blocks from config file
@@ -813,7 +820,8 @@ sub processcasefile {  #get test case files to run (from command line or config 
                 push @casefilelist, "testcases.xml";  #if no files are specified in config.xml, default to testcases.xml
             }
             else {
-                die "\nERROR: I can't find the default test case file\nYou must either use a config.xml or pass a filename on the command line\n\n";
+                die "\nERROR: I can't any test case files to run.\nYou must either use a config file or pass a filename " . 
+                    "on the command line if you are not using the default testcase file (testcases.xml).";
             }
         }
     }
@@ -935,7 +943,7 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         
     if ($casecount == 1) {
             
-        open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
+        open(XMLTOCONVERT, "$dirname"."$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
         @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
             
         for(@xmltoconvert) { 
@@ -943,7 +951,7 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         }       
         close(XMLTOCONVERT);
             
-        open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+        open(XMLTOCONVERT, ">$dirname"."$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
         print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
         close(XMLTOCONVERT);
     }
@@ -953,7 +961,7 @@ sub convtestcases {  #convert ampersands and certain escaped chars so xml parser
         
     my @xmltoconvert;        
         
-    open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, "$dirname"."$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
         
     $casecount = 0;
@@ -973,7 +981,7 @@ sub convtestcases {  #convert ampersands and certain escaped chars so xml parser
         
     close(XMLTOCONVERT);   
         
-    open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, ">$dirname"."$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
     close(XMLTOCONVERT);
 }
@@ -983,7 +991,7 @@ sub cleancases {  #cleanup conversions made to file for converted characters and
         
     my @xmltoconvert;
         
-    open(XMLTOCONVERT, "$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, "$dirname"."$currentcasefile") or die "\nError: Failed to open test case file\n\n";  #open file handle   
     @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
         
     foreach (@xmltoconvert) { 
@@ -996,7 +1004,7 @@ sub cleancases {  #cleanup conversions made to file for converted characters and
         
     close(XMLTOCONVERT);   
         
-    open(XMLTOCONVERT, ">$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
+    open(XMLTOCONVERT, ">$dirname"."$currentcasefile") or die "\nERROR: Failed to open test case file\n\n";  #open file handle   
     print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
     close(XMLTOCONVERT);
 }
@@ -1070,11 +1078,11 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
         $time = "$months{$mon} $mday $hours $min $sec $year";
             
         if ($plotclear eq 'yes') {  #used to clear the graph when requested
-            open(PLOTLOG, ">plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in clobber mode so log gets truncated
+            open(PLOTLOG, ">$dirname"."plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in clobber mode so log gets truncated
             $plotclear = 'no';  #reset the value 
         }
         else {
-            open(PLOTLOG, ">>plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in append mode
+            open(PLOTLOG, ">>$dirname"."plot.log") or die "ERROR: Failed to open file plot.log\n";  #open in append mode
         }
           
         printf PLOTLOG "%s %2.4f\n", $time, $value;
@@ -1087,7 +1095,7 @@ sub gnuplotcfg {  #create gnuplot config file
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
     unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {  
         
-        open(GNUPLOTPLT, ">plot.plt") || die "Could not open file\n";
+        open(GNUPLOTPLT, ">$dirname"."plot.plt") || die "Could not open file\n";
         print GNUPLOTPLT qq|
 set term png 
 set output \"plot.png\"
