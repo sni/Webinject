@@ -698,7 +698,7 @@ sub httplog {  #write requests and responses to http.log file
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
     
-    if (($globalhttplog && ($globalhttplog =~ /onerror/i)) && ($isfailure > 0)) { #global http log setting - onerror mode
+    if (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0)) { #global http log setting - onfail mode
         print HTTPLOGFILE $request->as_string, "\n\n";
         print HTTPLOGFILE $response->as_string, "\n\n";
     }
