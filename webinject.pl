@@ -44,10 +44,15 @@ $mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
 $mw->InitStderr; #redirect all STDERR to a window
 
 
-$mw -> Photo('logogif', -file => "logo.gif");
+$mw ->Photo('logogif', -file => "logo.gif");
 $mw ->Label(-image => 'logogif', 
             -bg    => '#666699'
-            )->place(qw/-x 210 -y 20/);
+            )->place(qw/-x 235 -y 12/);
+
+
+$mw ->Label(-text  => 'Test Case File:',
+            -bg    => '#666699'
+            )->place(qw/-x 25 -y 120/);
 
 
 $out_window = $mw->Scrolled(ROText, 
@@ -55,15 +60,20 @@ $out_window = $mw->Scrolled(ROText,
                    -background  => '#EFEFEF',
                    -width       => '80',
                    -height      => '12',
-                  )->place(qw/-x 25 -y 144/); #output window
+                  )->place(qw/-x 25 -y 138/); #output window
+
+
+$mw ->Label(-text  => 'Test Case Status:',
+            -bg    => '#666699'
+            )->place(qw/-x 25 -y 318/);
 
 
 $status_window = $mw->Scrolled(ROText, 
                    -scrollbars  => 'e',
                    -background  => '#EFEFEF',
                    -width       => '80',
-                   -height      => '25',
-                  )->place(qw/-x 25 -y 330/); #status window
+                   -height      => '24',
+                  )->place(qw/-x 25 -y 336/); #status window
 
 
 $rtc_button = $mw->Button->Compound;
@@ -77,7 +87,7 @@ $mw->Button(-width              => '85',
             -borderwidth        => '3',
             -image              => $rtc_button,
             -command            => sub{engine()}
-            )->place(qw/-x 25 -y 110/);
+            )->place(qw/-x 25 -y 85/);
 
 
 $exit_button = $mw->Button->Compound;
@@ -96,7 +106,7 @@ $mw->Button(-width              => '40',
 
 $progressbar = $mw->ProgressBar(-width  => '420', 
                                 -bg     => '#666699'
-                                )->place(qw/-x 150 -y 110/);
+                                )->place(qw/-x 150 -y 85/);
 
 
 
