@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.33";
+our $version="1.34";
 
 use strict;
 use LWP;
@@ -25,7 +25,7 @@ use XML::Simple;
 use Time::HiRes 'time','sleep';
 use Getopt::Long;
 use Crypt::SSLeay;  #for SSL/HTTPS (you may comment this out if you don't need it)
-#use Data::Dumper;  #to dump hashes for debugging   
+#use Data::Dumper;  #uncomment to dump hashes for debugging   
 
 
 $| = 1; #don't buffer output to STDOUT
@@ -81,13 +81,6 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     getoptions();  #get command line options
         
-    $startruntimer = time();  #timer for entire test run
-    $currentdatetime = localtime time;  #get current date and time for results report
-        
-    open(HTTPLOGFILE, ">$dirname"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
-    open(RESULTS, ">$dirname"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
-    open(RESULTSXML, ">$dirname"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
-        
     #delete files leftover from previous run (do this here so they are whacked each run)
     whackoldfiles();
         
@@ -95,7 +88,13 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     $useragent = LWP::UserAgent->new;
     $cookie_jar = HTTP::Cookies->new;
     $useragent->agent('WebInject');  #http useragent that will show up in webserver logs
-    $useragent->max_redirect('0');  #don't follow redirects for GET's (POST's already don't by default)
+    $useragent->max_redirect('0');  #don't follow redirects for GET's (POST's already don't follow, by default)
+        
+        
+    if ($gui != 1){   
+        $graphtype = 'lines'; #default to line graph if not in GUI
+        $standaloneplot = 'off'; #initialize so we don't get warnings when <standaloneplot> is not set in config         
+    }
         
     processcasefile();
         
@@ -116,19 +115,21 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         $useragent->timeout("$timeout");  #default LWP timeout is 180 secs.
     }
         
-    print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
+    #open file handles
+    unless ($reporttype) {  #we suppress most logging when running in a plugin mode   
+        open(HTTPLOGFILE, ">$dirname"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
+        open(RESULTS, ">$dirname"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
+        open(RESULTSXML, ">$dirname"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
+    }
         
-    writeinitialhtml();  #write opening tags for results file
-        
+    unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+        print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
+        writeinitialhtml();  #write opening tags for results file
+    }
+               
     unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
         writeinitialstdout();  #write opening tags for STDOUT. 
     }
-        
-        
-    if ($gui != 1){   
-        $graphtype = 'lines'; #default to line graph if not in GUI
-        $standaloneplot = 'on'; #initialize so we don't get warnings when <standaloneplot>on</standaloneplot> is not set in config         
-    } 
         
     if ($gui == 1){ $curgraphtype = $graphtype; }  #set the initial value so we know if the user changes the graph setting from the gui
         
@@ -146,6 +147,10 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     $minresponse = 10000000; #set to large value so first minresponse will be less
     $stop = 'no';
     $plotclear = 'no';
+        
+        
+    $currentdatetime = localtime time;  #get current date and time for results report
+    $startruntimer = time();  #timer for entire test run
         
         
     foreach (@casefilelist) { #process test case files named in config
@@ -228,68 +233,86 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     }
                 }
                     
-                print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br />\n|;
+                unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+                    print RESULTS qq|<b>Test:  $currentcasefile - $testnum </b><br />\n|;
+                }
+                    
                 unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT qq|Test:  $currentcasefile - $testnum \n|;
                 }
                     
-                unless ($casefilecheck eq $currentcasefile) {
-                    unless ($currentcasefile eq $casefilelist[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
-                        print RESULTSXML qq|    </testcases>\n\n|;
+                unless ($reporttype) {  #we suppress most logging when running in a plugin mode     
+                    unless ($casefilecheck eq $currentcasefile) {
+                        unless ($currentcasefile eq $casefilelist[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
+                            print RESULTSXML qq|    </testcases>\n\n|;
+                        }
+                        print RESULTSXML qq|    <testcases file="$currentcasefile">\n\n|;
                     }
-                    print RESULTSXML qq|    <testcases file="$currentcasefile">\n\n|;
+                    print RESULTSXML qq|        <testcase id="$testnum">\n|;
                 }
                     
-                print RESULTSXML qq|        <testcase id="$testnum">\n|;
-                    
                 if ($description1) {
-                    print RESULTS qq|$description1 <br />\n|; 
-                    unless ($nooutput) { #skip regular STDOUT output 
-                        print STDOUT qq|$description1 \n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+                        print RESULTS qq|$description1 <br />\n|; 
+                        unless ($nooutput) { #skip regular STDOUT output 
+                            print STDOUT qq|$description1 \n|;
+                        }
+                        print RESULTSXML qq|            <description1>$description1</description1>\n|;
                     }
-                    print RESULTSXML qq|            <description1>$description1</description1>\n|; 
                 }
                     
                 if ($description2) {
-                    print RESULTS qq|$description2 <br />\n|;
-                    unless ($nooutput) { #skip regular STDOUT output 
-                        print STDOUT qq|$description2 \n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+                        print RESULTS qq|$description2 <br />\n|;
+                        unless ($nooutput) { #skip regular STDOUT output 
+                            print STDOUT qq|$description2 \n|;
+                        }
+                        print RESULTSXML qq|            <description2>$description2</description2>\n|;
                     }
-                    print RESULTSXML qq|            <description2>$description2</description2>\n|; 
                 }
                     
-                print RESULTS qq|<br />\n|;
+                unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                    print RESULTS qq|<br />\n|;
+                }
                     
                 if ($verifypositive) {
-                    print RESULTS qq|Verify: "$verifypositive" <br />\n|;
-                    unless ($nooutput) { #skip regular STDOUT output 
-                        print STDOUT qq|Verify: "$verifypositive" \n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+                        print RESULTS qq|Verify: "$verifypositive" <br />\n|;
+                        unless ($nooutput) { #skip regular STDOUT output 
+                            print STDOUT qq|Verify: "$verifypositive" \n|;
+                        }
+                        print RESULTSXML qq|            <verifypositive>$verifypositive</verifypositive>\n|;
                     }
-                    print RESULTSXML qq|            <verifypositive>$verifypositive</verifypositive>\n|; 
                 }
                     
                 if ($verifynegative) { 
-                    print RESULTS qq|Verify Negative: "$verifynegative" <br />\n|;
-                    unless ($nooutput) { #skip regular STDOUT output 
-                        print STDOUT qq|Verify Negative: "$verifynegative" \n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                        print RESULTS qq|Verify Negative: "$verifynegative" <br />\n|;
+                        unless ($nooutput) { #skip regular STDOUT output 
+                            print STDOUT qq|Verify Negative: "$verifynegative" \n|;
+                        }
+                        print RESULTSXML qq|            <verifynegative>$verifynegative</verifynegative>\n|;
                     }
-                    print RESULTSXML qq|            <verifynegative>$verifynegative</verifynegative>\n|; 
                 }
                     
                 if ($verifypositivenext) { 
-                    print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br />\n|;
-                    unless ($nooutput) { #skip regular STDOUT output  
-                        print STDOUT qq|Verify On Next Case: "$verifypositivenext" \n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                        print RESULTS qq|Verify On Next Case: "$verifypositivenext" <br />\n|;
+                        unless ($nooutput) { #skip regular STDOUT output  
+                            print STDOUT qq|Verify On Next Case: "$verifypositivenext" \n|;
+                        }
+                        print RESULTSXML qq|            <verifypositivenext>$verifypositivenext</verifypositivenext>\n|;
                     }
-                    print RESULTSXML qq|            <verifypositivenext>$verifypositivenext</verifypositivenext>\n|; 
                 }
                     
                 if ($verifynegativenext) { 
-                    print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br />\n|;
-                    unless ($nooutput) { #skip regular STDOUT output  
-                        print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" \n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                        print RESULTS qq|Verify Negative On Next Case: "$verifynegativenext" <br />\n|;
+                        unless ($nooutput) { #skip regular STDOUT output  
+                            print STDOUT qq|Verify Negative On Next Case: "$verifynegativenext" \n|;
+                        }
+                        print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|;
                     }
-                    print RESULTSXML qq|            <verifynegativenext>$verifynegativenext</verifynegativenext>\n|; 
                 }
                     
                     
@@ -321,13 +344,17 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                 if ($isfailure > 0) {  #if any verification fails, test case is considered a failure
                     if ($errormessage) { #Add defined error message to the output 
-                        print RESULTS qq|<b><span class="fail">TEST CASE FAILED : $errormessage</span></b><br />\n|;
+                        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                            print RESULTS qq|<b><span class="fail">TEST CASE FAILED : $errormessage</span></b><br />\n|;
+                        }
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|TEST CASE FAILED : $errormessage\n|;
                         }
                     }
                     else { #print regular error output
-                        print RESULTS qq|<b><span class="fail">TEST CASE FAILED</span></b><br />\n|;
+                        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                            print RESULTS qq|<b><span class="fail">TEST CASE FAILED</span></b><br />\n|;
+                        }
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|TEST CASE FAILED\n|;
                         }
@@ -341,18 +368,24 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         }
                         #print "\nReturn Message : $returnmessage\n"
                     }
-                    print RESULTSXML qq|            <success>false</success>\n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                        print RESULTSXML qq|            <success>false</success>\n|;
+                    }
                     if ($gui == 1){ 
                         gui_status_failed();
                     }
                     $casefailedcount++;
                 }
                 else {
-                    print RESULTS qq|<b><span class="pass">TEST CASE PASSED</span></b><br />\n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                        print RESULTS qq|<b><span class="pass">TEST CASE PASSED</span></b><br />\n|;
+                    }
                     unless ($nooutput) { #skip regular STDOUT output 
                         print STDOUT qq|TEST CASE PASSED \n|;
                     }
-                    print RESULTSXML qq|            <success>true</success>\n|;
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                        print RESULTSXML qq|            <success>true</success>\n|;
+                    }
                     if ($gui == 1){
                         gui_status_passed(); 
                     }
@@ -360,16 +393,21 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
                     
                     
-                print RESULTS qq|Response Time = $latency sec <br />\n|;
+                unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                    print RESULTS qq|Response Time = $latency sec <br />\n|;
+                }
+                    
                 if ($gui == 1) { gui_timer_output(); } 
+                    
                 unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT qq|Response Time = $latency sec \n|;
                 }
-                print RESULTSXML qq|            <responsetime>$latency</responsetime>\n|;
                     
-                print RESULTSXML qq|        </testcase>\n\n|;
-                    
-                print RESULTS qq|<br />\n------------------------------------------------------- <br />\n\n|;
+                unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                    print RESULTSXML qq|            <responsetime>$latency</responsetime>\n|;
+                    print RESULTSXML qq|        </testcase>\n\n|;
+                    print RESULTS qq|<br />\n------------------------------------------------------- <br />\n\n|;
+                }
                     
                 unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set   
                     print STDOUT qq|------------------------------------------------------- \n|;
@@ -451,8 +489,8 @@ qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 |; 
 }
 #------------------------------------------------------------------
-sub writeinitialstdout {  #write opening tags for STDOUT
-
+sub writeinitialstdout {  #write initial text for STDOUT
+        
     print STDOUT 
 qq|
 Starting WebInject Engine...
@@ -487,7 +525,7 @@ Min Response Time: $minresponse seconds <br />
 |; 
 }
 #------------------------------------------------------------------
-sub writefinalstdout {  #write summary and closing tags for STDOUT
+sub writefinalstdout {  #write summary and closing text for STDOUT
         
     print STDOUT
 qq|    
@@ -521,6 +559,7 @@ sub httpget {  #send http request and read response
 }
 #------------------------------------------------------------------
 sub httppost {  #post request based on specified encoding
+        
     if ($posttype) {
 	if ($posttype eq 'application/x-www-form-urlencoded') { httppost_form_urlencoded(); }
         elsif ($posttype eq 'multipart/form-data') { httppost_form_data(); }
@@ -572,14 +611,18 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifypositive) {
         if ($response->as_string() =~ /$verifypositive/si) {  #verify existence of string in response
-            print RESULTS qq|<span class="pass">Passed Positive Verification</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="pass">Passed Positive Verification</span><br />\n|;
+            }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Positive Verification \n";
             }
             $passedcount++;
         }
         else {
-            print RESULTS qq|<span class="fail">Failed Positive Verification</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="fail">Failed Positive Verification</span><br />\n|;
+            }
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed Positive Verification \n";         
             }
@@ -592,7 +635,9 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifynegative) {
         if ($response->as_string() =~ /$verifynegative/si) {  #verify existence of string in response
-            print RESULTS qq|<span class="fail">Failed Negative Verification</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="fail">Failed Negative Verification</span><br />\n|;
+            }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Negative Verification \n";            
             }
@@ -600,7 +645,9 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
         else {
-            print RESULTS qq|<span class="pass">Passed Negative Verification</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="pass">Passed Negative Verification</span><br />\n|;
+            }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Negative Verification \n";
             }
@@ -612,14 +659,18 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifylater) {
         if ($response->as_string() =~ /$verifylater/si) {  #verify existence of string in response
-            print RESULTS qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
+            }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
             }
             $passedcount++;
         }
         else {
-            print RESULTS qq|<span class="fail">Failed Positive Verification (verification set in previous test case)</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="fail">Failed Positive Verification (verification set in previous test case)</span><br />\n|;
+            }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Failed Positive Verification (verification set in previous test case) \n";            
             }
@@ -633,7 +684,9 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifylaterneg) {
         if ($response->as_string() =~ /$verifylaterneg/si) {  #verify existence of string in response
-            print RESULTS qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
+            }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set  
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";     
             }
@@ -641,7 +694,9 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $isfailure++;
         }
         else {
-            print RESULTS qq|<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span><br />\n|;
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span><br />\n|;
+            }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Negative Verification (negative verification set in previous test case) \n";
             }
@@ -654,7 +709,9 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     #verify http response code is in the 100-399 range    
     if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
-        print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|; 
+        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+            print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|; 
+        }
         unless ($nooutput) { #skip regular STDOUT output 
             print STDOUT "Passed HTTP Response Code Verification (not in error range) \n"; 
         }
@@ -664,13 +721,17 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
     else {
         $response->as_string() =~ /(HTTP\/1.)(.*)/i;
         if ($1) {  #this is true if an HTTP response returned 
-            print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification ($1$2)</span><br />\n|; #($1$2) is http response code
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification ($1$2)</span><br />\n|; #($1$2) is http response code
+            }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is http response code   
             }
         }
         else {  #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
-            print RESULTS qq|<span class="fail">Failed - No Response</span><br />\n|; #($1$2) is http response code
+            unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                print RESULTS qq|<span class="fail">Failed - No Response</span><br />\n|; #($1$2) is http response code
+            }
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed - No Response \n"; #($1$2) is http response code   
             }
@@ -1063,6 +1124,7 @@ sub cleancases {  #cleanup conversions made to file for converted characters and
 }
 #------------------------------------------------------------------
 sub convertbackxml() {  #converts replaced xml with substitutions
+        
     $_[0] =~ s/{AMPERSAND}/&/g;
     $_[0] =~ s/{LESSTHAN}/</g;
     $_[0] =~ s/{TIMESTAMP}/$timestamp/g;
@@ -1086,31 +1148,34 @@ sub url_escape {  #escapes difficult characters with %hexvalue
 #------------------------------------------------------------------
 sub httplog {  #write requests and responses to http.log file
         
-    if ($logrequest && ($logrequest =~ /yes/i)) {  #http request - log setting per test case
-        print HTTPLOGFILE $request->as_string, "\n\n";
-    } 
+    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
         
-    if ($logresponse && ($logresponse =~ /yes/i)) {  #http response - log setting per test case
-        print HTTPLOGFILE $response->as_string, "\n\n";
+        if ($logrequest && ($logrequest =~ /yes/i)) {  #http request - log setting per test case
+            print HTTPLOGFILE $request->as_string, "\n\n";
+        } 
+            
+        if ($logresponse && ($logresponse =~ /yes/i)) {  #http response - log setting per test case
+            print HTTPLOGFILE $response->as_string, "\n\n";
+        }
+            
+        if ($globalhttplog && ($globalhttplog =~ /yes/i)) {  #global http log setting
+            print HTTPLOGFILE $request->as_string, "\n\n";
+            print HTTPLOGFILE $response->as_string, "\n\n";
+        }
+            
+        if (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0)) { #global http log setting - onfail mode
+            print HTTPLOGFILE $request->as_string, "\n\n";
+            print HTTPLOGFILE $response->as_string, "\n\n";
+        }
+            
+        if (($logrequest && ($logrequest =~ /yes/i)) or
+            ($logresponse && ($logresponse =~ /yes/i)) or
+            ($globalhttplog && ($globalhttplog =~ /yes/i)) or
+            (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0))
+           ) {     
+                print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
+        }
     }
-        
-    if ($globalhttplog && ($globalhttplog =~ /yes/i)) {  #global http log setting
-        print HTTPLOGFILE $request->as_string, "\n\n";
-        print HTTPLOGFILE $response->as_string, "\n\n";
-    }
-        
-    if (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0)) { #global http log setting - onfail mode
-        print HTTPLOGFILE $request->as_string, "\n\n";
-        print HTTPLOGFILE $response->as_string, "\n\n";
-    }
-        
-    if (($logrequest && ($logrequest =~ /yes/i)) or
-        ($logresponse && ($logresponse =~ /yes/i)) or
-        ($globalhttplog && ($globalhttplog =~ /yes/i)) or
-        (($globalhttplog && ($globalhttplog =~ /onfail/i)) && ($isfailure > 0))
-       ) {     
-            print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
-    }    
 }
 #------------------------------------------------------------------
 sub plotlog {  #write performance results to plot.log in the format gnuplot can use
@@ -1171,18 +1236,24 @@ sub finaltasks {  #do ending tasks
         
     if ($gui == 1){ gui_stop(); }
         
-    writefinalhtml();  #write summary and closing tags for results file
+    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+        writefinalhtml();  #write summary and closing tags for results file
+    }
         
     unless ($xnode or $reporttype) { #skip regular STDOUT output if using an XPath or $reporttype is set ("standard" does not set this) 
         writefinalstdout();  #write summary and closing tags for STDOUT
     }
         
-    print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
-        
-    close(HTTPLOGFILE);
-    close(RESULTS);
-    close(RESULTSXML);
-        
+    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+        print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
+    }
+    
+    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+        #these handles shouldn't be open    
+        close(HTTPLOGFILE);
+        close(RESULTS);
+        close(RESULTSXML);
+    }    
         
     #Nagios plugin compatibility for WebInject
     if ($reporttype) {  #return value is set which corresponds to a monitoring program
@@ -1227,7 +1298,7 @@ sub whackoldfiles {  #delete any files leftover from previous run if they exist
 sub plotit {  #call the external plotter to create a graph (if we are in the appropriate mode)
         
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting     
-    unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) { 
+    unless ((($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) or (($gui == 0) and ($standaloneplot ne 'on'))) {
         unless ($graphtype eq 'nograph') {  #do this unless its being called from the gui with No Graph set
             if ($gnuplot) {  #if gnuplot is specified in config.xml, use it
                 system "$gnuplot", "plot.plt";  #plot it with gnuplot
@@ -1243,6 +1314,7 @@ sub plotit {  #call the external plotter to create a graph (if we are in the app
 }
 #------------------------------------------------------------------
 sub getoptions {  #command line options
+        
     Getopt::Long::Configure('bundling');
     GetOptions(
         'v|version'     => \$opt_version,
