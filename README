@@ -10,5 +10,11 @@ Version 0.90 - 02/19/2004
     -Initial public beta release
     -Contains SSL/TLS support
     -Perl/Tk GUI
-
+    -automatic cookie handling
+    
+Version 0.91 - 02/23/2004
+    -decoupled GUI (webinjectgui) from Test Engine (webinject) so engine can run standalone
+    -testcase name can be passed on command line as well as via config.xml
+    -code cleanup
+    -output sent to STDOUT as well as reports
 ---------------------------------
