@@ -93,7 +93,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         
     #change response delay timeout in seconds if it is set in config.xml      
     if ($timeout) {
-        $useragent->timeout("$timeout");
+        $useragent->timeout($timeout);
     }
         
     print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
