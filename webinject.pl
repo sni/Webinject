@@ -19,6 +19,7 @@ our $version="1.33";
 
 use strict;
 use LWP;
+use HTTP::Request::Common;
 use HTTP::Cookies;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
@@ -42,7 +43,7 @@ our ($runcount, $totalruncount, $casepassedcount, $casefailedcount, $passedcount
 our ($totalresponse, $avgresponse, $maxresponse, $minresponse);
 our (@casefilelist, $currentcasefile, $casecount, $isfailure);
 our ($verifypositive, $verifylater, $verifynegative, $verifylaterneg);
-our ($url, $baseurl, $postbody);
+our ($url, $baseurl, $postbody, $posttype);
 our ($gnuplot, $standaloneplot, $globalhttplog);
 our ($currentdatetime, $totalruntime, $starttimer, $endtimer);
 our ($opt_configfile, $opt_version);
@@ -204,6 +205,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $method = $xmltestcases->{case}->{$testnum}->{method}; if ($method) { convertbackxml($method); }  
                 $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) { convertbackxml($url); }  
                 $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) { convertbackxml($postbody); }  
+                $posttype = $xmltestcases->{case}->{$testnum}->{posttype}; if ($posttype) { convertbackxml($posttype); }  
                 $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) { convertbackxml($verifypositive); }  
                 $verifynegative = $xmltestcases->{case}->{$testnum}->{verifynegative}; if ($verifynegative) { convertbackxml($verifynegative); }  
                 $verifypositivenext = $xmltestcases->{case}->{$testnum}->{verifypositivenext}; if ($verifypositivenext) { convertbackxml($verifypositivenext); }  
@@ -518,20 +520,51 @@ sub httpget {  #send http request and read response
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
-sub httppost {  #send http request and read response
+sub httppost {  #post request based on specified encoding
+    if ($posttype) {
+	if ($posttype eq 'application/x-www-form-urlencoded') { httppost_form_urlencoded(); }
+        elsif ($posttype eq 'multipart/form-data') { httppost_form_data(); }
+        else { print STDERR qq|ERROR: Bad Form Encoding Type, you must use "application/x-www-form-urlencoded" or "multipart/form-data"\n|; }
+    }
+    else {   
+        $posttype = 'application/x-www-form-urlencoded';
+        httppost_form_urlencoded();  #use "x-www-form-urlencoded" if no encoding is specified  
+    } 
+}
+#------------------------------------------------------------------
+sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP request and read response
         
     $request = new HTTP::Request('POST',"$url");
-    $request->content_type('application/x-www-form-urlencoded');
-    $request->content($postbody);
-    $cookie_jar->add_cookie_header($request);
+    $request->content_type("$posttype");
+    $request->content("$postbody");
+    $cookie_jar->add_cookie_header("$request");
     #print $request->as_string; print "\n\n";
     $starttimer = time();
-    $response = $useragent->request($request);
+    $response = $useragent->request("$request");
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
     #print $response->as_string; print "\n\n";
         
-    $cookie_jar->extract_cookies($response);
+    $cookie_jar->extract_cookies("$response");
+    #print $cookie_jar->as_string; print "\n\n";
+}
+#------------------------------------------------------------------
+sub httppost_form_data {  #send multipart/form-data HTTP request and read response
+	
+    my %myContent_;
+    eval "\%myContent_ = $postbody";
+    $request = POST "$url",
+               Content_Type => "$posttype",
+               Content => \%myContent_;
+    $cookie_jar->add_cookie_header("$request");
+    #print $request->as_string; print "\n\n";
+    $starttimer = time();
+    $response = $useragent->request("$request");
+    $endtimer = time();
+    $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
+    #print $response->as_string; print "\n\n";
+        
+    $cookie_jar->extract_cookies("$response");
     #print $cookie_jar->as_string; print "\n\n";
 }
 #------------------------------------------------------------------
