@@ -780,7 +780,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
         if ($xpath =~ /\/(.*)\[/) {    #if the argument contains a "/" and "[", it is really an XPath  
             $xpath =~ /(.*)\/(.*)\[(.*?)\]/;  #if it contains XPath info, just grab the file name
             $xnode = $3;  #grab the XPath Node value.. (from inside the "[]")
-            print "\nXPath node is: $xnode \n";
+            #print "\nXPath Node is: $xnode \n";
         }
         else {
             print STDERR "\nSorry, $xpath is not in the XPath format I was excpecting, I'm ignoring it...\n"; 
