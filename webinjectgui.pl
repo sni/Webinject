@@ -94,7 +94,7 @@ $statustab_canvas = $status_tab->Canvas(-width          => '719',
 
 
 $statustab_buttoncanvas = $statustab_canvas->Canvas(-width        => '700',  
-                                                    -height       => '24',                                     
+                                                    -height       => '24',
                                                     -background   => '#666699',
                                                    )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
                                        
@@ -103,9 +103,9 @@ $statustab_buttoncanvas = $statustab_canvas->Canvas(-width        => '700',
 
 $minimalcheckbx = 'minimal_off';  #give it a default value
 $statustab_buttoncanvas->Label(-text  => 'Minimal Output',
-           -bg    => '#666699',
-           -fg    => 'white',
-          )->place(qw/-x 49 -y 4/); $mw->update();
+                               -bg    => '#666699',
+                               -fg    => 'white',
+                              )->place(qw/-x 49 -y 4/); $mw->update();
 $minimal_checkbx = $statustab_buttoncanvas->Checkbutton(-text       => '',  #using a text widget instead 
                         -onvalue                => 'minimal_on',
                         -offvalue               => 'minimal_off',
@@ -118,9 +118,9 @@ $minimal_checkbx = $statustab_buttoncanvas->Checkbutton(-text       => '',  #usi
 
 $timercheckbx = 'timer_off';  #give it a default value
 $statustab_buttoncanvas->Label(-text  => 'Response Timer Output',
-           -bg    => '#666699',
-           -fg    => 'white',
-          )->place(qw/-x 199 -y 4/); $mw->update();
+                               -bg    => '#666699',
+                               -fg    => 'white',
+                              )->place(qw/-x 199 -y 4/); $mw->update();
 $timers_checkbx = $statustab_buttoncanvas->Checkbutton(-text        => '',  #using a text widget instead 
                         -onvalue                => 'timer_on',
                         -offvalue               => 'timer_off',
@@ -152,6 +152,48 @@ $montab_canvas = $mon_tab->Canvas(-width        => '719',
                                  )->pack(); $mw->update();  #canvas to fill tab to place widgets into
 
 
+
+
+
+
+$montab_buttoncanvas = $montab_canvas->Canvas(-width        => '700',  
+                                              -height       => '24',
+                                              -background   => '#666699',
+                                             )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
+
+
+
+
+
+
+
+$radiolinegraph = $montab_buttoncanvas->Label(-text  => 'Line Graph',
+                                              -bg    => '#666699',
+                                              -fg    => 'white',
+                                             )->place(qw/-x 49 -y 4/); $mw->update();
+$radiolinegraph = $montab_buttoncanvas->Radiobutton(-value                  => 'lines',
+                                                    -variable               => \$graphtype,
+                                                    -indicatoron            => 'true',
+                                                    -background             => '#666699',
+                                                    -activebackground       => '#666699',
+                                                    -highlightbackground    => '#666699',
+                                                    )->place(qw/-x 20 -y 2/); $mw->update();
+$radiolinegraph->select;  #select as default
+
+
+
+$montab_buttoncanvas->Label(-text  => 'Impulse Graph',
+                            -bg    => '#666699',
+                            -fg    => 'white',
+                           )->place(qw/-x 199 -y 4/); $mw->update();
+$montab_buttoncanvas->Radiobutton(-value                  => 'impulses',
+                                  -variable               => \$graphtype,
+                                  -background             => '#666699',
+                                  -activebackground       => '#666699',
+                                  -highlightbackground    => '#666699',
+                                 )->place(qw/-x 170 -y 2/); $mw->update();
+                                 
+                                 
 
 
 $restart_button = $mw->Button->Compound;
@@ -195,7 +237,7 @@ $stop_button = $mw->Button(-width              => '50',
                            -activeforeground   => '#FFFFFF',
                            -borderwidth        => '3',
                            -image              => $stop_button,
-                           -command            => sub{$STOP = 'YES';}
+                           -command            => sub{$stop = 'yes';}
                           )->place; $mw->update();  #create this button but don't place it yet
                            
                            
@@ -266,7 +308,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $casefailedcount = '';
     $casepassedcount = '';
     $totalruntime = '';
-    $STOP = 'NO';
+    $stop = 'no';
 
 
     $out_window->delete('0.0','end');  #clear window before starting
