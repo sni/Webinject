@@ -38,7 +38,7 @@ $mw = MainWindow->new(-title  => 'WebInject - HTTP Test Tool',
                       );
 $mw->InitStderr; #redirect all STDERR to a window
 $mw->raise; #put application in front at startup
-$mw->bind('<F5>' => \&engine);
+$mw->bind('<F5>' => \&engine);  #F5 key makes it run
 
 
 if (-e "logo.gif") #if icon graphic exists, use it
@@ -218,4 +218,3 @@ sub gui_final {
                            );
 }
 #------------------------------------------------------------------
-
