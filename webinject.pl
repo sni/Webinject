@@ -94,6 +94,10 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
     $casefailedcount = 0;
     $passedcount = 0;
     $failedcount = 0;
+    $totalresponse = 0;
+    $avgresponse = 0;
+    $maxresponse = 0;
+    $minresponse = 10000000; #set to large value so first minresponse will be less
     $stop = 'no';
     $plotclear = 'no';
         
@@ -259,7 +263,6 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                     
                 httplog();  #write to http.log file
                     
-                    
                 plotlog($latency);  #send perf data to log file for plotting
                     
                 unless (($gui == 1) and ($monitorenabledchkbx eq 'monitor_off')) {  #do this unless monitor is disabled in gui
@@ -323,19 +326,23 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
                 }
                     
                     
-                    
                 $endruntimer = time();
                 $totalruntime = (int(1000 * ($endruntimer - $startruntimer)) / 1000);  #elapsed time rounded to thousandths 
                     
                 $testnum++;
                 $totalruncount++;
                     
+                if ($latency > $maxresponse) {$maxresponse = $latency;}  #set max response time
+                if ($latency < $minresponse) {$minresponse = $latency;}  #set min response time
+                $totalresponse = ($totalresponse + $latency);  #keep total of response times for calculating avg 
+                $avgresponse = (int(100 * ($totalresponse / $totalruncount)) / 100);  #avg response rounded to hundreths
+                   
                     
                 #break from sub if user presses stop button in gui    
                 if ($stop eq 'yes'){
-                    if ($gui == 1){gui_stop();}
+                    finaltasks();
                     $stop = 'no';
-                    return "";
+                    return "";  #break from sub
                 }
                     
                 if ($sleep) {  #if a sleep parameter is set in the case, sleep that amount
@@ -348,23 +355,7 @@ sub engine  #wrap the whole engine in a subroutine so it can be integrated with 
         }
     }
         
-        
-    
-        
-        
-    if ($gui == 1){gui_final();}
-        
-    writefinalhtml();  #write summary and closing tags for results file
-    
-    unless ($xnode) { #if using XPath, skip stdout output 
-        writefinalstdout();  #write summary and closing tags for STDOUT
-    }
-        
-    print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
-        
-    close(HTTPLOGFILE);
-    close(RESULTS);
-    close(RESULTSXML);
+    finaltasks();  #do ending tasks
         
 } #end engine subroutine
 
@@ -433,6 +424,10 @@ Test Cases Passed: $casepassedcount <br>
 Test Cases Failed: $casefailedcount <br>
 Verifications Passed: $passedcount <br>
 Verifications Failed: $failedcount <br>
+<br>
+Average Response Time: $avgresponse  seconds <br>
+Max Response Time: $maxresponse  seconds <br>
+Min Response Time: $minresponse  seconds <br>
 </b>
 <br>
 
@@ -955,6 +950,24 @@ set timefmt \"%m %d %H %M %S %Y\"
 plot \"plot.log\" using 1:7 title \"Response Times" w $graphtype
 |;      
     close(GNUPLOTPLT);
+        
+}
+#------------------------------------------------------------------
+sub finaltasks {  #do ending tasks
+        
+    if ($gui == 1){gui_stop();}
+        
+    writefinalhtml();  #write summary and closing tags for results file
+    
+    unless ($xnode) { #if using XPath, skip stdout output 
+        writefinalstdout();  #write summary and closing tags for STDOUT
+    }
+        
+    print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
+        
+    close(HTTPLOGFILE);
+    close(RESULTS);
+    close(RESULTSXML);
         
 }
 #------------------------------------------------------------------
