@@ -8,7 +8,7 @@ Release History:
 
 
 Version 1.31 - Jan 11, 2005
-    -  Bugfix for errors and broken status bar in GUI
+    - Bugfix for errors and broken status bar in GUI
     
 Version 1.30 - Jan 07, 2005
     - HTTP Basic Authentication support
