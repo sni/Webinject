@@ -240,8 +240,8 @@ sub httpget {  #send http request and read response
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
       
-    if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
-    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
+    if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
+    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
@@ -259,8 +259,8 @@ sub httppost {  #send http request and read response
     $endtimer = time();
     $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
      
-    if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
-    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
+    if ($logrequest && $logrequest eq "yes") {print HTTPLOGFILE $request->as_string; print HTTPLOGFILE "\n\n";} 
+    if ($logresponse && $logresponse eq "yes") {print HTTPLOGFILE $response->as_string; print HTTPLOGFILE "\n\n";} 
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
