@@ -522,7 +522,7 @@ sub monitor_enable_disable {
                    
         $clear_graph = $mon_tab->Button->Compound;
         $clear_graph->Text(-text => "Clear Graph");
-        $clear_graph = $mon_tab->Button(-width         => '60',
+        $clear_graph = $mon_tab->Button(-width         => '70',
                                    -height             => '13',
                                    -background         => '#EFEFEF',
                                    -activebackground   => '#666699',
