@@ -154,7 +154,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         $casefilecheck = ' ';
             
-        if ($gui == 1){gui_processing_msg();}
+        if ($gui == 1){ gui_processing_msg(); }
             
         convtestcases();
             
@@ -172,9 +172,9 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         foreach (1 .. $repeat) {
                 
-	    foreach (sort {$a<=>$b} keys %{$xmltestcases->{case}}) {  #process cases in sorted order
+            foreach (sort {$a<=>$b} keys %{$xmltestcases->{case}}) {  #process cases in sorted order
                     
-		$testnum = $_;
+                $testnum = $_;
                     
                 if ($xnode) {  #if an XPath Node is defined, only process the single Node 
                     $testnum = $xnode; 
@@ -825,10 +825,11 @@ sub processcasefile {  #get test case files to run (from command line or config 
             
         unless ($casefilelist[0]) {
             if (-e "$dirname"."testcases.xml") {
-                push @casefilelist, "$dirname"."testcases.xml";  #if no files are specified in config.xml, default to testcases.xml
+                #not appending a $dirname here since we append one when we open the file
+                push @casefilelist, "testcases.xml";  #if no files are specified in config.xml, default to testcases.xml
             }
             else {
-                die "\nERROR: I can't any test case files to run.\nYou must either use a config file or pass a filename " . 
+                die "\nERROR: I can't find any test case files to run.\nYou must either use a config file or pass a filename " . 
                     "on the command line if you are not using the default testcase file (testcases.xml).";
             }
         }
