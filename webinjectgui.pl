@@ -27,7 +27,7 @@ $| = 1; #don't buffer output to STDOUT
 
 
 $mw = MainWindow->new(
-        -title            => 'WebInject - HTTP Test Tool    (version 1.31)',
+        -title            => 'WebInject - HTTP Test Tool    (version 1.32)',
         -bg               => '#666699',
         -takefocus        => '1',  #start on top
         );
@@ -305,6 +305,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $casecount = '';
     $description1 = '';
     $totalruncount = '';
+    $runcount = '';
     $failedcount = '';
     $passedcount = '';
     $casefailedcount = '';
@@ -350,8 +351,10 @@ sub gui_statusbar {
 #------------------------------------------------------------------
 sub gui_tc_descript {
     unless ($minimalcheckbx  eq "minimal_on") {
-        $status_window->insert("end", "- $description1\n"); 
-        $status_window->see("end");
+        unless ($description1 =~ /dummy test case/) {
+            $status_window->insert("end", "- $description1\n"); 
+            $status_window->see("end");
+        }
     }
 }
 #------------------------------------------------------------------
