@@ -902,23 +902,23 @@ sub processcasefile {  #get test case files to run (from command line or config 
         if (/<gnuplot>/) {        
             $_ =~ /<gnuplot>(.*)<\/gnuplot>/;
             $gnuplot = $1;
-            #print "\n$gnuplot \n\n";
+            #print "\ngnuplot : $gnuplot \n\n";
         }
         
         if (/<standaloneplot>/) {        
             $_ =~ /<standaloneplot>(.*)<\/standaloneplot>/;
             $standaloneplot = $1;
-            #print "\nstandaloneplot \n\n";
+            #print "\nstandaloneplot : $standaloneplot \n\n";
         }
             
         if (/<httpauth>/) {        
             $_ =~ /<httpauth>(.*)<\/httpauth>/;
             @httpauth = split(/:/, $1);
             if ($#httpauth != 4) {
-                print STDERR "\nSorry, httpauth should have 5 fields delimited by colons...\n"; 
+                print STDERR "\nError: httpauth should have 5 fields delimited by colons\n\n"; 
                 undef @httpauth;
             }
-            #print "\nhttpauth \n\n";
+            #print "\nhttpauth : @httpauth \n\n";
         }
             
     }  
