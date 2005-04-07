@@ -1318,7 +1318,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             else {
 		push(@httpauth, [@authentry]);
 	    }
-            print "\nhttpauth : @httpauth \n\n";
+            #print "\nhttpauth : @httpauth \n\n";
         }
             
     }  
