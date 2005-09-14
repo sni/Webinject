@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.35";
+our $version="1.36";
 
 use strict;
 use LWP;
@@ -310,7 +310,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|Verify: "$verifypositive1" \n|;
                         }
-                        print RESULTSXML qq|            <verifypositive>$verifypositive1</verifypositive>\n|;
+                        print RESULTSXML qq|            <verifypositive1>$verifypositive1</verifypositive1>\n|;
                     }
                 }
                     
@@ -320,7 +320,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|Verify: "$verifypositive2" \n|;
                         }
-                        print RESULTSXML qq|            <verifypositive>$verifypositive2</verifypositive>\n|;
+                        print RESULTSXML qq|            <verifypositive2>$verifypositive2</verifypositive2>\n|;
                     }
                 }
                     
@@ -330,7 +330,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|Verify: "$verifypositive3" \n|;
                         }
-                        print RESULTSXML qq|            <verifypositive>$verifypositive3</verifypositive>\n|;
+                        print RESULTSXML qq|            <verifypositive3>$verifypositive3</verifypositive3>\n|;
                     }
                 }
                     
@@ -350,7 +350,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|Verify Negative: "$verifynegative1" \n|;
                         }
-                        print RESULTSXML qq|            <verifynegative>$verifynegative1</verifynegative>\n|;
+                        print RESULTSXML qq|            <verifynegative1>$verifynegative1</verifynegative1>\n|;
                     }
                 }
 
@@ -360,7 +360,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|Verify Negative: "$verifynegative2" \n|;
                         }
-                        print RESULTSXML qq|            <verifynegative>$verifynegative2</verifynegative>\n|;
+                        print RESULTSXML qq|            <verifynegative2>$verifynegative2</verifynegative2>\n|;
                     }
                 }
 
@@ -370,7 +370,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|Verify Negative: "$verifynegative3" \n|;
                         }
-                        print RESULTSXML qq|            <verifynegative>$verifynegative3</verifynegative>\n|;
+                        print RESULTSXML qq|            <verifynegative3>$verifynegative3</verifynegative3>\n|;
                     }
                 }
                     
@@ -432,9 +432,13 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     
                     
                 if ($isfailure > 0) {  #if any verification fails, test case is considered a failure
+                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+                        print RESULTSXML qq|            <success>false</success>\n|;
+                    }
                     if ($errormessage) { #Add defined error message to the output 
                         unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                             print RESULTS qq|<b><span class="fail">TEST CASE FAILED : $errormessage</span></b><br />\n|;
+                            print RESULTSXML qq|            <result-message>$errormessage</result-message>\n|;
                         }
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|TEST CASE FAILED : $errormessage\n|;
@@ -443,6 +447,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     else { #print regular error output
                         unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                             print RESULTS qq|<b><span class="fail">TEST CASE FAILED</span></b><br />\n|;
+                            print RESULTSXML qq|            <result-message>TEST CASE FAILED</result-message>\n|;
                         }
                         unless ($nooutput) { #skip regular STDOUT output 
                             print STDOUT qq|TEST CASE FAILED\n|;
@@ -456,9 +461,6 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                             $returnmessage = "Test case number $testnum failed"; 
                         }
                         #print "\nReturn Message : $returnmessage\n"
-                    }
-                    unless ($reporttype) {  #we suppress most logging when running in a plugin mode
-                        print RESULTSXML qq|            <success>false</success>\n|;
                     }
                     if ($gui == 1){ 
                         gui_status_failed();
@@ -474,6 +476,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     }
                     unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                         print RESULTSXML qq|            <success>true</success>\n|;
+                        print RESULTSXML qq|            <result-message>TEST CASE PASSED</result-message>\n|;
                     }
                     if ($gui == 1){
                         gui_status_passed(); 
@@ -618,6 +621,29 @@ Min Response Time: $minresponse seconds <br />
 |; 
 }
 #------------------------------------------------------------------
+sub writefinalxml {  #write summary and closing tags for XML results file
+        
+    print RESULTSXML
+qq|    
+    </testcases>
+
+    <test-summary>
+        <start-time>$currentdatetime</start-time>
+        <total-run-time>$totalruntime</total-run-time>
+        <test-cases-run>$totalruncount</test-cases-run>
+        <test-cases-passed>$casepassedcount</test-cases-passed>
+        <test-cases-failed>$casefailedcount</test-cases-failed>
+        <verifications-passed>$passedcount</verifications-passed>
+        <verifications-failed>$failedcount</verifications-failed>
+        <average-response-time>$avgresponse</average-response-time>
+        <max-response-time>$maxresponse</max-response-time>
+        <min-response-time>$minresponse</min-response-time>
+    </test-summary>
+
+</results>
+|; 
+}
+#------------------------------------------------------------------
 sub writefinalstdout {  #write summary and closing text for STDOUT
         
     print STDOUT
@@ -706,6 +732,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifypositive~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive-success>true</verifypositive-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Positive Verification \n";
@@ -715,6 +742,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive-success>false</verifypositive-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed Positive Verification \n";         
@@ -730,6 +758,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifypositive1~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Second Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive1-success>true</verifypositive1-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Second Positive Verification \n";
@@ -739,6 +768,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Second Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive1-success>false</verifypositive1-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed Second Positive Verification \n";         
@@ -754,6 +784,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifypositive2~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Third Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive2-success>true</verifypositive2-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Third Positive Verification \n";
@@ -763,6 +794,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Third Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive2-success>false</verifypositive2-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed Third Positive Verification \n";         
@@ -778,6 +810,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifypositive3~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Fourth Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive3-success>true</verifypositive3-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Fourth Positive Verification \n";
@@ -787,6 +820,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Fourth Positive Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifypositive3-success>false</verifypositive3-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output  
                 print STDOUT "Failed Fourth Positive Verification \n";         
@@ -802,6 +836,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifynegative~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative-success>false</verifynegative-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Negative Verification \n";            
@@ -812,6 +847,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative-success>true</verifynegative-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Negative Verification \n";
@@ -826,6 +862,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifynegative1~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Second Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative1-success>false</verifynegative1-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Second Negative Verification \n";        
@@ -836,6 +873,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Second Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative1-success>true</verifynegative1-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Second Negative Verification \n";
@@ -850,6 +888,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifynegative2~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Third Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative2-success>false</verifynegative2-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Third Negative Verification \n"; 
@@ -860,6 +899,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Third Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative2-success>true</verifynegative2-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Third Negative Verification \n";
@@ -874,6 +914,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifynegative3~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Fourth Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative3-success>false</verifynegative3-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Failed Fourth Negative Verification \n";
@@ -884,6 +925,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Fourth Negative Verification</span><br />\n|;
+                print RESULTSXML qq|            <verifynegative3-success>true</verifynegative3-success>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT "Passed Fourth Negative Verification \n";
@@ -898,6 +940,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ m~$verifylater~si) {  #verify existence of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
+                print RESULTSXML qq|            <verifypositivenext-success>true</verifypositivenext-success>\n|;
             }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
@@ -907,6 +950,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Positive Verification (verification set in previous test case)</span><br />\n|;
+                print RESULTSXML qq|            <verifypositivenext-success>false</verifypositivenext-success>\n|;
             }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Failed Positive Verification (verification set in previous test case) \n";            
@@ -921,8 +965,10 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         
     if ($verifylaterneg) {
         if ($response->as_string() =~ m~$verifylaterneg~si) {  #verify existence of string in response
+
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
+                print RESULTSXML qq|            <verifynegativenext-success>false</verifynegativenext-success>\n|;
             }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set  
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";     
@@ -933,6 +979,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span><br />\n|;
+                print RESULTSXML qq|            <verifynegativenext-success>true</verifynegativenext-success>\n|;
             }
             unless ($xnode or $nooutput) { #skip regular STDOUT output if using an XPath or $nooutput is set 
                 print STDOUT "Passed Negative Verification (negative verification set in previous test case) \n";
@@ -948,6 +995,8 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($verifyresponsecode == $response->code()) { #verify returned HTTP response code matches verifyresponsecode set in test case
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification </span><br />\n|; 
+                print RESULTSXML qq|            <verifyresponsecode-success>true</verifyresponsecode-success>\n|;
+                print RESULTSXML qq|            <verifyresponsecode-message>Passed HTTP Response Code Verification</verifyresponsecode-message>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT qq|Passed HTTP Response Code Verification \n|; 
@@ -957,6 +1006,8 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         else {
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification (received | . $response->code() .  qq|, expecting $verifyresponsecode)</span><br />\n|;
+                print RESULTSXML qq|            <verifyresponsecode-success>false</verifyresponsecode-success>\n|;
+                print RESULTSXML qq|            <verifyresponsecode-message>Failed HTTP Response Code Verification (received | . $response->code() .  qq|, expecting $verifyresponsecode)</verifyresponsecode-message>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT qq|Failed HTTP Response Code Verification (received | . $response->code() .  qq|, expecting $verifyresponsecode) \n|;
@@ -969,6 +1020,8 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         if ($response->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
             unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|; 
+                print RESULTSXML qq|            <verifyresponsecode-success>true</verifyresponsecode-success>\n|;
+                print RESULTSXML qq|            <verifyresponsecode-message>Passed HTTP Response Code Verification (not in error range)</verifyresponsecode-message>\n|;
             }
             unless ($nooutput) { #skip regular STDOUT output 
                 print STDOUT qq|Passed HTTP Response Code Verification (not in error range) \n|; 
@@ -981,6 +1034,8 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             if ($1) {  #this is true if an HTTP response returned 
                 unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                     print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification ($1$2)</span><br />\n|; #($1$2) is HTTP response code
+                    print RESULTSXML qq|            <verifyresponsecode-success>false</verifyresponsecode-success>\n|;
+                    print RESULTSXML qq|            <verifyresponsecode-message>Failed HTTP Response Code Verification ($1$2)</verifyresponsecode-message>\n|;
                 }
                 unless ($nooutput) { #skip regular STDOUT output 
                     print STDOUT "Failed HTTP Response Code Verification ($1$2) \n"; #($1$2) is HTTP response code   
@@ -989,6 +1044,8 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             else {  #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
                 unless ($reporttype) {  #we suppress most logging when running in a plugin mode
                     print RESULTS qq|<span class="fail">Failed - No Response</span><br />\n|; #($1$2) is HTTP response code
+                    print RESULTSXML qq|            <verifyresponsecode-success>false</verifyresponsecode-success>\n|;
+                    print RESULTSXML qq|            <verifyresponsecode-message>Failed - No Response</verifyresponsecode-message>\n|;
                 }
                 unless ($nooutput) { #skip regular STDOUT output  
                     print STDOUT "Failed - No Response \n"; #($1$2) is HTTP response code   
@@ -1216,7 +1273,7 @@ sub processcasefile {  #get test case files to run (from command line or config 
             #print "\nXPath Node is: $xnode \n";
         }
         else {
-            print STDERR "\nSorry, $xpath is not in the XPath format I was excpecting, I'm ignoring it...\n"; 
+            print STDERR "\nSorry, $xpath is not in the XPath format I was expecting, I'm ignoring it...\n"; 
         }
             
         #use testcase filename passed on command line (config.xml is only used for other options)        
@@ -1502,7 +1559,7 @@ sub finaltasks {  #do ending tasks
     }
         
     unless ($reporttype) {  #we suppress most logging when running in a plugin mode
-        print RESULTSXML qq|    </testcases>\n\n</results>\n|;  #write final xml tag
+        writefinalxml();  #write summary and closing tags for XML results file
     }
     
     unless ($reporttype) {  #we suppress most logging when running in a plugin mode
