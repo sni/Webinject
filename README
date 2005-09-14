@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
+Version 1.36 - ???
+    - More detail added to XML output
+    
 Version 1.35 - April 4, 2005
     - New command line option (-o) to specify location for writing output files (http.log, results.html, and results.xml)
     - Nagios plugin performance data support
