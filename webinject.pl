@@ -176,7 +176,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         fixsinglecase();
           
-        $xmltestcases = XMLin("$dirname"."$currentcasefile".".$$".".tmp"); #slurp test case file to parse
+        $xmltestcases = XMLin("$dirname"."$currentcasefile".".$$".".tmp", VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
         #print keys %{$configfile};  #for debug, print keys from dereferenced hash
             
