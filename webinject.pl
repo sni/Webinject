@@ -682,7 +682,8 @@ sub httppost {  #post request based on specified encoding
     if ($posttype) {
 	if ($posttype eq 'application/x-www-form-urlencoded') { httppost_form_urlencoded(); }
         elsif ($posttype eq 'multipart/form-data') { httppost_form_data(); }
-        else { print STDERR qq|ERROR: Bad Form Encoding Type, you must use "application/x-www-form-urlencoded" or "multipart/form-data"\n|; }
+        elsif ($posttype eq 'text/xml') { httppost_xml(); }
+        else { print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml" \n|; }
     }
     else {   
         $posttype = 'application/x-www-form-urlencoded';
@@ -705,6 +706,29 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
         
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
+}
+#------------------------------------------------------------------
+sub httppost_xml{  #send text/xml HTTP request and read response 
+    
+    #read the xml file specified in the testcase
+    $postbody =~ /file=>(.*)/i;
+    open(XMLBODY, $1) or die "\nError: Failed to open text/xml file\n\n";  #open file handle   
+    my @xmlbody = <XMLBODY>;  #read the file into an array   
+    close(XMLBODY);
+        
+    $request = new HTTP::Request('POST', "$url"); 
+    $request->content_type("$posttype");     
+    $request->content(join(" ", @xmlbody));  #load the contents of the file into the request body 
+    $cookie_jar->add_cookie_header($request);
+    #print $request->as_string; print "\n\n";    
+    $starttimer = time(); 
+    $response = $useragent->request($request); 
+    $endtimer = time(); 
+    $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
+    #print $response->as_string; print "\n\n";    
+
+    $cookie_jar->extract_cookies($response);
+    #print $cookie_jar->as_string; print "\n\n";    
 }
 #------------------------------------------------------------------
 sub httppost_form_data {  #send multipart/form-data HTTP request and read response
