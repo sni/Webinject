@@ -682,8 +682,8 @@ sub httppost {  #post request based on specified encoding
     if ($posttype) {
 	if ($posttype eq 'application/x-www-form-urlencoded') { httppost_form_urlencoded(); }
         elsif ($posttype eq 'multipart/form-data') { httppost_form_data(); }
-        elsif ($posttype eq 'text/xml') { httppost_xml(); }
-        else { print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml" \n|; }
+        elsif ($posttype eq ('text/xml' or 'application/soap+xml')) { httppost_xml(); }
+        else { print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|; }
     }
     else {   
         $posttype = 'application/x-www-form-urlencoded';
@@ -712,7 +712,7 @@ sub httppost_xml{  #send text/xml HTTP request and read response
     
     #read the xml file specified in the testcase
     $postbody =~ /file=>(.*)/i;
-    open(XMLBODY, $1) or die "\nError: Failed to open text/xml file\n\n";  #open file handle   
+    open(XMLBODY, "$dirname"."$1") or die "\nError: Failed to open text/xml file\n\n";  #open file handle   
     my @xmlbody = <XMLBODY>;  #read the file into an array   
     close(XMLBODY);
         
