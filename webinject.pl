@@ -46,7 +46,7 @@ our ($verifyresponsecode);
 our ($verifypositive, $verifylater, $verifynegative, $verifylaterneg);
 our ($verifypositive1,$verifypositive2,$verifypositive3);
 our ($verifynegative1,$verifynegative2,$verifynegative3);
-our ($url, $baseurl, $baseurl1, $baseurl2, $postbody, $posttype);
+our ($url, $baseurl, $baseurl1, $baseurl2, $postbody, $posttype, $addheader);
 our ($gnuplot, $standaloneplot, $globalhttplog);
 our ($currentdatetime, $totalruntime, $starttimer, $endtimer);
 our ($opt_configfile, $opt_version, $opt_output);
@@ -223,6 +223,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 $url = $xmltestcases->{case}->{$testnum}->{url}; if ($url) { convertbackxml($url); }  
                 $postbody = $xmltestcases->{case}->{$testnum}->{postbody}; if ($postbody) { convertbackxml($postbody); }  
                 $posttype = $xmltestcases->{case}->{$testnum}->{posttype}; if ($posttype) { convertbackxml($posttype); }  
+                $addheader = $xmltestcases->{case}->{$testnum}->{addheader}; if ($addheader) { convertbackxml($addheader); }  
                 $verifypositive = $xmltestcases->{case}->{$testnum}->{verifypositive}; if ($verifypositive) { convertbackxml($verifypositive); }  
                 $verifypositive1 = $xmltestcases->{case}->{$testnum}->{verifypositive1}; if ($verifypositive1) { convertbackxml($verifypositive1); }  
                 $verifypositive2 = $xmltestcases->{case}->{$testnum}->{verifypositive2}; if ($verifypositive2) { convertbackxml($verifypositive2); }  
@@ -680,9 +681,9 @@ sub httpget {  #send http request and read response
 sub httppost {  #post request based on specified encoding
         
     if ($posttype) {
-	if ($posttype eq 'application/x-www-form-urlencoded') { httppost_form_urlencoded(); }
-        elsif ($posttype eq 'multipart/form-data') { httppost_form_data(); }
-        elsif ($posttype eq ('text/xml' or 'application/soap+xml')) { httppost_xml(); }
+	if ($posttype =~ m~application/x-www-form-urlencoded~) { httppost_form_urlencoded(); }
+        elsif ($posttype =~ m~multipart/form-data~) { httppost_form_data(); }
+        elsif (($posttype =~ m~text/xml~) or ($posttype =~ m~application/soap+xml~)) { httppost_xml(); }
         else { print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|; }
     }
     else {   
@@ -695,6 +696,13 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
         
     $request = new HTTP::Request('POST',"$url");
     $request->content_type("$posttype");
+    
+    if ($addheader) {  #add an additional HTTP Header if specified
+        $addheader =~ m~(.*): (.*)~;
+        $request->header($1 => $2);  #using HTTP::Headers Class
+        $addheader = '';
+    }
+    
     $request->content("$postbody");
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
@@ -711,13 +719,20 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
 sub httppost_xml{  #send text/xml HTTP request and read response 
     
     #read the xml file specified in the testcase
-    $postbody =~ /file=>(.*)/i;
+    $postbody =~ m~file=>(.*)~i;
     open(XMLBODY, "$dirname"."$1") or die "\nError: Failed to open text/xml file\n\n";  #open file handle   
     my @xmlbody = <XMLBODY>;  #read the file into an array   
     close(XMLBODY);
         
     $request = new HTTP::Request('POST', "$url"); 
-    $request->content_type("$posttype");     
+    $request->content_type("$posttype");
+    
+    if ($addheader) {  #add an additional HTTP Header if specified
+        $addheader =~ m~(.*): (.*)~;
+        $request->header($1 => $2);  #using HTTP::Headers Class
+        $addheader = '';
+    }
+    
     $request->content(join(" ", @xmlbody));  #load the contents of the file into the request body 
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";    
