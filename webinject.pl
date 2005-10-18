@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.36";
+our $version="1.40";
 
 use strict;
 use LWP;
@@ -25,6 +25,8 @@ use XML::Simple;
 use Time::HiRes 'time','sleep';
 use Getopt::Long;
 use Crypt::SSLeay;  #for SSL/HTTPS (you may comment this out if you don't need it)
+use XML::Parser;  #for web services verification (you may comment this out if aren't doing XML verifications for web services)
+use Error qw(:try);  #for web services verification (you may comment this out if aren't doing XML verifications for web services)
 #use Data::Dumper;  #uncomment to dump hashes for debugging   
 
 
@@ -743,7 +745,37 @@ sub httppost_xml{  #send text/xml HTTP request and read response
     #print $response->as_string; print "\n\n";    
 
     $cookie_jar->extract_cookies($response);
-    #print $cookie_jar->as_string; print "\n\n";    
+    #print $cookie_jar->as_string; print "\n\n";
+
+
+    my $xmlparser = new XML::Parser;
+    try {  #see if the XML parses properly
+        $xmlparser->parse($response);
+        #print "good xml\n";
+        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+            print RESULTS qq|<span class="pass">Passed XML Parser (content is well-formed)</span><br />\n|;
+            print RESULTSXML qq|            <verifyxml-success>true</verifyxml-success>\n|;
+        }
+        unless ($nooutput) { #skip regular STDOUT output 
+            print STDOUT "Passed XML Parser (content is well-formed) \n";
+        }
+        $passedcount++;
+        return; #exit try block
+    }
+    catch Error with {
+        my $ex = shift;  #get the exception object
+        #print "bad xml\n";
+        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
+            print RESULTS qq|<span class="fail">Failed XML Parser: $ex</span><br />\n|;
+            print RESULTSXML qq|            <verifyxml-success>false</verifyxml-success>\n|;
+        }
+        unless ($nooutput) { #skip regular STDOUT output  
+            print STDOUT "Failed XML Parser: $ex \n";         
+        }
+        $failedcount++;
+        $isfailure++;
+    };  # <-- remember the semicolon
+
 }
 #------------------------------------------------------------------
 sub httppost_form_data {  #send multipart/form-data HTTP request and read response
