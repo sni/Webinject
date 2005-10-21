@@ -750,7 +750,7 @@ sub httppost_xml{  #send text/xml HTTP request and read response
 
     my $xmlparser = new XML::Parser;
     try {  #see if the XML parses properly
-        $xmlparser->parse($response);
+        $xmlparser->parse($response->content);
         #print "good xml\n";
         unless ($reporttype) {  #we suppress most logging when running in a plugin mode
             print RESULTS qq|<span class="pass">Passed XML Parser (content is well-formed)</span><br />\n|;
