@@ -1284,9 +1284,19 @@ sub finaltasks {  #do ending tasks
                 exit(0);
             }
         }
+        
+        #External plugin. To use it, add something like that in the config file:
+        # <reporttype>external:/home/webinject/Plugin.pm</reporttype>
+        elsif ($reporttype =~ /^external:(.*)/) { 
+            unless (my $return = do $1) {
+                die "couldn't parse $1: $@\n" if $@;
+                die "couldn't do $1: $!\n" unless defined $return;
+                die "couldn't run $1\n" unless $return;
+            }
+        }
 
         else {
-            print STDERR "\nError: only 'nagios', 'mrtg', or 'standard' are supported reporttype values\n\n";
+            print STDERR "\nError: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values\n\n";
         }
             
     }
