@@ -303,7 +303,7 @@ sub gui_initial {   #this runs when engine is first loaded
     $currentcasefile = ''; 
     $latency = '';    
     $casecount = '';
-    $description1 = '';
+    $case{description1} = '';
     $totalruncount = '';
     $runcount = '';
     $failedcount = '';
@@ -351,8 +351,8 @@ sub gui_statusbar {
 #------------------------------------------------------------------
 sub gui_tc_descript {
     unless ($minimalcheckbx  eq "minimal_on") {
-        unless ($description1 =~ /dummy test case/) {
-            $status_window->insert("end", "- $description1\n"); 
+        unless ($case{description1} =~ /dummy test case/) {
+            $status_window->insert("end", "- $case{description1}\n"); 
             $status_window->see("end");
         }
     }
