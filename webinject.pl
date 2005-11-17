@@ -1011,14 +1011,16 @@ sub processcasefile {  #get test case files to run (from command line or config 
     #grab values for constants in config file:
     foreach (@configfile) {
 
-      for (qw/baseurl baseurl1 baseurl2 gnuplot proxy
-	      timeout globaltimeout globalhttplog standaloneplot/) {
-        if (/<$_>/) {   
-            $_ =~ m~<$_>(.*)</$_>~;
-            $config{$_} = $1;
-            #print "\n$_ : $config{$_} \n\n";
+        for my $config_const (qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout
+                globaltimeout globalhttplog standaloneplot/) {
+
+            if (/<$config_const>/) {
+                $_ =~ m~<$config_const>(.*)</$config_const>~;
+                $config{$config_const} = $1;
+                #$config{$_} = $1;
+                #print "\n$_ : $config{$_} \n\n";
+            }
         }
-      }
             
         if (/<reporttype>/) {   
             $_ =~ m~<reporttype>(.*)</reporttype>~;
