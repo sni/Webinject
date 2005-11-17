@@ -1017,7 +1017,6 @@ sub processcasefile {  #get test case files to run (from command line or config 
             if (/<$config_const>/) {
                 $_ =~ m~<$config_const>(.*)</$config_const>~;
                 $config{$config_const} = $1;
-                #$config{$_} = $1;
                 #print "\n$_ : $config{$_} \n\n";
             }
         }
