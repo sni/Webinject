@@ -7,8 +7,16 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 
-Version 1.36 - ???
+Version 1.40 - Dec 6, 2005
+    - Support for Web Services (SOAP/XML)
+    - Added XML parser for parsing and verification of XML responses (web services)
+    - Support for 'text/xml' and 'application/soap+xml' Content-Type (web services)
+    - Added new 'addheader' testcase parameter so you can specify an additional HTTP Header field for requests
+    - Support for setting variables/constants within test case files
+    - Added ability to call generic external Perl plugins for easier integration and post-processing
     - More detail added to XML output
+    - Code refactoring
+
     
 Version 1.35 - April 4, 2005
     - New command line option (-o) to specify location for writing output files (http.log, results.html, and results.xml)
