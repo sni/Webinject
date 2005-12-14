@@ -1121,8 +1121,8 @@ sub convertbackxml() {  #converts replaced xml with substitutions
     $_[0] =~ s~{BASEURL1}~$config{baseurl1}~g;
     $_[0] =~ s~{BASEURL2}~$config{baseurl2}~g;
     $_[0] =~ s~{PARSEDRESULT}~$parsedresult{parseresponse}~g; 
-    $_[0] =~ s~{PARSEDRESULT1}~$parsedresult{parseresponse2}~g; 
-    $_[0] =~ s~{PARSEDRESULT2}~$parsedresult{parseresponse3}~g; 
+    $_[0] =~ s~{PARSEDRESULT1}~$parsedresult{parseresponse1}~g; 
+    $_[0] =~ s~{PARSEDRESULT2}~$parsedresult{parseresponse2}~g; 
     $_[0] =~ s~{PARSEDRESULT3}~$parsedresult{parseresponse3}~g; 
     $_[0] =~ s~{PARSEDRESULT4}~$parsedresult{parseresponse4}~g; 
     $_[0] =~ s~{PARSEDRESULT5}~$parsedresult{parseresponse5}~g;
