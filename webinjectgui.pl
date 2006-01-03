@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-#    Copyright 2004-2005 Corey Goldberg (corey@goldb.org)
+#    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
 #    This file is part of WebInject.
 #
@@ -27,7 +27,7 @@ $| = 1; #don't buffer output to STDOUT
 
 
 $mw = MainWindow->new(
-        -title            => 'WebInject - HTTP Test Tool    (version 1.40)',
+        -title            => 'WebInject - HTTP Test Tool    (version 1.41)',
         -bg               => '#666699',
         -takefocus        => '1',  #start on top
         );

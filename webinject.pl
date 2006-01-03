@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-#    Copyright 2004-2005 Corey Goldberg (corey@goldb.org)
+#    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
 #    This file is part of WebInject.
 #
@@ -219,7 +219,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 			verifypositive verifypositive1 verifypositive2 verifypositive3
 			verifynegative verifynegative1 verifynegative2 verifynegative3
 			parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5
-			verifyresponsescode logrequest logresponse sleep
+			verifyresponsescode logrequest logresponse sleep errormessage
 			verifypositivenext verifynegativenext/) {
 		  $case{$_} = $xmltestcases->{case}->{$testnum}->{$_};
 		  if ($case{$_}) { convertbackxml($case{$_}); }
