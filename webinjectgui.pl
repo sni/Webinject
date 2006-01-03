@@ -483,13 +483,13 @@ sub about {
                                 
     $about_text->insert("end", qq| 
 WebInject
-©2004-2005 Corey Goldberg
+©2004-2006 Corey Goldberg
 
-please visit www.webinject.org
+Please visit www.webinject.org
 for information and documentation.
 
 WebInject is Free and Open Source.
-Licensed under the terms of the GNU GPL
+Licensed under the terms of the GNU GPL.
     |);
 
 }
@@ -564,7 +564,7 @@ sub monitor_enable_disable {
         
         $montab_buttoncanvas = $montab_canvas->Canvas(
                 -width        => '700',  
-                -height       => '24',
+                -height       => '26',
                 -background   => '#666699',
                 )->place(qw/-x 10 -y 334/); $mw->update();  #canvas to place buttons into
         
@@ -635,7 +635,7 @@ sub monitor_enable_disable {
                 -foreground  => 'black',
                 -relief      => 'flat',
                 -anchor      => 'w',
-                )->place(qw/-x 12 -y 265/); $mw->update();                    
+                )->place(qw/-x 32 -y 265/); $mw->update();                    
         $mintime_text->configure(-text => "Min:  $minresponse sec");
         
         
@@ -647,7 +647,7 @@ sub monitor_enable_disable {
                 -foreground  => 'black',
                 -relief      => 'flat',
                 -anchor      => 'w',
-                )->place(qw/-x 12 -y 280/); $mw->update();                    
+                )->place(qw/-x 32 -y 285/); $mw->update();                    
         $maxtime_text->configure(-text => "Max:  $maxresponse sec");
             
             
@@ -659,7 +659,7 @@ sub monitor_enable_disable {
                 -foreground  => 'black',
                 -relief      => 'flat',
                 -anchor      => 'w',
-                )->place(qw/-x 12 -y 295/); $mw->update();                    
+                )->place(qw/-x 32 -y 305/); $mw->update();                    
         $avgtime_text->configure(-text => "Avg:  $avgresponse sec");
             
             
@@ -682,7 +682,7 @@ sub monitor_enable_disable {
                 -foreground  => 'black',
                 -relief      => 'flat',
                 -anchor      => 'w',
-                )->place(qw/-x 250 -y 265/); $mw->update();                    
+                )->place(qw/-x 270 -y 265/); $mw->update();                    
         $runcounttotal_text->configure(-text => "Total:  $totalruncount");
             
             
@@ -694,7 +694,7 @@ sub monitor_enable_disable {
                 -foreground  => 'black',
                 -relief      => 'flat',
                 -anchor      => 'w',
-                )->place(qw/-x 250 -y 280/); $mw->update();                    
+                )->place(qw/-x 270 -y 285/); $mw->update();                    
         $runcountcasespassed_text->configure(-text => "Passed:  $casepassedcount");
             
             
@@ -706,7 +706,7 @@ sub monitor_enable_disable {
                 -foreground  => 'black',
                 -relief      => 'flat',
                 -anchor      => 'w',
-                )->place(qw/-x 250 -y 295/); $mw->update();                    
+                )->place(qw/-x 270 -y 305/); $mw->update();                    
         $runcountcasespfailed_text->configure(-text => "Failed:  $casefailedcount");
         
         
