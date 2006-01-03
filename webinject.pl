@@ -567,7 +567,13 @@ Verifications Failed: $failedcount
 sub httpget {  #send http request and read response
         
     $request = new HTTP::Request('GET',"$case{url}");
-        
+    
+    if ($case{addheader}) {  #add an additional HTTP Header if specified
+        $case{addheader} =~ m~(.*): (.*)~;
+        $request->header($1 => $2);  #using HTTP::Headers Class
+        $case{addheader} = '';
+    }
+    
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
         
@@ -592,13 +598,14 @@ sub httppost {  #post request based on specified encoding
     else {   
         $case{posttype} = 'application/x-www-form-urlencoded';
         httppost_form_urlencoded();  #use "x-www-form-urlencoded" if no encoding is specified  
-    } 
+    }
 }
 #------------------------------------------------------------------
 sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP request and read response
         
     $request = new HTTP::Request('POST',"$case{url}");
     $request->content_type("$case{posttype}");
+    $request->content("$case{postbody}");
     
     if ($case{addheader}) {  #add an additional HTTP Header if specified
         $case{addheader} =~ m~(.*): (.*)~;
@@ -606,7 +613,6 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
         $case{addheader} = '';
     }
     
-    $request->content("$case{postbody}");
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
     $starttimer = time();
@@ -629,14 +635,14 @@ sub httppost_xml{  #send text/xml HTTP request and read response
         
     $request = new HTTP::Request('POST', "$case{url}"); 
     $request->content_type("$case{posttype}");
+    $request->content(join(" ", @xmlbody));  #load the contents of the file into the request body 
     
-    if ($case{addheader}) {  #add an additional HTTP Header if specified
+    if ($case{addheader}) {  #add an additional HTTP header if specified
         $case{addheader} =~ m~(.*): (.*)~;
-        $request->header($1 => $2);  #using HTTP::Headers Class
+        $request->header($1 => $2);  #using HTTP::Headers class
         $case{addheader} = '';
     }
     
-    $request->content(join(" ", @xmlbody));  #load the contents of the file into the request body 
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";    
     $starttimer = time(); 
@@ -688,6 +694,13 @@ sub httppost_form_data {  #send multipart/form-data HTTP request and read respon
                Content => \%myContent_;
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
+    
+    if ($case{addheader}) {  #add an additional HTTP header if specified
+        $case{addheader} =~ m~(.*): (.*)~;
+        $request->header($1 => $2);  #using HTTP::Headers class
+        $case{addheader} = '';
+    }
+    
     $starttimer = time();
     $response = $useragent->request($request);
     $endtimer = time();
