@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.40";
+our $version="1.41";
 
 use strict;
 use LWP;
