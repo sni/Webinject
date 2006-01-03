@@ -569,8 +569,11 @@ sub httpget {  #send http request and read response
     $request = new HTTP::Request('GET',"$case{url}");
     
     if ($case{addheader}) {  #add an additional HTTP Header if specified
-        $case{addheader} =~ m~(.*): (.*)~;
-        $request->header($1 => $2);  #using HTTP::Headers Class
+        my @addheaders = split(/\|/, $case{addheader});  #can add multiple headers with a pipe delimiter
+        foreach (@addheaders) {
+            $_ =~ m~(.*): (.*)~;
+            $request->header($1 => $2);  #using HTTP::Headers Class
+        }
         $case{addheader} = '';
     }
     
@@ -608,8 +611,11 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
     $request->content("$case{postbody}");
     
     if ($case{addheader}) {  #add an additional HTTP Header if specified
-        $case{addheader} =~ m~(.*): (.*)~;
-        $request->header($1 => $2);  #using HTTP::Headers Class
+        my @addheaders = split(/\|/, $case{addheader});  #can add multiple headers with a pipe delimiter
+        foreach (@addheaders) {
+            $_ =~ m~(.*): (.*)~;
+            $request->header($1 => $2);  #using HTTP::Headers Class
+        }
         $case{addheader} = '';
     }
     
@@ -637,9 +643,12 @@ sub httppost_xml{  #send text/xml HTTP request and read response
     $request->content_type("$case{posttype}");
     $request->content(join(" ", @xmlbody));  #load the contents of the file into the request body 
     
-    if ($case{addheader}) {  #add an additional HTTP header if specified
-        $case{addheader} =~ m~(.*): (.*)~;
-        $request->header($1 => $2);  #using HTTP::Headers class
+    if ($case{addheader}) {  #add an additional HTTP Header if specified
+        my @addheaders = split(/\|/, $case{addheader});  #can add multiple headers with a pipe delimiter
+        foreach (@addheaders) {
+            $_ =~ m~(.*): (.*)~;
+            $request->header($1 => $2);  #using HTTP::Headers Class
+        }
         $case{addheader} = '';
     }
     
@@ -695,9 +704,12 @@ sub httppost_form_data {  #send multipart/form-data HTTP request and read respon
     $cookie_jar->add_cookie_header($request);
     #print $request->as_string; print "\n\n";
     
-    if ($case{addheader}) {  #add an additional HTTP header if specified
-        $case{addheader} =~ m~(.*): (.*)~;
-        $request->header($1 => $2);  #using HTTP::Headers class
+    if ($case{addheader}) {  #add an additional HTTP Header if specified
+        my @addheaders = split(/\|/, $case{addheader});  #can add multiple headers with a pipe delimiter
+        foreach (@addheaders) {
+            $_ =~ m~(.*): (.*)~;
+            $request->header($1 => $2);  #using HTTP::Headers Class
+        }
         $case{addheader} = '';
     }
     
