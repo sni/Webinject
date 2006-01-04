@@ -1,10 +1,17 @@
 WebInject
 
-Copyright 2004, 2005 Corey Goldberg (corey@goldb.org)
+Copyright 2004, 2005, 2006 Corey Goldberg (corey@goldb.org)
 For information and documentation, visit the website at http://www.webinject.org
 
 ---------------------------------
 Release History:
+
+
+Version 1.41 - Jan 4, 2006
+    - Added ability to add multiple HTTP Headers within an 'addheader' testcase parameter
+    - Added 'addheader' testcase parameter to GET requests (previously only supported POST)
+    - Fixed GUI layout for high dpi displays
+    - Bugfixes for 'verifyresponsecode' and 'errormessage' parameters
 
 
 Version 1.40 - Dec 6, 2005
