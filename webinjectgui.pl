@@ -466,7 +466,7 @@ sub about {
             -takefocus  => '1',  #start on top
             );
     $about->raise; #put in front
-    $about->geometry("320x200+200+200");  #size and screen placement
+    $about->geometry("400x200+200+200");  #size and screen placement
     if (-e "icon.gif") {  #if icon graphic exists, use it
         $about->update();
         $icon = $about->Photo(-file => 'icon.gif');
@@ -482,14 +482,14 @@ sub about {
             )->pack;
                                 
     $about_text->insert("end", qq| 
-WebInject
-©2004-2006 Corey Goldberg
-
-Please visit www.webinject.org
-for information and documentation.
-
-WebInject is Free and Open Source.
-Licensed under the terms of the GNU GPL.
+ WebInject
+ ©2004-2006 Corey Goldberg
+ 
+ Please visit www.webinject.org
+ for information and documentation.
+ 
+ WebInject is Free and Open Source.
+ Licensed under the terms of the GNU GPL.
     |);
 
 }
