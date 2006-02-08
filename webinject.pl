@@ -595,7 +595,7 @@ sub httppost {  #post request based on specified encoding
     if ($case{posttype}) {
 	if ($case{posttype} =~ m~application/x-www-form-urlencoded~) { httppost_form_urlencoded(); }
         elsif ($case{posttype} =~ m~multipart/form-data~) { httppost_form_data(); }
-        elsif (($case{posttype} =~ m~text/xml~) or ($case{posttype} =~ m~application/soap+xml~)) { httppost_xml(); }
+        elsif (($case{posttype} =~ m~text/xml~) or ($case{posttype} =~ m~application/soap\+xml~)) { httppost_xml(); }
         else { print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|; }
     }
     else {   
