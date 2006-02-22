@@ -176,7 +176,6 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
           
         $xmltestcases = XMLin("$dirname"."$currentcasefile".".$$".".tmp", VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
-        #print keys %{$configfile};  #for debug, print keys from dereferenced hash
             
         #delete the temp file as soon as we are done reading it    
         if (-e "$dirname"."$currentcasefile".".$$".".tmp") { unlink "$dirname"."$currentcasefile".".$$".".tmp"; }        
@@ -215,12 +214,12 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 if ($case{verifynegativenext}) { $verifylaterneg = $case{verifynegativenext}; }  #grab $case{verifynegativenext} string from previous test case (if it exists)
                     
                 # populate variables with values from testcase file, do substitutions, and revert converted values back
-		for (qw/method description1 description2 url postbody posttype addheader
-			verifypositive verifypositive1 verifypositive2 verifypositive3
-			verifynegative verifynegative1 verifynegative2 verifynegative3
-			parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5
-			verifyresponsecode logrequest logresponse sleep errormessage
-			verifypositivenext verifynegativenext/) {
+                for (qw/method description1 description2 url postbody posttype addheader
+                        verifypositive verifypositive1 verifypositive2 verifypositive3
+                        verifynegative verifynegative1 verifynegative2 verifynegative3
+                        parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5
+                        verifyresponsecode logrequest logresponse sleep errormessage
+                        verifypositivenext verifynegativenext/) {
 		  $case{$_} = $xmltestcases->{case}->{$testnum}->{$_};
 		  if ($case{$_}) { convertbackxml($case{$_}); }
 		}
@@ -264,8 +263,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     print RESULTS qq|<br />\n|;
                 }
 
-		for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3
-			verifynegative verifynegative1 verifynegative2 verifynegative3/) {
+                for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3
+                        verifynegative verifynegative1 verifynegative2 verifynegative3/) {
                     my $negative = $_ =~ /negative/ ? "Negative" : "";
                     if ($case{$_}) {
                         unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
