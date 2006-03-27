@@ -528,7 +528,7 @@ sub viewconfig {
 #------------------------------------------------------------------
 sub monitor_enable_disable {
         
-    if ($monitorenabledchkbx eq 'monitor_on') {  #create the monitor tab and all it's widgets
+    if ($monitorenabledchkbx eq 'monitor_on') {  #create the monitor tab and all its widgets
         
         $mon_tab = $tabs->add('montab', -label => 'Monitor'); $mw->update();  #add the notebook tab
         
@@ -723,7 +723,7 @@ sub monitor_enable_disable {
 sub gui_no_plotter_found {  #if gnuplot not specified, notify on gui
         
     $montab_plotcanvas->Label(
-            -text  => "Sorry, I can't display the graph.\nMake sure you have gnuplot on your system and it's location is specified in config.xml. ",
+            -text  => "Sorry, I can't display the graph.\nMake sure you have gnuplot installed on your system and the location is specified in config.xml. ",
             -bg    => '#EFEFEF',
             -fg    => 'black',
             )->place(qw/-x 95 -y 100/); $mw->update();
