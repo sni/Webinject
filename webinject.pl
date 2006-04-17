@@ -15,7 +15,7 @@
 #    GNU General Public License for more details.
 
 
-our $version="1.41";
+our $version="1.42";
 
 use strict;
 use LWP;
@@ -629,69 +629,81 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
     $cookie_jar->extract_cookies($response);
     #print $cookie_jar->as_string; print "\n\n";
 }
-#------------------------------------------------------------------
-sub httppost_xml{  #send text/xml HTTP request and read response 
+#------------------------------------------------------------------ 
+sub httppost_xml{  #send text/xml HTTP request and read response  
     
-    #read the xml file specified in the testcase
-    $case{postbody} =~ m~file=>(.*)~i;
-    open(XMLBODY, "$dirname"."$1") or die "\nError: Failed to open text/xml file\n\n";  #open file handle   
-    my @xmlbody = <XMLBODY>;  #read the file into an array   
-    close(XMLBODY);
-        
-    $request = new HTTP::Request('POST', "$case{url}"); 
-    $request->content_type("$case{posttype}");
-    $request->content(join(" ", @xmlbody));  #load the contents of the file into the request body 
+    #read the xml file specified in the testcase 
+    $case{postbody} =~ m~file=>(.*)~i; 
+ 
+    open(XMLBODY, "$dirname"."$1") or die "\nError: Failed to open text/xml file\n\n";  #open file handle    
+    # added for variables support with XML posts  
+    my @xmlbody = (''); 
+    while ($_ = <XMLBODY> ) { 
+        if ($_ =~ /\{PARSEDRESULT.\}/) {
+            # Replace text, all instances on a line (/g) 
+            $_ =~ s/{PARSEDRESULT}/$parsedresult{parseresponse}/g; 
+            $_ =~ s/{PARSEDRESULT1}/$parsedresult{parseresponse1}/g; 
+            $_ =~ s/{PARSEDRESULT2}/$parsedresult{parseresponse2}/g; 
+            $_ =~ s/{PARSEDRESULT3}/$parsedresult{parseresponse3}/g; 
+            $_ =~ s/{PARSEDRESULT4}/$parsedresult{parseresponse4}/g; 
+            $_ =~ s/{PARSEDRESULT5}/$parsedresult{parseresponse5}/g; 
+        } 
+        push(@xmlbody,"$_");
+    } 
+    close(XMLBODY); 
     
-    if ($case{addheader}) {  #add an additional HTTP Header if specified
-        my @addheaders = split(/\|/, $case{addheader});  #can add multiple headers with a pipe delimiter
-        foreach (@addheaders) {
-            $_ =~ m~(.*): (.*)~;
-            $request->header($1 => $2);  #using HTTP::Headers Class
-        }
-        $case{addheader} = '';
-    }
+    $request = new HTTP::Request('POST', "$case{url}");  
+    $request->content_type("$case{posttype}"); 
+    $request->content(join("", @xmlbody));  #load the contents of the file into the request body  
     
-    $cookie_jar->add_cookie_header($request);
-    #print $request->as_string; print "\n\n";    
-    $starttimer = time(); 
-    $response = $useragent->request($request); 
-    $endtimer = time(); 
-    $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths 
-    #print $response->as_string; print "\n\n";    
+    if ($case{addheader}) {  #add an additional HTTP Header if specified 
+        my @addheaders = split(/\|/, $case{addheader});  #can add multiple headers with a pipe delimiter 
+        foreach (@addheaders) { 
+            $_ =~ m~(.*): (.*)~; 
+            $request->header($1 => $2);  #using HTTP::Headers Class 
+        } 
+        $case{addheader} = ''; 
+    } 
 
-    $cookie_jar->extract_cookies($response);
+    $cookie_jar->add_cookie_header($request); 
+    #print $request->as_string; print "\n\n";     
+    $starttimer = time();  
+    $response = $useragent->request($request);  
+    $endtimer = time();  
+    $latency = (int(1000 * ($endtimer - $starttimer)) / 1000);  #elapsed time rounded to thousandths  
+    #print $response->as_string; print "\n\n";     
+ 
+    $cookie_jar->extract_cookies($response); 
     #print $cookie_jar->as_string; print "\n\n";
-
-
-    my $xmlparser = new XML::Parser;
-    try {  #see if the XML parses properly
-        $xmlparser->parse($response->content);
-        #print "good xml\n";
-        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
-            print RESULTS qq|<span class="pass">Passed XML Parser (content is well-formed)</span><br />\n|;
-            print RESULTSXML qq|            <verifyxml-success>true</verifyxml-success>\n|;
-        }
-        unless ($nooutput) { #skip regular STDOUT output 
-            print STDOUT "Passed XML Parser (content is well-formed) \n";
-        }
-        $passedcount++;
-        return; #exit try block
-    }
-    catch Error with {
-        my $ex = shift;  #get the exception object
-        #print "bad xml\n";
-        unless ($reporttype) {  #we suppress most logging when running in a plugin mode
-            print RESULTS qq|<span class="fail">Failed XML Parser: $ex</span><br />\n|;
-            print RESULTSXML qq|            <verifyxml-success>false</verifyxml-success>\n|;
-        }
+    
+    my $xmlparser = new XML::Parser; 
+    try {  #see if the XML parses properly 
+        $xmlparser->parse($response->content); 
+        #print "good xml\n"; 
+        unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+            print RESULTS qq|<span class="pass">Passed XML Parser (content is well-formed)</span><br />\n|; 
+            print RESULTSXML qq|  <verifyxml-success>true</verifyxml-success>\n|; 
+        } 
         unless ($nooutput) { #skip regular STDOUT output  
-            print STDOUT "Failed XML Parser: $ex \n";         
-        }
-        $failedcount++;
-        $isfailure++;
-    };  # <-- remember the semicolon
-
-}
+            print STDOUT "Passed XML Parser (content is well-formed) \n"; 
+        } 
+        $passedcount++; 
+        return; #exit try block 
+    } 
+    catch Error with { 
+        my $ex = shift;  #get the exception object 
+        #print "bad xml\n"; 
+        unless ($reporttype) {  #we suppress most logging when running in a plugin mode 
+            print RESULTS qq|<span class="fail">Failed XML Parser: $ex</span><br />\n|; 
+            print RESULTSXML qq|  <verifyxml-success>false</verifyxml-success>\n|; 
+        } 
+        unless ($nooutput) { #skip regular STDOUT output   
+            print STDOUT "Failed XML Parser: $ex \n";     
+        } 
+        $failedcount++; 
+        $isfailure++; 
+    };  # <-- remember the semicolon 
+} 
 #------------------------------------------------------------------
 sub httppost_form_data {  #send multipart/form-data HTTP request and read response
 	
