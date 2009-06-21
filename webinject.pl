@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-#    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
+#    Copyright 2004-2009 Corey Goldberg (corey@goldb.org) & Jan Klepek (jan.klepek@brandforge.sk)
 #
 #    This file is part of WebInject.
 #
@@ -16,6 +16,7 @@
 
 
 our $version="1.42";
+our $DEBUG=0;
 
 use strict;
 use LWP;
@@ -27,6 +28,7 @@ use Getopt::Long;
 use Crypt::SSLeay;  #for SSL/HTTPS (you may comment this out if you don't need it)
 use XML::Parser;  #for web services verification (you may comment this out if aren't doing XML verifications for web services)
 use Error qw(:try);  #for web services verification (you may comment this out if aren't doing XML verifications for web services)
+use File::Temp qw/ tempfile tempdir /; # for handling temporary files
 #use Data::Dumper;  #uncomment to dump hashes for debugging   
 
 
@@ -170,15 +172,17 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
             
         if ($gui == 1){ gui_processing_msg(); }
             
-        convtestcases();
+        my $tempfile = convtestcases();
             
-        fixsinglecase();
+        fixsinglecase($tempfile);
           
-        $xmltestcases = XMLin("$dirname"."$currentcasefile".".$$".".tmp", VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
+        #$xmltestcases = XMLin("$dirname"."$currentcasefile".".$$".".tmp", VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
+        $xmltestcases = XMLin($tempfile, VarAttr => 'varname');
         #print Dumper($xmltestcases);  #for debug, dump hash of xml   
             
         #delete the temp file as soon as we are done reading it    
-        if (-e "$dirname"."$currentcasefile".".$$".".tmp") { unlink "$dirname"."$currentcasefile".".$$".".tmp"; }        
+        #if (-e "$dirname"."$currentcasefile".".$$".".tmp") { unlink "$dirname"."$currentcasefile".".$$".".tmp"; }        
+        if(-e $tempfile) {unlink $tempfile;}
             
             
         $repeat = $xmltestcases->{repeat};  #grab the number of times to iterate test case file
@@ -1122,10 +1126,27 @@ sub convtestcases {
         
     close(XMLTOCONVERT);   
         
-    open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle to temp file  
-    print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
-    close(XMLTOCONVERT);
+#    open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle to temp file  
+    our ($fh, $filename) = tempfile(UNLINK => 1, DIR => &getostempdir) or die "\nERROR: Failed to create temporary file in ".&getostempdir."\n"; # create temporary files for storage of converted file
+    print STDERR "temp filename $filename\n" if ($DEBUG);
+#    print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
+    print $fh @xmltoconvert;
+    close ($fh);
+#    close(XMLTOCONVERT); 
+    return $filename;
 }
+#-----------------------------------------------------------------
+# get temporary directory based on OS
+sub getostempdir{
+	print STDERR "os: ".$^O."\n" if ($DEBUG);
+	if ($^O =~ m/win/i) {
+		return "c:\\";
+	}
+	else {
+		return "/tmp/";
+	}
+}
+
 #------------------------------------------------------------------
 sub fixsinglecase{ #xml parser creates a hash in a different format if there is only a single testcase.
                    #add a dummy testcase to fix this situation
@@ -1133,8 +1154,9 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
     my @xmltoconvert;
         
     if ($casecount == 1) {
-            
-        open(XMLTOCONVERT, "$dirname"."$currentcasefile".".$$".".tmp") or die "\nError: Failed to open temp file\n\n";  #open file handle   
+        my $temp = $_[0];    
+        #open(XMLTOCONVERT, "$dirname"."$currentcasefile".".$$".".tmp") or die "\nError: Failed to open temp file\n\n";  #open file handle   
+        open(XMLTOCONVERT,"$temp");
         @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
             
         for(@xmltoconvert) { 
@@ -1142,7 +1164,8 @@ sub fixsinglecase{ #xml parser creates a hash in a different format if there is 
         }       
         close(XMLTOCONVERT);
             
-        open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle   
+        #open(XMLTOCONVERT, ">$dirname"."$currentcasefile".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle   
+        open(XMLTOCONVERT,">$temp") or die "\nERROR: Failed to create temporary file in ".&getostempdir."\n";
         print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
         close(XMLTOCONVERT);
     }
