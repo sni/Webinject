@@ -121,11 +121,13 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     #open file handles
     unless ($reporttype) {  #we suppress most logging when running in a plugin mode
         if ($opt_output) {  #use output location if it is passed from the command line
+	    print STDERR "output directory $opt_output\n" if ($DEBUG);
             open(HTTPLOGFILE, ">$opt_output"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
             open(RESULTS, ">$opt_output"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
             open(RESULTSXML, ">$opt_output"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
         }
         else {
+	    print STDERR "standard output directory\n" if ($DEBUG);
             open(HTTPLOGFILE, ">$dirname"."http.log") or die "\nERROR: Failed to open http.log file\n\n";   
             open(RESULTS, ">$dirname"."results.html") or die "\nERROR: Failed to open results.html file\n\n";    
             open(RESULTSXML, ">$dirname"."results.xml") or die "\nERROR: Failed to open results.xml file\n\n";
@@ -1052,12 +1054,12 @@ sub processcasefile {  #get test case files to run (from command line or config 
     foreach (@configfile) {
 
         for my $config_const (qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout
-                globaltimeout globalhttplog standaloneplot/) {
+                globaltimeout globalhttplog standaloneplot opt_output/) {
 
             if (/<$config_const>/) {
                 $_ =~ m~<$config_const>(.*)</$config_const>~;
                 $config{$config_const} = $1;
-                #print "\n$_ : $config{$_} \n\n";
+                print "\n$_ : $config{$_} \n\n" if ($DEBUG);
             }
         }
             
@@ -1067,16 +1069,21 @@ sub processcasefile {  #get test case files to run (from command line or config 
                $reporttype = $1;
 	       $nooutput = "set";
 	    } 
-            #print "\nreporttype : $reporttype \n\n";
+            print "\nreporttype : $reporttype \n\n" if ($DEBUG);
         }    
-            
+        if (/<outputdir>/) {
+		$_ =~ m~<outputdir>(.*)</outputdir>~;
+		$opt_output=$1;
+		print "\noutput_dir : $opt_output \n\n" if ($DEBUG);
+
+	}    
         if (/<useragent>/) {   
             $_ =~ m~<useragent>(.*)</useragent>~;
             $setuseragent = $1;
             if ($setuseragent) { #http useragent that will show up in webserver logs
                 $useragent->agent($setuseragent);
             }  
-            #print "\nuseragent : $setuseragent \n\n";
+            print "\nuseragent : $setuseragent \n\n" if ($DEBUG);
         }
          
         if (/<httpauth>/) {
