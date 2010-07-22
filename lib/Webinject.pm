@@ -122,9 +122,11 @@ sub new {
 
 =head1 METHODS
 
-=cut
+=head2 engine
 
-#------------------------------------------------------------------
+start the engine of webinject
+
+=cut
 sub engine {   #wrap the whole engine in a subroutine so it can be integrated with the gui
     my $self = shift;
 
@@ -137,11 +139,11 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
     if($self->{'gui'}) { $self->{'gui'}->gui_initial(); }
 
-    $self->getdirname();  #get the directory webinject engine is running from
+    $self->_getdirname();  #get the directory webinject engine is running from
 
-    $self->getoptions();  #get command line options
+    $self->_getoptions();  #get command line options
 
-    $self->whackoldfiles();  #delete files leftover from previous run (do this here so they are whacked each run)
+    $self->_whackoldfiles();  #delete files leftover from previous run (do this here so they are whacked each run)
 
     #contsruct objects
     $self->{'useragent'} = LWP::UserAgent->new;
@@ -196,16 +198,16 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
     unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
         print RESULTSXML qq|<results>\n\n|;  #write initial xml tag
-        $self->writeinitialhtml();  #write opening tags for results file
+        $self->_writeinitialhtml();  #write opening tags for results file
     }
 
     unless ($self->{'xnode'} or $self->{'nooutput'}) { #skip regular STDOUT output if using an XPath or $self->{'nooutput'} is set
-        $self->writeinitialstdout();  #write opening tags for STDOUT.
+        $self->_writeinitialstdout();  #write opening tags for STDOUT.
     }
 
     if($self->{'gui'}) { $curgraphtype = $self->{'graphtype'}; }  #set the initial value so we know if the user changes the graph setting from the gui
 
-    $self->gnuplotcfg(); #create the gnuplot config file
+    $self->_gnuplotcfg(); #create the gnuplot config file
 
 
     $self->{'totalruncount'}   = 0;
@@ -234,9 +236,9 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
         if($self->{'gui'}){ $self->{'gui'}->gui_processing_msg(); }
 
-        $self->convtestcases();
+        $self->_convtestcases();
 
-        $self->fixsinglecase();
+        $self->_fixsinglecase();
 
         $xmltestcases = XMLin("$self->{'dirname'}"."$self->{'currentcasefile'}".".$$".".tmp", VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
         #print Dumper($xmltestcases);  #for debug, dump hash of xml
@@ -267,7 +269,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 if($self->{'gui'}){
                     unless ($self->{'monitorenabledchkbx'} eq 'monitor_off') {  #don't do this if monitor is disabled in gui
                         if ($curgraphtype ne $self->{'graphtype'}) {        #check to see if the user changed the graph setting
-                            $self->gnuplotcfg();                             #create the gnuplot config file since graph setting changed
+                            $self->_gnuplotcfg();                             #create the gnuplot config file since graph setting changed
                             $curgraphtype = $self->{'graphtype'};
                         }
                     }
@@ -286,12 +288,12 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         verifyresponsecode logrequest logresponse sleep errormessage
                         verifypositivenext verifynegativenext/) {
                     $self->{'case'}->{$_} = $xmltestcases->{case}->{$testnum}->{$_};
-                    if ($self->{'case'}->{$_}) { $self->convertbackxml($self->{'case'}->{$_}); }
+                    if ($self->{'case'}->{$_}) { $self->_convertbackxml($self->{'case'}->{$_}); }
                 }
 
                 if($self->{'gui'}){ $self->{'gui'}->gui_tc_descript(); }
 
-                if ($self->{'case'}->{description1} and $self->{'case'}->{description1} =~ /dummy test case/) {  #if we hit a dummy record, skip it
+                if ($self->{'case'}->{description1} and $self->{'case'}->{description1} =~ /dummy\ test\ case/mx) {  #if we hit a dummy record, skip it
                     next;
                 }
 
@@ -330,7 +332,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
                 for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3
                         verifynegative verifynegative1 verifynegative2 verifynegative3/) {
-                    my $negative = $_ =~ /negative/ ? "Negative" : "";
+                    my $negative = $_ =~ /negative/mx ? "Negative" : "";
                     if ($self->{'case'}->{$_}) {
                         unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                             print RESULTS qq|Verify $negative: "$self->{'case'}->{$_}" <br />\n|;
@@ -374,29 +376,29 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
 
                 if ($self->{'case'}->{method}) {
-                    if ($self->{'case'}->{method} eq "get") { $self->httpget(); }
-                    elsif ($self->{'case'}->{method} eq "post") { $self->httppost(); }
+                    if ($self->{'case'}->{method} eq "get") { $self->_httpget(); }
+                    elsif ($self->{'case'}->{method} eq "post") { $self->_httppost(); }
                     else { print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|; }
                 }
                 else {
-                    $self->httpget();      #use "get" if no method is specified
+                    $self->_httpget();      #use "get" if no method is specified
                 }
 
 
-                $self->verify();           #verify result from http response
+                $self->_verify();           #verify result from http response
 
-                $self->httplog();          #write to http.log file
+                $self->_httplog();          #write to http.log file
 
-                $self->plotlog($self->{'latency'});  #send perf data to log file for plotting
+                $self->_plotlog($self->{'latency'});  #send perf data to log file for plotting
 
-                $self->plotit();           #call the external plotter to create a graph
+                $self->_plotit();           #call the external plotter to create a graph
 
                 if($self->{'gui'}) {
                     $self->{'gui'}->gui_updatemontab();  #update monitor with the newly rendered plot graph
                 }
 
 
-                $self->parseresponse();  #grab string from response to send later
+                $self->_parseresponse();  #grab string from response to send later
 
 
                 if ($self->{'isfailure'} > 0) {  #if any verification fails, test case is considered a failure
@@ -494,7 +496,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
                 #break from sub if user presses stop button in gui
                 if ($self->{'stop'} eq 'yes') {
-                    $self->finaltasks();
+                    $self->_finaltasks();
                     $self->{'stop'} = 'no';
                     return;  #break from sub
                 }
@@ -513,16 +515,16 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
         }
     }
 
-    $self->finaltasks();  #do return/cleanup tasks
+    $self->_finaltasks();  #do return/cleanup tasks
 
-} #end engine subroutine
+    return;
+}
 
 
 
-#------------------------------------------------------------------
-#  SUBROUTINES
-#------------------------------------------------------------------
-sub writeinitialhtml {  #write opening tags for results file
+################################################################################
+# write opening tags for results file
+sub _writeinitialhtml {
     my $self = shift;
 
     print RESULTS
@@ -552,9 +554,12 @@ qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 <hr />
 -------------------------------------------------------<br />
 |;
+    return;
 }
-#------------------------------------------------------------------
-sub writeinitialstdout {  #write initial text for STDOUT
+
+################################################################################
+# write initial text for STDOUT
+sub _writeinitialstdout {
     my $self = shift;
 
     print STDOUT
@@ -563,9 +568,12 @@ Starting WebInject Engine...
 
 -------------------------------------------------------
 |;
+    return;
 }
-#------------------------------------------------------------------
-sub writefinalhtml {  #write summary and closing tags for results file
+
+################################################################################
+# write summary and closing tags for results file
+sub _writefinalhtml {
     my $self = shift;
 
     print RESULTS
@@ -590,9 +598,12 @@ Min Response Time: $self->{'minresponse'} seconds <br />
 </body>
 </html>
 |;
+    return;
 }
-#------------------------------------------------------------------
-sub writefinalxml {  #write summary and closing tags for XML results file
+
+################################################################################
+# write summary and closing tags for XML results file
+sub _writefinalxml {
     my $self = shift;
 
     print RESULTSXML
@@ -614,9 +625,12 @@ qq|
 
 </results>
 |;
+    return;
 }
-#------------------------------------------------------------------
-sub writefinalstdout {  #write summary and closing text for STDOUT
+
+################################################################################
+# write summary and closing text for STDOUT
+sub _writefinalstdout {
     my $self = shift;
 
     print STDOUT
@@ -631,17 +645,20 @@ Verifications Passed: $self->{'passedcount'}
 Verifications Failed: $self->{'failedcount'}
 
 |;
+    return;
 }
-#------------------------------------------------------------------
-sub httpget {  #send http request and read response
+
+################################################################################
+# send http request and read response
+sub _httpget {
     my $self = shift;
 
     $self->{'request'} = new HTTP::Request('GET',"$self->{'case'}->{url}");
 
     if ($self->{'case'}->{addheader}) {  #add an additional HTTP Header if specified
-        my @addheaders = split(/\|/, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
+        my @addheaders = split(/\|/mx, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
         foreach (@addheaders) {
-            $_ =~ m~(.*): (.*)~;
+            $_ =~ m~(.*): (.*)~mx;
             $self->{'request'}->header($1 => $2);  #using HTTP::Headers Class
         }
         $self->{'case'}->{addheader} = '';
@@ -658,24 +675,30 @@ sub httpget {  #send http request and read response
 
     $self->{'cookie_jar'}->extract_cookies($self->{'response'});
     #print $self->{'cookie_jar'}->as_string; print "\n\n";
+    return;
 }
-#------------------------------------------------------------------
-sub httppost {  #post request based on specified encoding
+
+################################################################################
+# post request based on specified encoding
+sub _httppost {
     my $self = shift;
 
     if ($self->{'case'}->{posttype}) {
-    if ($self->{'case'}->{posttype} =~ m~application/x-www-form-urlencoded~) { $self->httppost_form_urlencoded(); }
-        elsif ($self->{'case'}->{posttype} =~ m~multipart/form-data~) { $self->httppost_form_data(); }
-        elsif (($self->{'case'}->{posttype} =~ m~text/xml~) or ($self->{'case'}->{posttype} =~ m~application/soap+xml~)) { $self->httppost_xml(); }
+    if($self->{'case'}->{posttype} =~ m~application/x-www-form-urlencoded~mx) { $self->_httppost_form_urlencoded(); }
+        elsif ($self->{'case'}->{posttype} =~ m~multipart/form-data~mx) { $self->_httppost_form_data(); }
+        elsif (($self->{'case'}->{posttype} =~ m~text/xml~mx) or ($self->{'case'}->{posttype} =~ m~application/soap+xml~mx)) { $self->_httppost_xml(); }
         else { print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|; }
     }
     else {
         $self->{'case'}->{posttype} = 'application/x-www-form-urlencoded';
-        $self->httppost_form_urlencoded();  #use "x-www-form-urlencoded" if no encoding is specified
+        $self->_httppost_form_urlencoded();  #use "x-www-form-urlencoded" if no encoding is specified
     }
+    return;
 }
-#------------------------------------------------------------------
-sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP request and read response
+
+################################################################################
+# send application/x-www-form-urlencoded HTTP request and read response
+sub _httppost_form_urlencoded {
     my $self = shift;
 
     $self->{'request'} = new HTTP::Request('POST',"$self->{'case'}->{url}");
@@ -683,9 +706,9 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
     $self->{'request'}->content("$self->{'case'}->{postbody}");
 
     if ($self->{'case'}->{addheader}) {  #add an additional HTTP Header if specified
-        my @addheaders = split(/\|/, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
+        my @addheaders = split(/\|/mx, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
         foreach (@addheaders) {
-            $_ =~ m~(.*): (.*)~;
+            $_ =~ m~(.*): (.*)~mx;
             $self->{'request'}->header($1 => $2);  #using HTTP::Headers Class
         }
         $self->{'case'}->{addheader} = '';
@@ -701,13 +724,16 @@ sub httppost_form_urlencoded {  #send application/x-www-form-urlencoded HTTP req
 
     $self->{'cookie_jar'}->extract_cookies($self->{'response'});
     #print $self->{'cookie_jar'}->as_string; print "\n\n";
+    return;
 }
-#------------------------------------------------------------------
-sub httppost_xml{  #send text/xml HTTP request and read response
+
+################################################################################
+# send text/xml HTTP request and read response
+sub _httppost_xml{
     my $self = shift;
 
     #read the xml file specified in the testcase
-    $self->{'case'}->{postbody} =~ m~file=>(.*)~i;
+    $self->{'case'}->{postbody} =~ m~file=>(.*)~imx;
     open(XMLBODY, "$self->{'dirname'}"."$1") or die "\nError: Failed to open text/xml file\n\n";  #open file handle
     my @xmlbody = <XMLBODY>;  #read the file into an array
     close(XMLBODY);
@@ -717,9 +743,9 @@ sub httppost_xml{  #send text/xml HTTP request and read response
     $self->{'request'}->content(join(" ", @xmlbody));  #load the contents of the file into the request body
 
     if ($self->{'case'}->{addheader}) {  #add an additional HTTP Header if specified
-        my @addheaders = split(/\|/, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
+        my @addheaders = split(/\|/mx, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
         foreach (@addheaders) {
-            $_ =~ m~(.*): (.*)~;
+            $_ =~ m~(.*): (.*)~mx;
             $self->{'request'}->header($1 => $2);  #using HTTP::Headers Class
         }
         $self->{'case'}->{addheader} = '';
@@ -765,9 +791,12 @@ sub httppost_xml{  #send text/xml HTTP request and read response
         $self->{'isfailure'}++;
     };  # <-- remember the semicolon
 
+    return;
 }
-#------------------------------------------------------------------
-sub httppost_form_data {  #send multipart/form-data HTTP request and read response
+
+################################################################################
+# send multipart/form-data HTTP request and read response
+sub _httppost_form_data {
     my $self = shift;
 
     my %myContent_;
@@ -779,9 +808,9 @@ sub httppost_form_data {  #send multipart/form-data HTTP request and read respon
     #print $self->{'request'}->as_string; print "\n\n";
 
     if ($self->{'case'}->{addheader}) {  #add an additional HTTP Header if specified
-        my @addheaders = split(/\|/, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
+        my @addheaders = split(/\|/mx, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
         foreach (@addheaders) {
-            $_ =~ m~(.*): (.*)~;
+            $_ =~ m~(.*): (.*)~mx;
             $self->{'request'}->header($1 => $2);  #using HTTP::Headers Class
         }
         $self->{'case'}->{addheader} = '';
@@ -795,15 +824,18 @@ sub httppost_form_data {  #send multipart/form-data HTTP request and read respon
 
     $self->{'cookie_jar'}->extract_cookies($self->{'response'});
     #print $self->{'cookie_jar'}->as_string; print "\n\n";
+    return;
 }
-#------------------------------------------------------------------
-sub verify {  #do verification of http response and print status to HTML/XML/STDOUT/UI
+
+################################################################################
+# do verification of http response and print status to HTML/XML/STDOUT/UI
+sub _verify {
     my $self = shift;
 
     for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
 
         if ($self->{'case'}->{$_}) {
-            if ($self->{'response'}->as_string() =~ m~$self->{'case'}->{$_}~si) {  #verify existence of string in response
+            if ($self->{'response'}->as_string() =~ m~$self->{'case'}->{$_}~simx) {  #verify existence of string in response
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                     print RESULTS qq|<span class="pass">Passed Positive Verification</span><br />\n|;
                     print RESULTSXML qq|            <$_-success>true</$_-success>\n|;
@@ -830,7 +862,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
     for (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
 
         if ($self->{'case'}->{$_}) {
-            if ($self->{'response'}->as_string() =~ m~$self->{'case'}->{$_}~si) {  #verify existence of string in response
+            if ($self->{'response'}->as_string() =~ m~$self->{'case'}->{$_}~simx) {  #verify existence of string in response
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                     print RESULTS qq|<span class="fail">Failed Negative Verification</span><br />\n|;
                     print RESULTSXML qq|            <$_-success>false</$_-success>\n|;
@@ -855,7 +887,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
     }
 
     if ($self->{'verifylater'}) {
-        if ($self->{'response'}->as_string() =~ m~$self->{'verifylater'}~si) {  #verify existence of string in response
+        if ($self->{'response'}->as_string() =~ m~$self->{'verifylater'}~simx) {  #verify existence of string in response
             unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
                 print RESULTSXML qq|            <verifypositivenext-success>true</verifypositivenext-success>\n|;
@@ -882,7 +914,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
 
 
     if ($self->{'verifylaterneg'}) {
-        if ($self->{'response'}->as_string() =~ m~$self->{'verifylaterneg'}~si) {  #verify existence of string in response
+        if ($self->{'response'}->as_string() =~ m~$self->{'verifylaterneg'}~simx) {  #verify existence of string in response
 
             unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
@@ -935,7 +967,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
         }
     }
     else { #verify http response code is in the 100-399 range
-        if ($self->{'response'}->as_string() =~ /HTTP\/1.(0|1) (1|2|3)/i) {  #verify existance of string in response
+        if ($self->{'response'}->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx) {  #verify existance of string in response
             unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                 print RESULTS qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|;
                 print RESULTSXML qq|            <verifyresponsecode-success>true</verifyresponsecode-success>\n|;
@@ -948,7 +980,7 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $self->{'passedcount'}++;
         }
         else {
-            $self->{'response'}->as_string() =~ /(HTTP\/1.)(.*)/i;
+            $self->{'response'}->as_string() =~ /(HTTP\/1.)(.*)/mxi;
             if ($1) {  #this is true if an HTTP response returned
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                     print RESULTS qq|<span class="fail">Failed HTTP Response Code Verification ($1$2)</span><br />\n|; #($1$2) is HTTP response code
@@ -973,9 +1005,12 @@ sub verify {  #do verification of http response and print status to HTML/XML/STD
             $self->{'isfailure'}++;
         }
     }
+    return;
 }
-#------------------------------------------------------------------
-sub parseresponse {  #parse values from responses for use in future request (for session id's, dynamic URL rewriting, etc)
+
+################################################################################
+# parse values from responses for use in future request (for session id's, dynamic URL rewriting, etc)
+sub _parseresponse {
     my $self = shift;
 
     my($resptoparse, @parseargs);
@@ -986,28 +1021,30 @@ sub parseresponse {  #parse values from responses for use in future request (for
 
         next unless $self->{'case'}->{$_};
 
-        @parseargs = split(/\|/, $self->{'case'}->{$_});
+        @parseargs = split(/\|/mx, $self->{'case'}->{$_});
 
         $leftboundary = $parseargs[0]; $rightboundary = $parseargs[1]; $escape = $parseargs[2];
 
         $resptoparse = $self->{'response'}->as_string;
-        if ($resptoparse =~ m~$leftboundary(.*?)$rightboundary~s) {
+        if ($resptoparse =~ m~$leftboundary(.*?)$rightboundary~smx) {
             $self->{'parsedresult'}->{$_} = $1;
         }
 
         if ($escape) {
             if ($escape eq 'escape') {
-                $self->{'parsedresult'}->{$_} = $self->url_escape($self->{'parsedresult'}->{$_});
+                $self->{'parsedresult'}->{$_} = $self->_url_escape($self->{'parsedresult'}->{$_});
             }
         }
         #print "\n\nParsed String: $self->{'parsedresult'}->{$_}\n\n";
     }
-
-
+    return;
 }
-#------------------------------------------------------------------
-sub processcasefile {  #get test case files to run (from command line or config file) and evaluate constants
-    my $self = shift;  #parse config file and grab values it sets
+
+################################################################################
+# get test case files to run (from command line or config file) and evaluate constants
+sub _processcasefile {
+    # parse config file and grab values it sets
+    my $self = shift;
 
     my @configfile;
     my $comment_mode;
@@ -1035,12 +1072,12 @@ sub processcasefile {  #get test case files to run (from command line or config 
 
         #remove any commented blocks from config file
          foreach (@precomment) {
-            unless (m~<comment>.*</comment>~) {  #single line comment
+            unless (m~<comment>.*</comment>~mx) {  #single line comment
                 #multi-line comments
-                if (/<comment>/) {
+                if (/<comment>/mx) {
                     $comment_mode = 1;
                 }
-                elsif (m~</comment>~) {
+                elsif (m~</comment>~mx) {
                     $comment_mode = 0;
                 }
                 elsif (!$comment_mode) {
@@ -1055,9 +1092,9 @@ sub processcasefile {  #get test case files to run (from command line or config 
         #parse test case file names from config.xml and build array
         foreach (@configfile) {
 
-            if (/<testcasefile>/) {
+            if (/<testcasefile>/mx) {
                 $firstparse = $';  #print "$' \n\n";
-                $firstparse =~ m~</testcasefile>~;
+                $firstparse =~ m~</testcasefile>~mx;
                 $filename = $`;  #string between tags will be in $filename
                 #print "\n$filename \n\n";
                 push @{$self->{'casefilelist'}}, $filename;  #add next filename we grab to end of array
@@ -1088,8 +1125,8 @@ sub processcasefile {  #get test case files to run (from command line or config 
 
         $xpath = $ARGV[1];
 
-        if ($xpath =~ /\/(.*)\[/) {  #if the argument contains a "/" and "[", it is really an XPath
-            $xpath =~ /(.*)\/(.*)\[(.*?)\]/;  #if it contains XPath info, just grab the file name
+        if ($xpath =~ /\/(.*)\[/mx) {  #if the argument contains a "/" and "[", it is really an XPath
+            $xpath =~ /(.*)\/(.*)\[(.*?)\]/mx;  #if it contains XPath info, just grab the file name
             $self->{'xnode'} = $3;  #grab the XPath Node value.. (from inside the "[]")
             #print "\nXPath Node is: $self->{'xnode'} \n";
         }
@@ -1114,15 +1151,15 @@ sub processcasefile {  #get test case files to run (from command line or config 
         for my $config (qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout
                 globaltimeout globalhttplog standaloneplot/) {
 
-            if (/<$config>/) {
-                $_ =~ m~<$config>(.*)</$config>~;
+            if (/<$config>/mx) {
+                $_ =~ m~<$config>(.*)</$config>~mx;
                 $self->{'config'}->{$config} = $1;
                 #print "\n$_ : $self->{'config'}->{$_} \n\n";
             }
         }
 
-        if (/<reporttype>/) {
-            $_ =~ m~<reporttype>(.*)</reporttype>~;
+        if (/<reporttype>/mx) {
+            $_ =~ m~<reporttype>(.*)</reporttype>~mx;
             if ($1 ne "standard") {
                $self->{'reporttype'} = $1;
                $self->{'nooutput'} = "set";
@@ -1130,8 +1167,8 @@ sub processcasefile {  #get test case files to run (from command line or config 
             #print "\nreporttype : $self->{'reporttype'} \n\n";
         }
 
-        if (/<useragent>/) {
-            $_ =~ m~<useragent>(.*)</useragent>~;
+        if (/<useragent>/mx) {
+            $_ =~ m~<useragent>(.*)</useragent>~mx;
             $setuseragent = $1;
             if ($setuseragent) { #http useragent that will show up in webserver logs
                 $self->{'useragent'}->agent($setuseragent);
@@ -1139,13 +1176,13 @@ sub processcasefile {  #get test case files to run (from command line or config 
             #print "\nuseragent : $setuseragent \n\n";
         }
 
-        if (/<httpauth>/) {
+        if (/<httpauth>/mx) {
                 #each time we see an <httpauth>, we set @authentry to be the
                 #array of values, then we use [] to get a reference to that array
                 #and push that reference onto @httpauth.
             my @authentry;
-            $_ =~ m~<httpauth>(.*)</httpauth>~;
-            @authentry = split(/:/, $1);
+            $_ =~ m~<httpauth>(.*)</httpauth>~mx;
+            @authentry = split(/:/mx, $1);
             if ($#authentry != 4) {
                 print STDERR "\nError: httpauth should have 5 fields delimited by colons\n\n";
             }
@@ -1154,16 +1191,17 @@ sub processcasefile {  #get test case files to run (from command line or config 
             }
             #print "\nhttpauth : @{$self->{'httpauth'}} \n\n";
         }
-
     }
 
     close(CONFIG);
+    return;
 }
-#------------------------------------------------------------------
-sub convtestcases {
+
+################################################################################
+# here we do some pre-processing of the test case file and write it out to a temp file.
+# we convert certain chars so xml parser doesn't puke.
+sub _convtestcases {
     my $self = shift;
-    #here we do some pre-processing of the test case file and write it out to a temp file.
-    #we convert certain chars so xml parser doesn't puke.
 
     my @xmltoconvert;
 
@@ -1177,11 +1215,11 @@ sub convtestcases {
 
         #convert escaped chars and certain reserved chars to temporary values that the parser can handle
         #these are converted back later in processing
-        s/&/{AMPERSAND}/g;
-        s/\\</{LESSTHAN}/g;
+        s/&/{AMPERSAND}/gmx;
+        s/\\</{LESSTHAN}/gmx;
 
         #count cases while we are here
-        if ($_ =~ /<case/) {  #count test cases based on '<case' tag
+        if ($_ =~ /<case/mx) {  #count test cases based on '<case' tag
             $self->{'case'}->{'count'}++;
         }
     }
@@ -1191,10 +1229,14 @@ sub convtestcases {
     open(XMLTOCONVERT, ">$self->{'dirname'}"."$self->{'currentcasefile'}".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing\n\n";  #open file handle to temp file
     print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
     close(XMLTOCONVERT);
+    return;
 }
-#------------------------------------------------------------------
-sub fixsinglecase{      #xml parser creates a hash in a different format if there is only a single testcase.
-    my $self = shift;   #add a dummy testcase to fix this situation
+
+################################################################################
+# xml parser creates a hash in a different format if there is only a single testcase.
+# add a dummy testcase to fix this situation
+sub _fixsinglecase {
+    my $self = shift;
 
     my @xmltoconvert;
 
@@ -1204,7 +1246,7 @@ sub fixsinglecase{      #xml parser creates a hash in a different format if ther
         @xmltoconvert = <XMLTOCONVERT>;  #read the file into an array
 
         for(@xmltoconvert) {
-            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/g;  #add dummy test case to end of file
+            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/gmx;  #add dummy test case to end of file
         }
         close(XMLTOCONVERT);
 
@@ -1212,69 +1254,80 @@ sub fixsinglecase{      #xml parser creates a hash in a different format if ther
         print XMLTOCONVERT @xmltoconvert;  #overwrite file with converted array
         close(XMLTOCONVERT);
     }
+    return;
 }
-#------------------------------------------------------------------
-sub convertbackxml() {  #converts replaced xml with substitutions
+
+################################################################################
+# converts replaced xml with substitutions
+sub _convertbackxml {
     my $self = shift;
 
-    $_[0] =~ s~{AMPERSAND}~&~g;
-    $_[0] =~ s~{LESSTHAN}~<~g;
-    $_[0] =~ s~{TIMESTAMP}~$self->{'timestamp'}~g;
-    $_[0] =~ s~{BASEURL}~$self->{'config'}->{baseurl}~g;
-    $_[0] =~ s~{BASEURL1}~$self->{'config'}->{baseurl1}~g;
-    $_[0] =~ s~{BASEURL2}~$self->{'config'}->{baseurl2}~g;
-    $_[0] =~ s~{PARSEDRESULT}~$self->{'parsedresult'}->{parseresponse}~g;
-    $_[0] =~ s~{PARSEDRESULT1}~$self->{'parsedresult'}->{parseresponse1}~g;
-    $_[0] =~ s~{PARSEDRESULT2}~$self->{'parsedresult'}->{parseresponse2}~g;
-    $_[0] =~ s~{PARSEDRESULT3}~$self->{'parsedresult'}->{parseresponse3}~g;
-    $_[0] =~ s~{PARSEDRESULT4}~$self->{'parsedresult'}->{parseresponse4}~g;
-    $_[0] =~ s~{PARSEDRESULT5}~$self->{'parsedresult'}->{parseresponse5}~g;
+    $_[0] =~ s~{AMPERSAND}~&~gmx;
+    $_[0] =~ s~{LESSTHAN}~<~gmx;
+    $_[0] =~ s~{TIMESTAMP}~$self->{'timestamp'}~gmx;
+    $_[0] =~ s~{BASEURL}~$self->{'config'}->{baseurl}~gmx;
+    $_[0] =~ s~{BASEURL1}~$self->{'config'}->{baseurl1}~gmx;
+    $_[0] =~ s~{BASEURL2}~$self->{'config'}->{baseurl2}~gmx;
+    $_[0] =~ s~{PARSEDRESULT}~$self->{'parsedresult'}->{parseresponse}~gmx;
+    $_[0] =~ s~{PARSEDRESULT1}~$self->{'parsedresult'}->{parseresponse1}~gmx;
+    $_[0] =~ s~{PARSEDRESULT2}~$self->{'parsedresult'}->{parseresponse2}~gmx;
+    $_[0] =~ s~{PARSEDRESULT3}~$self->{'parsedresult'}->{parseresponse3}~gmx;
+    $_[0] =~ s~{PARSEDRESULT4}~$self->{'parsedresult'}->{parseresponse4}~gmx;
+    $_[0] =~ s~{PARSEDRESULT5}~$self->{'parsedresult'}->{parseresponse5}~gmx;
+    return;
 }
-#------------------------------------------------------------------
-sub url_escape {  #escapes difficult characters with %hexvalue
+
+################################################################################
+# escapes difficult characters with %hexvalue
+sub _url_escape {
     my $self = shift;
     #LWP handles url encoding already, but use this to escape valid chars that LWP won't convert (like +)
 
     my @a = @_;  #make a copy of the arguments
 
-    map { s/[^-\w.,!~'()\/ ]/sprintf "%%%02x", ord $&/eg } @a;
+    map { s/[^-\w.,!~'()\/\ ]/sprintf "%%%02x", ord $&/egmx } @a;
     return wantarray ? @a : $a[0];
 }
-#------------------------------------------------------------------
-sub httplog {  #write requests and responses to http.log file
+
+################################################################################
+# write requests and responses to http.log file
+sub _httplog {
     my $self = shift;
 
     unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
 
-        if ($self->{'case'}->{logrequest} && ($self->{'case'}->{logrequest} =~ /yes/i)) {  #http request - log setting per test case
+        if ($self->{'case'}->{logrequest} && ($self->{'case'}->{logrequest} =~ /yes/mxi)) {  #http request - log setting per test case
             print HTTPLOGFILE $self->{'request'}->as_string, "\n\n";
         }
 
-        if ($self->{'case'}->{logresponse} && ($self->{'case'}->{logresponse} =~ /yes/i)) {  #http response - log setting per test case
+        if ($self->{'case'}->{logresponse} && ($self->{'case'}->{logresponse} =~ /yes/mxi)) {  #http response - log setting per test case
             print HTTPLOGFILE $self->{'response'}->as_string, "\n\n";
         }
 
-        if ($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /yes/i)) {  #global http log setting
-            print HTTPLOGFILE $self->{'request'}->as_string, "\n\n";
-            print HTTPLOGFILE $self->{'response'}->as_string, "\n\n";
-        }
-
-        if (($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /onfail/i)) && ($self->{'isfailure'} > 0)) { #global http log setting - onfail mode
+        if ($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /yes/mxi)) {  #global http log setting
             print HTTPLOGFILE $self->{'request'}->as_string, "\n\n";
             print HTTPLOGFILE $self->{'response'}->as_string, "\n\n";
         }
 
-        if (($self->{'case'}->{logrequest} && ($self->{'case'}->{logrequest} =~ /yes/i)) or
-            ($self->{'case'}->{logresponse} && ($self->{'case'}->{logresponse} =~ /yes/i)) or
-            ($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /yes/i)) or
-            (($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /onfail/i)) && ($self->{'isfailure'} > 0))
+        if (($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /onfail/mxi)) && ($self->{'isfailure'} > 0)) { #global http log setting - onfail mode
+            print HTTPLOGFILE $self->{'request'}->as_string, "\n\n";
+            print HTTPLOGFILE $self->{'response'}->as_string, "\n\n";
+        }
+
+        if (($self->{'case'}->{logrequest} && ($self->{'case'}->{logrequest} =~ /yes/mxi)) or
+            ($self->{'case'}->{logresponse} && ($self->{'case'}->{logresponse} =~ /yes/mxi)) or
+            ($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /yes/mxi)) or
+            (($self->{'config'}->{globalhttplog} && ($self->{'config'}->{globalhttplog} =~ /onfail/mxi)) && ($self->{'isfailure'} > 0))
            ) {
                 print HTTPLOGFILE "\n************************* LOG SEPARATOR *************************\n\n\n";
         }
     }
+    return;
 }
-#------------------------------------------------------------------
-sub plotlog {  #write performance results to plot.log in the format gnuplot can use
+
+################################################################################
+# write performance results to plot.log in the format gnuplot can use
+sub _plotlog {
     my($self,$value) = shift;
 
     my(%months, $date, $time, $mon, $mday, $hours, $min, $sec, $year);
@@ -1287,7 +1340,7 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
 
         $date = scalar localtime;
         ($mon, $mday, $hours, $min, $sec, $year) = $date =~
-            /\w+ (\w+) +(\d+) (\d\d):(\d\d):(\d\d) (\d\d\d\d)/;
+            /\w+\ (\w+)\ +(\d+)\ (\d\d):(\d\d):(\d\d)\ (\d\d\d\d)/mx;
 
         $time = "$months{$mon} $mday $hours $min $sec $year";
 
@@ -1302,9 +1355,12 @@ sub plotlog {  #write performance results to plot.log in the format gnuplot can 
         printf PLOTLOG "%s %2.4f\n", $time, $value;
         close(PLOTLOG);
     }
+    return;
 }
-#------------------------------------------------------------------
-sub gnuplotcfg {  #create gnuplot config file
+
+################################################################################
+# create gnuplot config file
+sub _gnuplotcfg {
     my $self = shift;
 
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting
@@ -1327,23 +1383,26 @@ plot \"plot.log\" using 1:7 title \"Response Times" w $self->{'graphtype'}
         close(GNUPLOTPLT);
 
     }
+    return;
 }
-#------------------------------------------------------------------
-sub finaltasks {  #do ending tasks
+
+################################################################################
+# do ending tasks
+sub _finaltasks {
     my $self = shift;
 
     if($self->{'gui'}){ $self->{'gui'}->gui_stop(); }
 
     unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
-        $self->writefinalhtml();  #write summary and closing tags for results file
+        $self->_writefinalhtml();  #write summary and closing tags for results file
     }
 
     unless ($self->{'xnode'} or $self->{'reporttype'}) { #skip regular STDOUT output if using an XPath or $self->{'reporttype'} is set ("standard" does not set this)
-        $self->writefinalstdout();  #write summary and closing tags for STDOUT
+        $self->_writefinalstdout();  #write summary and closing tags for STDOUT
     }
 
     unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
-        $self->writefinalxml();  #write summary and closing tags for XML results file
+        $self->_writefinalxml();  #write summary and closing tags for XML results file
     }
 
     unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
@@ -1389,7 +1448,7 @@ sub finaltasks {  #do ending tasks
 
         #External plugin. To use it, add something like that in the config file:
         # <reporttype>external:/home/webinject/Plugin.pm</reporttype>
-        elsif ($self->{'reporttype'} =~ /^external:(.*)/) {
+        elsif ($self->{'reporttype'} =~ /^external:(.*)/mx) {
             unless (my $return = do $1) {
                 die "couldn't parse $1: $@\n" if $@;
                 die "couldn't do $1: $!\n" unless defined $return;
@@ -1402,10 +1461,12 @@ sub finaltasks {  #do ending tasks
         }
 
     }
-
+    return;
 }
-#------------------------------------------------------------------
-sub whackoldfiles {  #delete any files leftover from previous run if they exist
+
+################################################################################
+# delete any files leftover from previous run if they exist
+sub _whackoldfiles {
     my $self = shift;
 
     if (-e $self->{'dirname'}."plot.log")   { unlink $self->{'dirname'}."plot.log"; }
@@ -1417,9 +1478,12 @@ sub whackoldfiles {  #delete any files leftover from previous run if they exist
     while ((-e "plot.log") or (-e "plot.plt") or (-e "plot.png") or (glob('*.xml.tmp'))) {
         sleep .5;
     }
+    return;
 }
-#------------------------------------------------------------------
-sub plotit {  #call the external plotter to create a graph (if we are in the appropriate mode)
+
+################################################################################
+# call the external plotter to create a graph (if we are in the appropriate mode)
+sub _plotit {
     my $self = shift;
 
     #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting
@@ -1436,9 +1500,12 @@ sub plotit {  #call the external plotter to create a graph (if we are in the app
             }
         }
     }
+    return;
 }
-#------------------------------------------------------------------
-sub getdirname {  #get the directory webinject engine is running from
+
+################################################################################
+# get the directory webinject engine is running from
+sub _getdirname {
     my $self = shift;
 
     $self->{'dirname'} = "";
@@ -1448,41 +1515,41 @@ sub getdirname {  #get the directory webinject engine is running from
     #if ($self->{'dirname'} eq $0) {
     #    $self->{'dirname'} = './';
     #}
+    return;
 }
-#------------------------------------------------------------------
-sub getoptions {  #command line options
+
+################################################################################
+# command line options
+sub _getoptions {
     my $self = shift;
 
     my(@sets, $opt_version);
     Getopt::Long::Configure('bundling');
-    GetOptions(
+    unless(GetOptions(
         'v|V|version'   => \$opt_version,
         'c|config=s'    => \$self->{'opt_configfile'},
         'o|output=s'    => \$self->{'opt_output'},
         'n|no-output'   => \$self->{'nooutput'},
         's=s'           => \@sets,
-        )
-        or do {
-            print_usage();
-            exit();
-        };
+        )) {
+        print <<EOB;
+    Usage:
+      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [-s key=value] [testcase_file [XPath]]
+      webinject.pl --version|-v
+EOB
+        exit(1);
+    }
     if($opt_version) {
         print "WebInject version $Webinject::VERSION\nFor more info: http://www.webinject.org\n";
         exit();
     }
     for my $set (@sets) {
-        my($key,$val) = split/=/,$set,2;
+        my($key,$val) = split/=/mx,$set,2;
         $self->{'config'}->{lc $key} = $val;
     }
-    sub print_usage {
-        print <<EOB
-    Usage:
-      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [-s key=value] [testcase_file [XPath]]
-      webinject.pl --version|-v
-EOB
-    }
+    return;
 }
-#------------------------------------------------------------------
+
 
 =head1 SEE ALSO
 
