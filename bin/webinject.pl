@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
@@ -17,6 +17,7 @@
 
 our $version="1.41";
 
+use warnings;
 use strict;
 use LWP;
 use HTTP::Request::Common;
