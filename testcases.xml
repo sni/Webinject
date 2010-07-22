@@ -1,0 +1,38 @@
+<testcases repeat="1">
+
+<case
+    id="1"
+    description1="SAMPLE TEST CASE - load WebInject dev page"
+    description2="verify string 'Corey Goldberg' exists in response"
+    method="get"
+    url="http://www.webinject.org/dev.html"
+    verifypositive="Corey Goldberg"
+/>
+
+<case
+    id="2"
+    description1="SAMPLE [NEGATIVE] TEST CASE - load WebInject dev page"
+    description2="verify string 'bogus string' does not exist in response"
+    method="get"
+    url="http://www.webinject.org/dev.html"
+    verifynegative="bogus string"
+/>
+
+<case
+    id="3"
+    description1="SAMPLE TEST CASE THAT FAILS - load bogus page"
+    description2="case should fail with an HTTP 404 (not found) error"
+    method="get"
+    url="http://www.webinject.org/bogus.html"
+/>
+
+<case
+    id="4"
+    description1="SAMPLE TEST CASE THAT FAILS - valid page with bogus verification"
+    description2="case should fail"
+    method="get"
+    url="http://www.webinject.org/dev.html"
+    verifypositive="I am a bogus string"
+/>
+
+</testcases>
