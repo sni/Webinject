@@ -6,6 +6,8 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.50 - Jul 22, 2010
+    - changed layout to common cpan module style
 
 Version 1.41 - Jan 4, 2006
     - Added ability to add multiple HTTP Headers within an 'addheader' testcase parameter
