@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '1.54';
+our $VERSION = '1.50';
 
 
 =head1 NAME
@@ -73,6 +73,7 @@ Sven Nierlein, E<lt>nierlein@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
+Copyright (C) 2010 by Sven Nierlein
 Copyright (C) 2004-2006 by Corey Goldberg
 
 This library is free software; you can redistribute it under the GPL2 license.
