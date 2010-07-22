@@ -1372,12 +1372,14 @@ sub getdirname {  #get the directory webinject engine is running from
 #------------------------------------------------------------------
 sub getoptions {  #command line options
 
+    my @sets;
     Getopt::Long::Configure('bundling');
     GetOptions(
         'v|V|version'   => \$opt_version,
         'c|config=s'    => \$opt_configfile,
         'o|output=s'    => \$opt_output,
         'n|no-output'   => \$nooutput,
+        's=s'           => \@sets,
         )
         or do {
             print_usage();
@@ -1387,10 +1389,14 @@ sub getoptions {  #command line options
         print "WebInject version $version\nFor more info: http://www.webinject.org\n";
         exit();
     }
+    for my $set (@sets) {
+        my($key,$val) = split/=/,$set,2;
+        $config{lc $key} = $val;
+    }
     sub print_usage {
         print <<EOB
     Usage:
-      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [testcase_file [XPath]]
+      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [-s key=value] [testcase_file [XPath]]
       webinject.pl --version|-v
 EOB
     }
