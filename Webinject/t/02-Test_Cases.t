@@ -14,7 +14,7 @@ if($ENV{TEST_AUTHOR}) {
         plan skip_all => 'HTTP::Server::Simple::CGI required';
     }
     else{
-        plan tests => 8;
+        plan tests => 10;
     }
 }
 else{
@@ -73,7 +73,7 @@ is($webinject->{'passedcount'}, 9, '02-string_verification.xml - passed count');
 is($webinject->{'failedcount'}, 0, '02-string_verification.xml - fail count');
 
 ##################################################
-# Test File 04
+# Test File 03
 $webinject = Webinject->new();
 $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
 @ARGV = ($Bin."/data/03-parse_response.xml");
@@ -81,6 +81,13 @@ $webinject->engine();
 is($webinject->{'passedcount'}, 3, '03-parse_response.xml - passed count');
 is($webinject->{'failedcount'}, 0, '03-parse_response.xml - fail count');
 
+##################################################
+# Test File 04
+$webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
+@ARGV = ($Bin."/data/04-repeated_tests.xml");
+$webinject->engine();
+is($webinject->{'passedcount'}, 5, '04-repeated_tests.xml - passed count');
+is($webinject->{'failedcount'}, 5, '04-repeated_tests.xml - fail count');
 
 
 ##################################################
