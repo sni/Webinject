@@ -65,7 +65,6 @@ sub new {
         }
     }
 
-    $self->{timestamp} = undef;
     $self->{dirname}   = undef;
     $self->{parsedresult} = undef;
     $self->{useragent} = undef;
@@ -97,8 +96,6 @@ sub new {
     $self->{case} = undef;
     $self->{verifylater} = undef;
     $self->{verifylaterneg} = undef;
-    $self->{config} = undef;
-    $self->{currentdatetime} = undef;
     $self->{totalruntime} = undef;
     $self->{'starttimer'} = undef;
     $self->{endtimer} = undef;
@@ -106,11 +103,14 @@ sub new {
     $self->{opt_output} = undef;
     $self->{reporttype} = undef;
     $self->{returnmessage} = undef;
-    $self->{exit_codes} = {'UNKNOWN' => 3,
-                           'OK'      => 0,
-                           'WARNING' => 1,
-                           'CRITICAL'=> 2,
-                          };
+
+    $self->{config}             = {};
+    $self->{'currentdatetime'}  = localtime time;  #get current date and time for results report
+    $self->{exit_codes}         = { 'UNKNOWN' => 3,
+                                    'OK'      => 0,
+                                    'WARNING' => 1,
+                                    'CRITICAL'=> 2,
+                                  };
 
     bless $self, $class;
 
@@ -224,7 +224,6 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     $self->{'plotclear'}       = 'no';
 
 
-    $self->{'currentdatetime'} = localtime time;  #get current date and time for results report
     $startruntimer = time();  #timer for entire test run
 
 
@@ -275,7 +274,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     }
                 }
 
-                $self->{'timestamp'} = time();  #used to replace parsed {timestamp} with real timestamp value
+                my $timestamp = time();  #used to replace parsed {timestamp} with real timestamp value
 
                 if ($self->{'case'}->{verifypositivenext}) { $self->{'verifylater'} = $self->{'case'}->{verifypositivenext}; }     #grab $self->{'case'}->{verifypositivenext} string from previous test case (if it exists)
                 if ($self->{'case'}->{verifynegativenext}) { $self->{'verifylaterneg'} = $self->{'case'}->{verifynegativenext}; }  #grab $self->{'case'}->{verifynegativenext} string from previous test case (if it exists)
@@ -288,7 +287,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                         verifyresponsecode logrequest logresponse sleep errormessage
                         verifypositivenext verifynegativenext/) {
                     $self->{'case'}->{$_} = $xmltestcases->{case}->{$testnum}->{$_};
-                    if ($self->{'case'}->{$_}) { $self->_convertbackxml($self->{'case'}->{$_}); }
+                    if(defined $self->{'case'}->{$_}) { $self->{'case'}->{$_} = $self->_convertbackxml($self->{'case'}->{$_}, $timestamp); }
                 }
 
                 if($self->{'gui'}){ $self->{'gui'}->gui_tc_descript(); }
@@ -656,7 +655,7 @@ Verifications Failed: $self->{'failedcount'}
 sub _httpget {
     my $self = shift;
 
-    $self->{'request'} = new HTTP::Request('GET',"$self->{'case'}->{url}");
+    $self->{'request'} = new HTTP::Request('GET', $self->{'case'}->{url});
 
     if ($self->{'case'}->{addheader}) {  #add an additional HTTP Header if specified
         my @addheaders = split(/\|/mx, $self->{'case'}->{addheader});  #can add multiple headers with a pipe delimiter
@@ -1268,21 +1267,21 @@ sub _fixsinglecase {
 ################################################################################
 # converts replaced xml with substitutions
 sub _convertbackxml {
-    my $self = shift;
-
-    $_[0] =~ s~{AMPERSAND}~&~gmx;
-    $_[0] =~ s~{LESSTHAN}~<~gmx;
-    $_[0] =~ s~{TIMESTAMP}~$self->{'timestamp'}~gmx;
-    $_[0] =~ s~{BASEURL}~$self->{'config'}->{baseurl}~gmx;
-    $_[0] =~ s~{BASEURL1}~$self->{'config'}->{baseurl1}~gmx;
-    $_[0] =~ s~{BASEURL2}~$self->{'config'}->{baseurl2}~gmx;
-    $_[0] =~ s~{PARSEDRESULT}~$self->{'parsedresult'}->{parseresponse}~gmx;
-    $_[0] =~ s~{PARSEDRESULT1}~$self->{'parsedresult'}->{parseresponse1}~gmx;
-    $_[0] =~ s~{PARSEDRESULT2}~$self->{'parsedresult'}->{parseresponse2}~gmx;
-    $_[0] =~ s~{PARSEDRESULT3}~$self->{'parsedresult'}->{parseresponse3}~gmx;
-    $_[0] =~ s~{PARSEDRESULT4}~$self->{'parsedresult'}->{parseresponse4}~gmx;
-    $_[0] =~ s~{PARSEDRESULT5}~$self->{'parsedresult'}->{parseresponse5}~gmx;
-    return;
+    my($self,$string,$timestamp) = @_;
+    return unless defined $string;
+    $string =~ s~{AMPERSAND}~&~gmx;
+    $string =~ s~{LESSTHAN}~<~gmx;
+    $string =~ s~{TIMESTAMP}~$timestamp~gmx;
+    $string =~ s~{BASEURL}~$self->{'config'}->{baseurl}~gmx;
+    $string =~ s~{BASEURL1}~$self->{'config'}->{baseurl1}~gmx;
+    $string =~ s~{BASEURL2}~$self->{'config'}->{baseurl2}~gmx;
+    $string =~ s~{PARSEDRESULT}~$self->{'parsedresult'}->{parseresponse}~gmx;
+    $string =~ s~{PARSEDRESULT1}~$self->{'parsedresult'}->{parseresponse1}~gmx;
+    $string =~ s~{PARSEDRESULT2}~$self->{'parsedresult'}->{parseresponse2}~gmx;
+    $string =~ s~{PARSEDRESULT3}~$self->{'parsedresult'}->{parseresponse3}~gmx;
+    $string =~ s~{PARSEDRESULT4}~$self->{'parsedresult'}->{parseresponse4}~gmx;
+    $string =~ s~{PARSEDRESULT5}~$self->{'parsedresult'}->{parseresponse5}~gmx;
+    return $string;
 }
 
 ################################################################################
