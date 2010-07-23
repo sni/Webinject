@@ -19,6 +19,7 @@ requires 'Getopt::Long'            => 0;
 requires 'Crypt::SSLeay'           => 0;
 requires 'XML::Parser'             => 0;
 requires 'Error'                   => 0;
+requires 'File::Temp'              => 0;
 
 auto_install;
 WriteAll;
