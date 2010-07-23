@@ -25,6 +25,8 @@ Webinject - Perl Module for testing web services
 =head1 SYNOPSIS
 
     use Webinject;
+    my $webinject = Webinject->new();
+    $webinject->engine();
 
 =head1 DESCRIPTION
 
@@ -63,45 +65,7 @@ sub new {
         }
     }
 
-    $self->{dirname}             = undef;
-    $self->{parsedresult}        = undef;
-    $self->{useragent}           = undef;
-    $self->{request}             = undef;
-    $self->{response}            = undef;
-    $self->{gui}                 = undef;
-    $self->{monitorenabledchkbx} = undef;
-    $self->{latency}             = undef;
-    $self->{cookie_jar}          = undef;
     $self->{httpauth}            = [];
-    $self->{xnode}               = undef;
-    $self->{graphtype}           = undef;
-    $self->{plotclear}           = undef;
-    $self->{stop}                = undef;
-    $self->{nooutput}            = undef;
-    $self->{runcount}            = undef;
-    $self->{totalruncount}       = undef;
-    $self->{casepassedcount}     = undef;
-    $self->{casefailedcount}     = undef;
-    $self->{passedcount}         = undef;
-    $self->{failedcount}         = undef;
-    $self->{totalresponse}       = undef;
-    $self->{avgresponse}         = undef;
-    $self->{maxresponse}         = undef;
-    $self->{minresponse}         = undef;
-    $self->{casefilelist}        = undef;
-    $self->{casecount}           = undef;
-    $self->{isfailure}           = undef;
-    $self->{case}                = undef;
-    $self->{verifylater}         = undef;
-    $self->{verifylaterneg}      = undef;
-    $self->{totalruntime}        = undef;
-    $self->{'starttimer'}        = undef;
-    $self->{endtimer}            = undef;
-    $self->{opt_configfile}      = undef;
-    $self->{opt_output}          = undef;
-    $self->{reporttype}          = undef;
-    $self->{returnmessage}       = undef;
-
     $self->{config}              = {};
     $self->{'currentdatetime'}   = localtime time;    #get current date and time for results report
     $self->{exit_codes}          = {
