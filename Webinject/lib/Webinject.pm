@@ -10,10 +10,11 @@ use HTTP::Cookies;
 use XML::Simple;
 use Time::HiRes 'time','sleep';
 use Getopt::Long;
-use Crypt::SSLeay;      # for SSL/HTTPS (you may comment this out if you don't need it)
-use XML::Parser;        # for web services verification (you may comment this out if aren't doing XML verifications for web services)
-use Error qw(:try);     # for web services verification (you may comment this out if aren't doing XML verifications for web services)
-use Data::Dumper;       # uncomment to dump hashes for debugging
+use Crypt::SSLeay;              # for SSL/HTTPS (you may comment this out if you don't need it)
+use XML::Parser;                # for web services verification (you may comment this out if aren't doing XML verifications for web services)
+use Error qw(:try);             # for web services verification (you may comment this out if aren't doing XML verifications for web services)
+use Data::Dumper;               # dump hashes for debugging
+use File::Temp qw/ tempfile /;  # create temp files
 
 our $VERSION = '1.50';
 
@@ -91,7 +92,6 @@ sub new {
     $self->{maxresponse} = undef;
     $self->{minresponse} = undef;
     $self->{casefilelist} = undef;
-    $self->{currentcasefile} = undef;
     $self->{casecount} = undef;
     $self->{isfailure} = undef;
     $self->{case} = undef;
@@ -228,25 +228,24 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     $startruntimer = time();  #timer for entire test run
 
 
-    foreach (@{$self->{'casefilelist'}}) { #process test case files named in config
+    for my $currentcasefile (@{$self->{'casefilelist'}}) { #process test case files named in config
 
-        $self->{'currentcasefile'} = $_;
-        #print "\n$self->{'currentcasefile'}\n\n";
+        #print "\n$currentcasefile\n\n";
 
         $self->{'case'}->{'filecheck'} = ' ';
 
         if($self->{'gui'}){ $self->{'gui'}->gui_processing_msg(); }
 
-        $self->_convtestcases();
+        my $tempfile = $self->_convtestcases($currentcasefile);
 
         $self->_fixsinglecase();
 
-        $xmltestcases = XMLin("$self->{'dirname'}"."$self->{'currentcasefile'}".".$$".".tmp", VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
+        $xmltestcases = XMLin($tempfile, VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
         #print Dumper($xmltestcases);  #for debug, dump hash of xml
         #print keys %{$self->{'config'}->file};  #for debug, print keys from dereferenced hash
 
         #delete the temp file as soon as we are done reading it
-        if (-e "$self->{'dirname'}"."$self->{'currentcasefile'}".".$$".".tmp") { unlink "$self->{'dirname'}"."$self->{'currentcasefile'}".".$$".".tmp"; }
+        if (-e $tempfile) { unlink $tempfile; }
 
 
         $repeat = $xmltestcases->{repeat};  #grab the number of times to iterate test case file
@@ -299,19 +298,19 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
 
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
-                    print $results qq|<b>Test:  $self->{'currentcasefile'} - $testnum </b><br />\n|;
+                    print $results qq|<b>Test:  $currentcasefile - $testnum </b><br />\n|;
                 }
 
                 unless ($self->{'nooutput'}) { #skip regular STDOUT output
-                    print STDOUT qq|Test:  $self->{'currentcasefile'} - $testnum \n|;
+                    print STDOUT qq|Test:  $currentcasefile - $testnum \n|;
                 }
 
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
-                    unless ($self->{'case'}->{'filecheck'} eq $self->{'currentcasefile'}) {
-                        unless ($self->{'currentcasefile'} eq $self->{'case'}->{'filelist'}->[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
+                    unless ($self->{'case'}->{'filecheck'} eq $currentcasefile) {
+                        unless ($currentcasefile eq $self->{'casefilelist'}->[0]) {  #if this is the first test case file, skip printing the closing tag for the previous one
                             print $resultsxml qq|    </testcases>\n\n|;
                         }
-                        print $resultsxml qq|    <testcases file="$self->{'currentcasefile'}">\n\n|;
+                        print $resultsxml qq|    <testcases file="$currentcasefile">\n\n|;
                     }
                     print $resultsxml qq|        <testcase id="$testnum">\n|;
                 }
@@ -476,7 +475,7 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                     print STDOUT qq|------------------------------------------------------- \n|;
                 }
 
-                $self->{'case'}->{'filecheck'} = $self->{'currentcasefile'};  #set this so <testcases> xml is only closed after each file is done processing
+                $self->{'case'}->{'filecheck'} = $currentcasefile;  #set this so <testcases> xml is only closed after each file is done processing
 
                 $endruntimer = time();
                 $self->{'totalruntime'} = (int(1000 * ($endruntimer - $startruntimer)) / 1000);  #elapsed time rounded to thousandths
@@ -1092,6 +1091,7 @@ sub _processcasefile {
                 }
             }
         }
+        close($config);
     }
 
     if (($#ARGV + 1) < 1) {  #no command line args were passed
@@ -1108,7 +1108,7 @@ sub _processcasefile {
             }
         }
 
-        unless ($self->{'case'}->{'filelist'}->[0]) {
+        unless ($self->{'casefilelist'}->[0]) {
             if (-e "$self->{'dirname'}"."testcases.xml") {
                 #not appending a $self->{'dirname'} here since we append one when we open the file
                 push @{$self->{'casefilelist'}}, "testcases.xml";  #if no files are specified in config.xml, default to testcases.xml
@@ -1200,7 +1200,6 @@ sub _processcasefile {
         }
     }
 
-    close($config);
     return;
 }
 
@@ -1208,11 +1207,13 @@ sub _processcasefile {
 # here we do some pre-processing of the test case file and write it out to a temp file.
 # we convert certain chars so xml parser doesn't puke.
 sub _convtestcases {
-    my $self = shift;
+    my $self            = shift;
+    my $currentcasefile = shift;
 
     my @xmltoconvert;
 
-    my $filename = $self->{'dirname'}.$self->{'currentcasefile'};
+    my($fh, $tempfilename) = tempfile();
+    my $filename = $self->{'dirname'}.$currentcasefile;
     open(my $xmltoconvert, '<', $filename) or die "\nError: Failed to open test case file: ".$filename.": $!\n\n";  #open file handle
     @xmltoconvert = <$xmltoconvert>;  #read the file into an array
 
@@ -1233,10 +1234,10 @@ sub _convtestcases {
 
     close($xmltoconvert);
 
-    open($xmltoconvert, '>', "$self->{'dirname'}"."$self->{'currentcasefile'}".".$$".".tmp") or die "\nERROR: Failed to open temp file for writing: $!\n\n";  #open file handle to temp file
+    open($xmltoconvert, '>', $tempfilename) or die "\nERROR: Failed to open temp file for writing: $!\n\n";  #open file handle to temp file
     print $xmltoconvert @xmltoconvert;  #overwrite file with converted array
     close($xmltoconvert);
-    return;
+    return $tempfilename;
 }
 
 ################################################################################
