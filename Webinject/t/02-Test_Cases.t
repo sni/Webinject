@@ -14,7 +14,7 @@ if($ENV{TEST_AUTHOR}) {
         plan skip_all => 'HTTP::Server::Simple::CGI required';
     }
     else{
-        plan tests => 6;
+        plan tests => 8;
     }
 }
 else{
@@ -39,7 +39,7 @@ isa_ok($webinject, "Webinject", 'Object is a Webinject');
         my $path   = $cgi->path_info();
         my $method = $cgi->request_method();
         if($method eq 'GET' and $path =~ m|/code/(\d+)|) {
-            print "HTTP/1.0 $1\r\n\r\n";
+            print "HTTP/1.0 $1\r\n\r\nrequest for response code $1\r\n";
         }
         elsif($method eq 'GET' and $path =~ m|/teststring|) {
             print "HTTP/1.0 200 OK\r\n\r\nthis is just a teststring";
@@ -56,6 +56,7 @@ $SIG{INT} = sub{ kill 2, $webserverpid if defined $webserverpid; undef $webserve
 sleep(1);
 
 ##################################################
+# Test File 01
 $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
 @ARGV = ($Bin."/data/01-response_codes.xml");
 $webinject->engine();
@@ -63,12 +64,24 @@ is($webinject->{'passedcount'}, 1, '01-response_codes.xml - passed count');
 is($webinject->{'failedcount'}, 1, '01-response_codes.xml - fail count');
 
 ##################################################
+# Test File 02
 $webinject = Webinject->new();
 $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
 @ARGV = ($Bin."/data/02-string_verification.xml");
 $webinject->engine();
-is($webinject->{'passedcount'}, 6, '02-string_verification.xml - passed count');
-is($webinject->{'failedcount'}, 4, '02-string_verification.xml - fail count');
+is($webinject->{'passedcount'}, 9, '02-string_verification.xml - passed count');
+is($webinject->{'failedcount'}, 0, '02-string_verification.xml - fail count');
+
+##################################################
+# Test File 04
+$webinject = Webinject->new();
+$webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
+@ARGV = ($Bin."/data/03-parse_response.xml");
+$webinject->engine();
+is($webinject->{'passedcount'}, 3, '03-parse_response.xml - passed count');
+is($webinject->{'failedcount'}, 0, '03-parse_response.xml - fail count');
+
+
 
 ##################################################
 # stop our test webserver

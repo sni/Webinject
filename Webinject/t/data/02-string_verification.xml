@@ -9,13 +9,6 @@
     verifypositive1    = "this is just a teststring"
     verifypositive2    = "this is just a teststring"
     verifypositive3    = "this is just a teststring"
-/>
-<case
-    id                 = "2"
-    description1       = "test negative string verification"
-    method             = "get"
-    url                = "{BASEURL}/teststring"
-    verifyresponsecode = "200"
     verifynegative     = "this should not match"
     verifynegative1    = "this should not match"
     verifynegative2    = "this should not match"

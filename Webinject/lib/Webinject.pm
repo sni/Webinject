@@ -237,10 +237,14 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
         my $tempfile = $self->_convtestcases($currentcasefile);
 
-        $self->_fixsinglecase();
-
         $xmltestcases = XMLin($tempfile, VarAttr => 'varname'); #slurp test case file to parse (and specify variables tag)
+        # fix case if there is only one
+        if(defined $xmltestcases->{'case'}->{'id'}) {
+            my $tmpcase = $xmltestcases->{'case'};
+            $xmltestcases->{'case'} = { $tmpcase->{'id'} => $tmpcase };
+        }
         #print Dumper($xmltestcases);  #for debug, dump hash of xml
+
         #print keys %{$self->{'config'}->file};  #for debug, print keys from dereferenced hash
 
         #delete the temp file as soon as we are done reading it
@@ -291,10 +295,6 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
                 }
 
                 if($self->{'gui'}){ $self->{'gui'}->gui_tc_descript(); }
-
-                if ($self->{'case'}->{description1} and $self->{'case'}->{description1} =~ /dummy\ test\ case/mx) {  #if we hit a dummy record, skip it
-                    next;
-                }
 
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                     print $results qq|<b>Test:  $currentcasefile - $testnum </b><br />\n|;
@@ -837,9 +837,9 @@ sub _verify {
     my $results    = $self->{'RESULTS'};
 
     for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
-
-        if ($self->{'case'}->{$_}) {
-            if ($self->{'response'}->as_string() =~ m~$self->{'case'}->{$_}~simx) {  #verify existence of string in response
+        if($self->{'case'}->{$_}) {
+            my $regex = $self->{'case'}->{$_}; $regex =~ s/\ /\\ /gmx;
+            if($self->{'response'}->as_string() =~ m~$regex~simx) {  #verify existence of string in response
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                     print $results qq|<span class="pass">Passed Positive Verification</span><br />\n|;
                     print $resultsxml qq|            <$_-success>true</$_-success>\n|;
@@ -864,9 +864,9 @@ sub _verify {
     }
 
     for (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
-
-        if ($self->{'case'}->{$_}) {
-            if ($self->{'response'}->as_string() =~ m~$self->{'case'}->{$_}~simx) {  #verify existence of string in response
+        if($self->{'case'}->{$_}) {
+            my $regex = $self->{'case'}->{$_}; $regex =~ s/\ /\\ /gmx;
+            if ($self->{'response'}->as_string() =~ m~$regex~simx) {  #verify existence of string in response
                 unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                     print $results qq|<span class="fail">Failed Negative Verification</span><br />\n|;
                     print $resultsxml qq|            <$_-success>false</$_-success>\n|;
@@ -890,8 +890,9 @@ sub _verify {
         }
     }
 
-    if ($self->{'verifylater'}) {
-        if ($self->{'response'}->as_string() =~ m~$self->{'verifylater'}~simx) {  #verify existence of string in response
+    if($self->{'verifylater'}) {
+        my $regex = $self->{'verifylater'}; $regex =~ s/\ /\\ /gmx;
+        if($self->{'response'}->as_string() =~ m~$regex~simx) {  #verify existence of string in response
             unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                 print $results qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
                 print $resultsxml qq|            <verifypositivenext-success>true</verifypositivenext-success>\n|;
@@ -918,7 +919,8 @@ sub _verify {
 
 
     if ($self->{'verifylaterneg'}) {
-        if ($self->{'response'}->as_string() =~ m~$self->{'verifylaterneg'}~simx) {  #verify existence of string in response
+        my $regex = $self->{'verifylaterneg'}; $regex =~ s/\ /\\ /gmx;
+        if($self->{'response'}->as_string() =~ m~$regex~simx) {  #verify existence of string in response
 
             unless ($self->{'reporttype'}) {  #we suppress most logging when running in a plugin mode
                 print $results qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
@@ -1237,31 +1239,6 @@ sub _convtestcases {
     print $xmltoconvert @xmltoconvert;  #overwrite file with converted array
     close($xmltoconvert);
     return $tempfilename;
-}
-
-################################################################################
-# xml parser creates a hash in a different format if there is only a single testcase.
-# add a dummy testcase to fix this situation
-sub _fixsinglecase {
-    my $self = shift;
-
-    my @xmltoconvert;
-
-    if ($self->{'case'}->{'count'} == 1) {
-
-        open(my $xmltoconvert, $self->{'dirname'}.$self->{'currentcasefile'}.$$.".tmp") or die "\nError: Failed to open temp file\n\n";  #open file handle
-        @xmltoconvert = <$xmltoconvert>;  #read the file into an array
-
-        for(@xmltoconvert) {
-            s/<\/testcases>/<case id="2" description1="dummy test case"\/><\/testcases>/gmx;  #add dummy test case to end of file
-        }
-        close($xmltoconvert);
-
-        open($xmltoconvert, '>', $self->{'dirname'}.$self->{'currentcasefile'}.$$.".tmp") or die "\nERROR: Failed to open temp file for writing: $!\n\n";  #open file handle
-        print $xmltoconvert @xmltoconvert;  #overwrite file with converted array
-        close($xmltoconvert);
-    }
-    return;
 }
 
 ################################################################################
