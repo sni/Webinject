@@ -1,5 +1,19 @@
 package Webinject;
 
+#    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
+#
+#    This file is part of WebInject.
+#
+#    WebInject is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    WebInject is distributed in the hope that it will be useful,
+#    but without any warranty; without even the implied warranty of
+#    merchantability or fitness for a particular purpose.  See the
+#    GNU General Public License for more details.
+
 use 5.006;
 use strict;
 use warnings;
@@ -65,17 +79,9 @@ sub new {
         }
     }
 
-    $self->{httpauth}            = [];
-    $self->{config}              = {};
-    $self->{'currentdatetime'}   = localtime time;    #get current date and time for results report
-    $self->{exit_codes}          = {
-        'UNKNOWN'  => 3,
-        'OK'       => 0,
-        'WARNING'  => 1,
-        'CRITICAL' => 2,
-    };
-
     bless $self, $class;
+
+    $self->_set_defaults();
 
     return $self;
 }
@@ -101,7 +107,7 @@ sub engine {
     # undef local values
     map { $self->{'case'}->{$_} = undef } qw/method description1 description2 sleep/;
 
-    if( $self->{'gui'} ) { $self->{'gui'}->gui_initial(); }
+    if( $self->{'gui'} ) { $self->_gui_initial(); }
 
     $self->_getdirname();       # get the directory webinject engine is running from
     $self->_getoptions();       # get command line options
@@ -202,7 +208,7 @@ sub engine {
 
         $self->{'case'}->{'filecheck'} = ' ';
 
-        if($self->{'gui'}) { $self->{'gui'}->gui_processing_msg(); }
+        if($self->{'gui'}) { $self->_gui_processing_msg(); }
 
         my $tempfile = $self->_convtestcases($currentcasefile);
 
@@ -240,7 +246,7 @@ sub engine {
                     # don't do this if monitor is disabled in gui
                     unless( $self->{'monitorenabledchkbx'} eq 'monitor_off' ) {
                         # check to see if the user changed the graph setting
-                        if( $curgraphtype ne $self->{'graphtype'} ) {
+                        if(!defined $curgraphtype or $curgraphtype ne $self->{'graphtype'} ) {
                             $self->_gnuplotcfg(); # create the gnuplot config file since graph setting changed
                             $curgraphtype = $self->{'graphtype'};
                         }
@@ -276,7 +282,7 @@ sub engine {
                     }
                 }
 
-                if( $self->{'gui'} ) { $self->{'gui'}->gui_tc_descript(); }
+                if( $self->{'gui'} ) { $self->_gui_tc_descript(); }
 
                 unless( $self->{'reporttype'} ) {
                     # we suppress most logging when running in a plugin mode
@@ -381,7 +387,7 @@ sub engine {
                 $self->_plotit();                       # call the external plotter to create a graph
 
                 if( $self->{'gui'} ) {
-                    $self->{'gui'}->gui_updatemontab(); # update monitor with the newly rendered plot graph
+                    $self->_gui_updatemontab(); # update monitor with the newly rendered plot graph
                 }
 
                 $self->_parseresponse();                # grab string from response to send later
@@ -419,7 +425,7 @@ sub engine {
                         #print "\nReturn Message : $self->{'returnmessage'}\n"
                     }
                     if( $self->{'gui'} ) {
-                        $self->{'gui'}->gui_status_failed();
+                        $self->_gui_status_failed();
                     }
                     $self->{'case'}->{'failedcount'}++;
                 }
@@ -435,7 +441,7 @@ sub engine {
                         print $resultsxml qq|            <result-message>TEST CASE PASSED</result-message>\n|;
                     }
                     if( $self->{'gui'} ) {
-                        $self->{'gui'}->gui_status_passed();
+                        $self->_gui_status_passed();
                     }
                     $self->{'case'}->{'passedcount'}++;
                 }
@@ -444,7 +450,7 @@ sub engine {
                     print $results qq|Response Time = $self->{'latency'} sec <br />\n|;
                 }
 
-                if( $self->{'gui'} ) { $self->{'gui'}->gui_timer_output(); }
+                if( $self->{'gui'} ) { $self->_gui_timer_output(); }
 
                 unless( $self->{'nooutput'} ) {    #skip regular STDOUT output
                     print STDOUT qq|Response Time = $self->{'latency'} sec \n|;
@@ -469,7 +475,7 @@ sub engine {
                 $self->{'totalruncount'}++;
 
                 if( $self->{'gui'} ) {
-                    $self->{'gui'}->gui_statusbar();    #update the statusbar
+                    $self->_gui_statusbar();    #update the statusbar
                 }
 
                 if( $self->{'latency'} > $self->{'maxresponse'} ) {
@@ -484,7 +490,7 @@ sub engine {
                 $self->{'avgresponse'} = ( int( 1000 * ( $self->{'totalresponse'} / $self->{'totalruncount'} ) ) / 1000 );
 
                 if( $self->{'gui'} ) {
-                    $self->{'gui'}->gui_updatemonstats(); # update timers and counts in monitor tab
+                    $self->_gui_updatemonstats(); # update timers and counts in monitor tab
                 }
 
                 # break from sub if user presses stop button in gui
@@ -509,6 +515,23 @@ sub engine {
 
     $self->_finaltasks();    # do return/cleanup tasks
 
+    return;
+}
+
+################################################################################
+# set defaults
+sub _set_defaults {
+    my $self = shift;
+    $self->{httpauth}            = [];
+    $self->{config}              = {};
+    $self->{'currentdatetime'}   = localtime time;    #get current date and time for results report
+    $self->{'graphtype'}         = 'lines';
+    $self->{exit_codes}          = {
+        'UNKNOWN'  => 3,
+        'OK'       => 0,
+        'WARNING'  => 1,
+        'CRITICAL' => 2,
+    };
     return;
 }
 
@@ -1208,7 +1231,7 @@ sub _convtestcases {
       . ": $!\n\n";    #open file handle
     @xmltoconvert = <$xmltoconvert>;    #read the file into an array
 
-    $self->{'case'}->{'count'} = 0;
+    $self->{'casecount'} = 0;
 
     foreach (@xmltoconvert) {
 
@@ -1219,7 +1242,7 @@ sub _convtestcases {
 
         # count cases while we are here
         if ( $_ =~ /<case/mx ) {        #count test cases based on '<case' tag
-            $self->{'case'}->{'count'}++;
+            $self->{'casecount'}++;
         }
     }
 
@@ -1333,7 +1356,7 @@ sub _httplog {
 ################################################################################
 # write performance results to plot.log in the format gnuplot can use
 sub _plotlog {
-    my ( $self, $value ) = shift;
+    my ( $self, $value ) = @_;
 
     my ( %months, $date, $time, $mon, $mday, $hours, $min, $sec, $year );
 
@@ -1429,7 +1452,7 @@ plot \"plot.log\" using 1:7 title \"Response Times" w $self->{'graphtype'}
 sub _finaltasks {
     my $self = shift;
 
-    if ( $self->{'gui'} ) { $self->{'gui'}->gui_stop(); }
+    if ( $self->{'gui'} ) { $self->_gui_stop(); }
 
     unless ( $self->{'reporttype'} )
     {    #we suppress most logging when running in a plugin mode
@@ -1573,7 +1596,7 @@ sub _plotit {
                   "plot.plt";    # plot it with gnuplot using exe
             }
             elsif ( $self->{'gui'} ) {
-                $self->{'gui'}->gui_no_plotter_found();  # if gnuplot not specified, notify on gui
+                $self->_gui_no_plotter_found();  # if gnuplot not specified, notify on gui
             }
         }
     }
@@ -1634,7 +1657,7 @@ EOB
 
 =head1 SEE ALSO
 
-For more information about webinject visit http://www.webinject.org/
+For more information about webinject visit http://www.webinject.org
 
 =head1 AUTHOR
 
@@ -1650,4 +1673,5 @@ This library is free software; you can redistribute it under the GPL2 license.
 
 =cut
 
+1;
 __END__
