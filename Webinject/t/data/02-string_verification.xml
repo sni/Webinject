@@ -1,0 +1,17 @@
+<testcases repeat="1">
+<case
+    id                 = "1"
+    description1       = "test string verification"
+    method             = "get"
+    url                = "{BASEURL}/teststring"
+    verifyresponsecode = "200"
+    verifypositive     = "this is just a teststring"
+    verifypositive1    = "this is just a teststring"
+    verifypositive2    = "this is just a teststring"
+    verifypositive3    = "this is just a teststring"
+    verifynegative     = "this should not match"
+    verifynegative1    = "this should not match"
+    verifynegative2    = "this should not match"
+    verifynegative3    = "this should not match"
+/>
+</testcases>
