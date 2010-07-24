@@ -1,7 +1,2 @@
-<<<<<<< HEAD
 <testcasefile>testcases.xml</testcasefile>
 <globalhttplog>onfail</globalhttplog>
-=======
-<testcasefile>testcases.xml</testcasefile>
-<globalhttplog>onfail</globalhttplog>
->>>>>>> lithim

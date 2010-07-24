@@ -1583,20 +1583,21 @@ sub _plotit {
             and ( $self->{'config'}->{standaloneplot} ne 'on' ) )
       )
     {
+        # do this unless its being called from the gui with No Graph set
         unless ( $self->{'graphtype'} eq 'nograph' )
-        {    # do this unless its being called from the gui with No Graph set
+        {
             if ( $self->{'config'}->{gnuplot} )
             {    # if gnuplot is specified in config.xml, use it
-                system "$self->{'config'}->{gnuplot}",
-                  "plot.plt";    # plot it with gnuplot
+                system "$self->{'config'}->{gnuplot}", "plot.plt";    # plot it with gnuplot
             }
+            # check for Win32 exe
             elsif ( ( $^O eq 'MSWin32' ) and ( -e './wgnupl32.exe' ) )
-            {                    # check for Win32 exe
-                system "wgnupl32.exe",
-                  "plot.plt";    # plot it with gnuplot using exe
+            {
+                system "wgnupl32.exe", "plot.plt";    # plot it with gnuplot using exe
             }
             elsif ( $self->{'gui'} ) {
-                $self->_gui_no_plotter_found();  # if gnuplot not specified, notify on gui
+                # if gnuplot not specified, notify on gui
+                $self->_gui_no_plotter_found();
             }
         }
     }

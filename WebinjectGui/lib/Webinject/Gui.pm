@@ -612,7 +612,7 @@ sub _about {
     $about_text->insert(
         "end", qq|
 WebInject
-©2004-2006 Corey Goldberg
+Â©2004-2006 Corey Goldberg
 
 Please visit www.webinject.org
 for information and documentation.
