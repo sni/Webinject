@@ -139,11 +139,8 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
 
     if($self->{'gui'}) { $self->{'gui'}->gui_initial(); }
 
-    $self->_getdirname();  #get the directory webinject engine is running from
-
-    $self->_getoptions();  #get command line options
-
-    $self->_whackoldfiles();  #delete files leftover from previous run (do this here so they are whacked each run)
+    $self->_getdirname();       # get the directory webinject engine is running from
+    $self->_whackoldfiles();    # delete files leftover from previous run (do this here so they are whacked each run)
 
     #contsruct objects
     $self->{'useragent'} = LWP::UserAgent->new;
@@ -520,7 +517,23 @@ sub engine {   #wrap the whole engine in a subroutine so it can be integrated wi
     return;
 }
 
-
+################################################################################
+# set defaults
+sub _set_defaults {
+    my $self = shift;
+    $self->{httpauth}            = [];
+    $self->{config}              = {};
+    $self->{'currentdatetime'}   = localtime time;    #get current date and time for results report
+    $self->{'graphtype'}         = 'lines';
+    $self->{exit_codes}          = {
+        'UNKNOWN'  => 3,
+        'OK'       => 0,
+        'WARNING'  => 1,
+        'CRITICAL' => 2,
+    };
+    $self->_getoptions(); # get command line options
+    return;
+}
 
 ################################################################################
 # write opening tags for results file
@@ -1497,17 +1510,36 @@ sub _whackoldfiles {
 sub _plotit {
     my $self = shift;
 
-    #do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting
-    unless((($self->{'gui'}) and ($self->{'monitorenabledchkbx'} eq 'monitor_off')) or ((!defined $self->{'gui'}) and ($self->{'config'}->{standaloneplot} ne 'on'))) {
-        unless ($self->{'graphtype'} eq 'nograph') {  #do this unless its being called from the gui with No Graph set
-            if($self->{'config'}->{gnuplot}) {  #if gnuplot is specified in config.xml, use it
-                system "$self->{'config'}->{gnuplot}", "plot.plt";  #plot it with gnuplot
+    # do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting
+    unless (
+        (
+                ( $self->{'gui'} )
+            and ( $self->{'monitorenabledchkbx'} eq 'monitor_off' )
+        )
+        or (    ( !defined $self->{'gui'} )
+            and ( $self->{'config'}->{standaloneplot} ne 'on' ) )
+      )
+    {
+        # do this unless its being called from the gui with No Graph set
+        unless ( $self->{'graphtype'} eq 'nograph' )
+        {
+            my $gnuplot;
+            if(defined $self->{'config'}->{gnuplot}) {
+                $gnuplot = $self->{'config'}->{gnuplot}
             }
-            elsif(($^O eq 'MSWin32') and (-e './wgnupl32.exe')) {  #check for Win32 exe
-                system "wgnupl32.exe", "plot.plt";  #plot it with gnuplot using exe
+            elsif($^O eq 'MSWin32') {
+                $gnuplot = "./wgnupl32.exe";
+            } else {
+                $gnuplot = "/usr/bin/gnuplot";
             }
-            elsif($self->{'gui'}) {
-                $self->{'gui'}->gui_no_plotter_found();  #if gnuplot not specified, notify on gui
+
+            # if gnuplot exists
+            if( -e $gnuplot ) {
+                system $gnuplot, "plot.plt";    # plot it
+            }
+            elsif( $self->{'gui'} ) {
+                # if gnuplot not specified, notify on gui
+                $self->_gui_no_plotter_found();
             }
         }
     }
