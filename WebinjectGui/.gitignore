@@ -11,3 +11,4 @@ results.xml
 testcases.xml.*.tmp
 plot.log
 plot.plt
+plot.png

@@ -77,7 +77,9 @@ sub new {
 
     bless $self, $class;
 
-    $self->{'gui'} = 1;
+    # save command line for later restarts
+    $self->{'command_line'} = $0." ".join(" ", @ARGV);
+    $self->{'gui'}          = 1;
     $self->_set_defaults();
     $self->_init_main_window();
 
@@ -392,13 +394,7 @@ sub _gui_initial {                   #this runs when engine is first loaded
 ########################################
 sub _gui_restart {    #kill the entire app and restart it
     my $self = shift;
-    if ( $0 =~ /webinjectgui\.pl/mx ) {
-        exec 'perl ./webinjectgui.pl';
-    }
-    if ( $0 =~ /webinjectgui\.exe/mx ) {
-        exec './webinjectgui.exe';
-    }
-    return;
+    return exec $self->{'command_line'};
 }
 
 ########################################
