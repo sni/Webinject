@@ -100,7 +100,7 @@ sub engine {
     #wrap the whole engine in a subroutine so it can be integrated with the gui
     my $self = shift;
 
-    my ($startruntimer, $endruntimer, $repeat);
+    my ($startruntimer, $endruntimer);
     my ($curgraphtype);
     my ($xmltestcases);
 
@@ -112,7 +112,7 @@ sub engine {
     $self->_getdirname();       # get the directory webinject engine is running from
     $self->_whackoldfiles();    # delete files leftover from previous run (do this here so they are whacked each run)
 
-    #contsruct objects
+    #construct objects
     $self->{'useragent'}  = LWP::UserAgent->new;
     $self->{'cookie_jar'} = HTTP::Cookies->new;
     $self->{'useragent'}->agent('WebInject');    # http useragent that will show up in webserver logs
@@ -127,7 +127,7 @@ sub engine {
 
     # add proxy support if it is set in config.xml
     if( $self->{'config'}->{proxy} ) {
-        $self->{'useragent'}->proxy( [ 'http', 'https' ], "$self->{'config'}->{proxy}" );
+        $self->{'useragent'}->proxy( [ 'http', 'https' ], $self->{'config'}->{proxy} );
     }
 
     # add http basic authentication support
@@ -139,15 +139,13 @@ sub engine {
         # deref $elem to get the array elements.
         for my $elem ( @{ $self->{'httpauth'} } ) {
             #print "adding credential: $elem->[0]:$elem->[1], $elem->[2], $elem->[3] => $elem->[4]\n";
-            $self->{'useragent'}
-              ->credentials( "$elem->[0]:$elem->[1]", "$elem->[2]",
-                "$elem->[3]" => "$elem->[4]" );
+            $self->{'useragent'}->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
         }
     }
 
     # change response delay timeout in seconds if it is set in config.xml
     if($self->{'config'}->{timeout}) {
-        $self->{'useragent'}->timeout("$self->{'config'}->{timeout}");    #default LWP timeout is 180 secs.
+        $self->{'useragent'}->timeout($self->{'config'}->{timeout});    #default LWP timeout is 180 secs.
     }
 
     #open file handles
@@ -212,7 +210,8 @@ sub engine {
         my $tempfile = $self->_convtestcases($currentcasefile);
 
         $xmltestcases = XMLin( $tempfile, VarAttr => 'varname' );    # slurp test case file to parse (and specify variables tag)
-        if( defined $xmltestcases->{'case'}->{'id'} ) {              # fix case if there is only one
+        # fix case if there is only one case
+        if( defined $xmltestcases->{'case'}->{'id'} ) {
             my $tmpcase = $xmltestcases->{'case'};
             $xmltestcases->{'case'} = { $tmpcase->{'id'} => $tmpcase };
         }
@@ -222,12 +221,13 @@ sub engine {
         #delete the temp file as soon as we are done reading it
         if ( -e $tempfile ) { unlink $tempfile; }
 
-        $repeat = $xmltestcases->{repeat};    #grab the number of times to iterate test case file
-        unless ($repeat) {
-            $repeat = 1; # set to 1 in case if is not defined in test case file
+        my $repeat = 1;
+        if(defined $xmltestcases->{repeat}) {
+            $repeat = $xmltestcases->{repeat};
         }
-
-        foreach ( 1 .. $repeat ) {
+        
+        $self->{'result'} = [];
+        for my $run_nr (1 .. $repeat) {
 
             $self->{'runcount'} = 0;
 
@@ -365,24 +365,25 @@ sub engine {
                     }
                 }
 
+                my($latency,$request);
                 if( $self->{'case'}->{method} ) {
                     if ( $self->{'case'}->{method} eq "get" ) {
-                        $self->_httpget();
+                        ($latency,$request) = $self->_httpget();
                     }
                     elsif ( $self->{'case'}->{method} eq "post" ) {
-                        $self->_httppost();
+                        ($latency,$request) = $self->_httppost();
                     }
                     else {
                         print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;
                     }
                 }
                 else {
-                    $self->_httpget();                  # use "get" if no method is specified
+                    ($latency,$request) = $self->_httpget();       # use "get" if no method is specified
                 }
 
                 $self->_verify();                       # verify result from http response
-                $self->_httplog();                      # write to http.log file
-                $self->_plotlog( $self->{'latency'} );  # send perf data to log file for plotting
+                $self->_httplog($request);              # write to http.log file
+                $self->_plotlog($latency);              # send perf data to log file for plotting
                 $self->_plotit();                       # call the external plotter to create a graph
 
                 if( $self->{'gui'} ) {
@@ -446,17 +447,17 @@ sub engine {
                 }
 
                 unless( $self->{'reporttype'} ) {    #we suppress most logging when running in a plugin mode
-                    print $results qq|Response Time = $self->{'latency'} sec <br />\n|;
+                    print $results qq|Response Time = $latency sec <br />\n|;
                 }
 
                 if( $self->{'gui'} ) { $self->_gui_timer_output(); }
 
                 unless( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                    print STDOUT qq|Response Time = $self->{'latency'} sec \n|;
+                    print STDOUT qq|Response Time = $latency sec \n|;
                 }
 
                 unless( $self->{'reporttype'} ) {    #we suppress most logging when running in a plugin mode
-                    print $resultsxml qq|            <responsetime>$self->{'latency'}</responsetime>\n|;
+                    print $resultsxml qq|            <responsetime>$latency</responsetime>\n|;
                     print $resultsxml qq|        </testcase>\n\n|;
                     print $results qq|<br />\n------------------------------------------------------- <br />\n\n|;
                 }
@@ -477,16 +478,21 @@ sub engine {
                     $self->_gui_statusbar();    #update the statusbar
                 }
 
-                if( $self->{'latency'} > $self->{'maxresponse'} ) {
-                    $self->{'maxresponse'} = $self->{'latency'}; # set max response time
+                if( $latency > $self->{'maxresponse'} ) {
+                    $self->{'maxresponse'} = $latency; # set max response time
                 }
-                if( $self->{'latency'} < $self->{'minresponse'} ) {
-                    $self->{'minresponse'} = $self->{'latency'}; # set min response time
+                if( $latency < $self->{'minresponse'} ) {
+                    $self->{'minresponse'} = $latency; # set min response time
                 }
                 # keep total of response times for calculating avg
-                $self->{'totalresponse'} = ( $self->{'totalresponse'} + $self->{'latency'} );
+                $self->{'totalresponse'} = ( $self->{'totalresponse'} + $latency );
                 # avg response rounded to thousandths
                 $self->{'avgresponse'} = ( int( 1000 * ( $self->{'totalresponse'} / $self->{'totalruncount'} ) ) / 1000 );
+                
+                push @{$self->{'result'}}, {
+                    'label'   => $run_nr,
+                    'latency' => $latency,
+                };
 
                 if( $self->{'gui'} ) {
                     $self->_gui_updatemonstats(); # update timers and counts in monitor tab
@@ -503,6 +509,7 @@ sub engine {
                 if( $self->{'case'}->{sleep} ) {
                     sleep( $self->{'case'}->{sleep} );
                 }
+                
 
                 # if an XPath Node is defined, only process the single Node
                 if( $self->{'xnode'} ) {
@@ -662,32 +669,34 @@ Verifications Failed: $self->{'failedcount'}
 
 ################################################################################
 sub _http_defaults {
-    my $self = shift;
+    my $self    = shift;
+    my $request = shift;
+    
     # add an additional HTTP Header if specified
     if( $self->{'case'}->{addheader} ) {
         # can add multiple headers with a pipe delimiter
         my @addheaders = split( /\|/mx, $self->{'case'}->{addheader} );
         foreach (@addheaders) {
             $_ =~ m~(.*): (.*)~mx;
-            $self->{'request'}->header( $1 => $2 );   # using HTTP::Headers Class
+            $request->header( $1 => $2 );   # using HTTP::Headers Class
         }
         $self->{'case'}->{addheader} = '';
     }
 
-    $self->{'cookie_jar'}->add_cookie_header( $self->{'request'} );
+    $self->{'cookie_jar'}->add_cookie_header( $request );
 
     # print $self->{'request'}->as_string; print "\n\n";
 
-    $self->{'starttimer'} = time();
-    $self->{'response'}   = $self->{'useragent'}->request( $self->{'request'} );
-    $self->{'endtimer'}   = time();
-    $self->{'latency'}    = ( int( 1000 * ( $self->{'endtimer'} - $self->{'starttimer'} ) ) / 1000 ); # elapsed time rounded to thousandths
+    my $starttimer        = time();
+    $self->{'response'}   = $self->{'useragent'}->request( $request );
+    my $endtimer          = time();
+    my $latency           = ( int( 1000 * ( $endtimer - $starttimer ) ) / 1000 ); # elapsed time rounded to thousandths
     # print $self->{'response'}->as_string; print "\n\n";
 
     $self->{'cookie_jar'}->extract_cookies( $self->{'response'} );
 
     #print $self->{'cookie_jar'}->as_string; print "\n\n";
-    return;
+    return($latency,$request);
 }
 
 ################################################################################
@@ -695,10 +704,8 @@ sub _http_defaults {
 sub _httpget {
     my $self = shift;
 
-    $self->{'request'} = new HTTP::Request( 'GET', $self->{'case'}->{url} );
-    $self->_http_defaults();
-
-    return;
+    my $request = new HTTP::Request( 'GET', $self->{'case'}->{url} );
+    return $self->_http_defaults($request);
 }
 
 ################################################################################
@@ -708,15 +715,15 @@ sub _httppost {
 
     if ( $self->{'case'}->{posttype} ) {
         if ( $self->{'case'}->{posttype} =~ m~application/x-www-form-urlencoded~mx ) {
-            $self->_httppost_form_urlencoded();
+            return $self->_httppost_form_urlencoded();
         }
         elsif ( $self->{'case'}->{posttype} =~ m~multipart/form-data~mx ) {
-            $self->_httppost_form_data();
+            return $self->_httppost_form_data();
         }
         elsif (( $self->{'case'}->{posttype} =~ m~text/xml~mx )
             or ( $self->{'case'}->{posttype} =~ m~application/soap+xml~mx ) )
         {
-            $self->_httppost_xml();
+            return $self->_httppost_xml();
         }
         else {
             print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|;
@@ -725,7 +732,7 @@ sub _httppost {
     else {
         # use "x-www-form-urlencoded" if no encoding is specified
         $self->{'case'}->{posttype} = 'application/x-www-form-urlencoded';
-        $self->_httppost_form_urlencoded();
+        return $self->_httppost_form_urlencoded();
     }
     return;
 }
@@ -735,13 +742,11 @@ sub _httppost {
 sub _httppost_form_urlencoded {
     my $self = shift;
 
-    $self->{'request'} = new HTTP::Request( 'POST', "$self->{'case'}->{url}" );
-    $self->{'request'}->content_type("$self->{'case'}->{posttype}");
-    $self->{'request'}->content("$self->{'case'}->{postbody}");
+    my $request = new HTTP::Request( 'POST', "$self->{'case'}->{url}" );
+    $request->content_type("$self->{'case'}->{posttype}");
+    $request->content("$self->{'case'}->{postbody}");
 
-    $self->_http_defaults();
-
-    return;
+    return $self->_http_defaults($request);
 }
 
 ################################################################################
@@ -757,11 +762,11 @@ sub _httppost_xml {
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
-    $self->{'request'} = new HTTP::Request( 'POST', "$self->{'case'}->{url}" );
-    $self->{'request'}->content_type("$self->{'case'}->{posttype}");
-    $self->{'request'}->content( join( " ", @xmlbody ) );    # load the contents of the file into the request body
+    my $request = new HTTP::Request( 'POST', "$self->{'case'}->{url}" );
+    $request->content_type("$self->{'case'}->{posttype}");
+    $request->content( join( " ", @xmlbody ) );    # load the contents of the file into the request body
 
-    $self->_http_defaults();
+    my $latency = $self->_http_defaults($request);
 
     my $xmlparser = new XML::Parser;
     try {    # see if the XML parses properly
@@ -793,7 +798,7 @@ sub _httppost_xml {
         $self->{'isfailure'}++;
     };    # <-- remember the semicolon
 
-    return;
+    return($latency,$request);
 }
 
 ################################################################################
@@ -801,13 +806,11 @@ sub _httppost_xml {
 sub _httppost_form_data {
     my $self = shift;
 
-    $self->{'request'} = POST "$self->{'case'}->{url}",
+    my $request = POST "$self->{'case'}->{url}",
       Content_Type => "$self->{'case'}->{posttype}",
       Content      => $self->{'case'}->{postbody};
 
-    $self->_http_defaults();
-
-    return;
+    return $self->_http_defaults($request);
 }
 
 ################################################################################
@@ -1012,10 +1015,7 @@ sub _parseresponse {
     my ( $resptoparse, @parseargs );
     my ( $leftboundary, $rightboundary, $escape );
 
-    for (
-        qw/parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5/
-      )
-    {
+    for( qw/parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5/ ) {
 
         next unless $self->{'case'}->{$_};
 
@@ -1109,7 +1109,7 @@ sub _processcasefile {
             }
         }
 
-        unless ( $self->{'casefilelist'}->[0] ) {
+        unless( $self->{'casefilelist'}->[0] ) {
             if ( -e "$self->{'dirname'}" . "testcases.xml" ) {
 
                 # not appending a $self->{'dirname'} here since we append one when we open the file
@@ -1293,6 +1293,7 @@ sub _url_escape {
 # write requests and responses to http.log file
 sub _httplog {
     my $self        = shift;
+    my $request     = shift;
     my $httplogfile = $self->{'HTTPLOGFILE'};
 
     unless ( $self->{'reporttype'} ) {    # we suppress most logging when running in a plugin mode
@@ -1300,7 +1301,7 @@ sub _httplog {
         if ( $self->{'case'}->{logrequest}
             && ( $self->{'case'}->{logrequest} =~ /yes/mxi ) )
         {    # http request - log setting per test case
-            print $httplogfile $self->{'request'}->as_string, "\n\n";
+            print $httplogfile $request->as_string, "\n\n";
         }
 
         if ( $self->{'case'}->{logresponse}
@@ -1312,7 +1313,7 @@ sub _httplog {
         if ( $self->{'config'}->{globalhttplog}
             && ( $self->{'config'}->{globalhttplog} =~ /yes/mxi ) )
         {    # global http log setting
-            print $httplogfile $self->{'request'}->as_string,  "\n\n";
+            print $httplogfile $request->as_string,  "\n\n";
             print $httplogfile $self->{'response'}->as_string, "\n\n";
         }
 
@@ -1324,7 +1325,7 @@ sub _httplog {
             && ( $self->{'isfailure'} > 0 )
           )
         {    # global http log setting - onfail mode
-            print $httplogfile $self->{'request'}->as_string,  "\n\n";
+            print $httplogfile $request->as_string,  "\n\n";
             print $httplogfile $self->{'response'}->as_string, "\n\n";
         }
 
@@ -1631,7 +1632,7 @@ sub _getoptions {
 
     my ( @sets, $opt_version );
     Getopt::Long::Configure('bundling');
-    unless (
+    unless(
         GetOptions(
             'v|V|version' => \$opt_version,
             'c|config=s'  => \$self->{'opt_configfile'},
