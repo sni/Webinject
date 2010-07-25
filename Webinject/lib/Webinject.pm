@@ -110,7 +110,6 @@ sub engine {
     if( $self->{'gui'} ) { $self->_gui_initial(); }
 
     $self->_getdirname();       # get the directory webinject engine is running from
-    $self->_getoptions();       # get command line options
     $self->_whackoldfiles();    # delete files leftover from previous run (do this here so they are whacked each run)
 
     #contsruct objects
@@ -532,6 +531,7 @@ sub _set_defaults {
         'WARNING'  => 1,
         'CRITICAL' => 2,
     };
+    $self->_getoptions(); # get command line options
     return;
 }
 
@@ -1045,7 +1045,6 @@ sub _parseresponse {
 ################################################################################
 # get test case files to run (from command line or config file) and evaluate constants
 sub _processcasefile {
-
     # parse config file and grab values it sets
     my $self = shift;
 

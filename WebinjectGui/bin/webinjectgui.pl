@@ -18,4 +18,4 @@ use warnings;
 use strict;
 use Webinject::Gui;
 
-my $webinjectgui = Webinject::Gui->new();
+my $webinjectgui = Webinject::Gui->new('stderrwindow' => 0);

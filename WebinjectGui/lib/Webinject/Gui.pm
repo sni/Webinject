@@ -62,8 +62,8 @@ sub new {
     $| = 1;    # don't buffer output to STDOUT
 
     my $self = {
-        'noloop'            => 0,
-        'nostderrwindow'    => 0,
+        'mainloop'        => 1,
+        'stderrwindow'    => 1,
     };
 
     for my $opt_key ( keys %options ) {
@@ -103,7 +103,7 @@ sub _init_main_window {
     );
 
     $self->{'mainwindow'}->geometry("750x650+0+0");   #size and screen placement
-    unless($self->{'nostderrwindow'}) {
+    if($self->{'stderrwindow'}) {
         $self->{'mainwindow'}->InitStderr;    #redirect all STDERR to a window
     }
     $self->{'mainwindow'}->raise;         #put application in front at startup
@@ -346,7 +346,7 @@ sub _init_main_window {
     )->place(qw/-x 621 -y 69/);
     $self->{'mainwindow'}->update();
 
-    unless($self->{'noloop'}) {
+    if($self->{'mainloop'}) {
         MainLoop;
     }
     return;
@@ -647,13 +647,24 @@ sub _viewconfig {
         -foreground => 'white',
     )->pack;
 
-    open( my $config, "config.xml" )
-      or die "\nERROR: Failed to open config.xml file\n\n";    #open file handle
-    my @configfile = <$config>;    #read the file into an array
+    my $file;
+    if($self->{'opt_configfile'} ) {
+        $file = $self->{'opt_configfile'};
+    } elsif(-e "config.xml") {
+        $file = "config.xml";
+    }
+    if(defined $file) {
+        # open file handle
+        open( my $config, '<', $file )
+          or die "\nERROR: Failed to open ".$file." file: $!\n\n"; 
+        # read the file into an array
+        my @configfile = <$config>;                                
+        $config_text->insert( "end", @configfile );
+        close($config);
+    } else {
+        $config_text->insert( "end", "couldn't open default config file" );
+    }
 
-    $config_text->insert( "end", @configfile );
-
-    close($config);
     return;
 }
 
