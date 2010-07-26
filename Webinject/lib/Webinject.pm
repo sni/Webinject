@@ -306,7 +306,7 @@ sub engine {
 
                 $self->_parseresponse($response, $case);        # grab string from response to send later
 
-                if($self->{'result'}->{'isfailure'}) {                # if any verification fails, test case is considered a failure
+                if($self->{'result'}->{'iscritical'}) {                # if any verification fails, test case is considered a failure
                     push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
                     if( $case->{errormessage} ) {       # Add defined error message to the output
                         push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>" };
@@ -405,7 +405,7 @@ sub engine {
                 $self->{'result'}->{'totalpassedcount'} += $case->{'passedcount'};
                 $self->{'result'}->{'totalfailedcount'} += $case->{'failedcount'};
 
-                if($self->{'result'}->{'isfailure'}) {
+                if($self->{'result'}->{'iscritical'} or $self->{'result'}->{'iswarning'}) {
                     $self->{'result'}->{'totalcasesfailedcount'}++;
                 } else {
                     $self->{'result'}->{'totalcasespassedcount'}++;
@@ -473,7 +473,8 @@ sub _reset_result {
         'totalruntime'           => 0,
         'casecount'              => 0,
         'avgresponse'            => 0,
-        'isfailure'              => 0,
+        'iscritical'             => 0,
+        'iswarning'              => 0,
         'maxresponse'            => 0,
         'minresponse'            => undef,
         'runcount'               => 0,
@@ -766,7 +767,7 @@ sub _httppost_xml {
             print STDOUT "Failed XML Parser: $ex \n";
         }
         $case->{'failedcount'}++;
-        $self->{'result'}->{'isfailure'} = 1;
+        $self->{'result'}->{'iscritical'} = 1;
     };    # <-- remember the semicolon
 
     return($latency,$request,$response);
@@ -817,7 +818,7 @@ sub _verify {
                     print STDOUT "Failed Positive Verification \n";
                 }
                 $case->{'failedcount'}++;
-                $self->{'result'}->{'isfailure'} = 1;
+                $self->{'result'}->{'iscritical'} = 1;
             }
         }
     }
@@ -838,7 +839,7 @@ sub _verify {
                     print STDOUT "Failed Negative Verification \n";
                 }
                 $case->{'failedcount'}++;
-                $self->{'result'}->{'isfailure'} = 1;
+                $self->{'result'}->{'iscritical'} = 1;
             }
             else {
                 push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification</span>' };
@@ -867,7 +868,7 @@ sub _verify {
                 print STDOUT "Failed Positive Verification (verification set in previous test case) \n";
             }
             $case->{'failedcount'}++;
-            $self->{'result'}->{'isfailure'} = 1;
+            $self->{'result'}->{'iscritical'} = 1;
         }
         # set to null after verification
         delete $self->{'verifylater'};
@@ -883,7 +884,7 @@ sub _verify {
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";
             }
             $case->{'failedcount'}++;
-            $self->{'result'}->{'isfailure'} = 1;
+            $self->{'result'}->{'iscritical'} = 1;
         }
         else {
             push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span>' };
@@ -918,7 +919,7 @@ sub _verify {
                 print STDOUT qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|;
             }
             $case->{'failedcount'}++;
-            $self->{'result'}->{'isfailure'} = 1;
+            $self->{'result'}->{'iscritical'} = 1;
         }
     }
     else {
@@ -952,7 +953,7 @@ sub _verify {
                 }
             }
             $case->{'failedcount'}++;
-            $self->{'result'}->{'isfailure'} = 1;
+            $self->{'result'}->{'iscritical'} = 1;
         }
     }
     return;
@@ -1256,7 +1257,7 @@ sub _httplog {
         }
 
         # global http log setting - onfail mode
-        if($self->{'config'}->{globalhttplog} && $self->{'config'}->{globalhttplog} =~ /onfail/mxi && $self->{'result'}->{'isfailure'}) {
+        if($self->{'config'}->{globalhttplog} && $self->{'config'}->{globalhttplog} =~ /onfail/mxi && $self->{'result'}->{'iscritical'}) {
             $output .= $request->as_string."\n\n";
             $output .= $response->as_string."\n\n";
         }
@@ -1389,8 +1390,7 @@ sub _finaltasks {
     if($self->{'config'}->{'reporttype'} ne 'standard') {
         # return value is set which corresponds to a monitoring program
         #Nagios plugin compatibility
-        if( $self->{'config'}->{'reporttype'} eq 'nagios' )
-        {      #report results in Nagios format
+        if($self->{'config'}->{'reporttype'} eq 'nagios') {
             my $end =
               defined $self->{'config'}->{globaltimeout}
               ? "$self->{'config'}->{globaltimeout};;0"

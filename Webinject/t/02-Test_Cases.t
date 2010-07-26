@@ -6,6 +6,7 @@ use strict;
 use Test::More;
 use Data::Dumper;
 use FindBin qw($Bin);
+use lib 't';
 
 
 if($ENV{TEST_AUTHOR}) {
@@ -14,7 +15,7 @@ if($ENV{TEST_AUTHOR}) {
         plan skip_all => 'HTTP::Server::Simple::CGI required';
     }
     else{
-        plan tests => 18;
+        plan tests => 26;
     }
 }
 else{
@@ -27,11 +28,8 @@ use_ok('Webinject');
 my $webinject = Webinject->new();
 isa_ok($webinject, "Webinject", 'Object is a Webinject');
 
-
-# start the server on port 508080
-my $webserverpid = TestWebServer->new(58080)->background();
-$SIG{INT} = sub{ kill 2, $webserverpid if defined $webserverpid; undef $webserverpid; exit 1; };
-sleep(1);
+require TestWebServer;
+TestWebServer->start_webserver();
 
 ##################################################
 # start our test cases
@@ -53,9 +51,10 @@ sub test_case_01 {
     @ARGV = ($Bin."/data/01-response_codes.xml");
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
-    $webinject->engine();
+    my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 1, '01-response_codes.xml - fail count');
+    is($rc, 0, '01-response_codes.xml - return code');
 }
 
 ##################################################
@@ -64,9 +63,10 @@ sub test_case_02 {
     @ARGV = ($Bin."/data/02-string_verification.xml");
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
-    $webinject->engine();
+    my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 9, '02-string_verification.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 0, '02-string_verification.xml - fail count');
+    is($rc, 0, '02-string_verification - return code');
 }
 
 ##################################################
@@ -75,9 +75,10 @@ sub test_case_03 {
     @ARGV = ($Bin."/data/03-parse_response.xml");
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
-    $webinject->engine();
+    my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 3, '03-parse_response.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 0, '03-parse_response.xml - fail count');
+    is($rc, 0, '03-parse_response.xml - return code');
 }
 
 ##################################################
@@ -86,9 +87,10 @@ sub test_case_04 {
     @ARGV = ($Bin."/data/04-repeated_tests.xml");
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
-    $webinject->engine();
+    my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 5, '04-repeated_tests.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 5, '04-repeated_tests.xml - fail count');
+    is($rc, 0, '04-repeated_tests.xml - return code');
 }
 
 
@@ -103,38 +105,10 @@ sub test_case_05 {
                 );
         my $webinject = Webinject->new();
         $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
-        $webinject->engine();
+        my $rc = $webinject->engine();
         is($webinject->{'result'}->{'totalpassedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - passed count');
         is($webinject->{'result'}->{'totalfailedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - fail count');
+        is($rc, 0, '05-report_types.xml - return code') if $type ne 'nagios';
+        is($rc, 2, '05-report_types.xml - return code') if $type eq 'nagios';
     }
-}
-
-##################################################
-# Fire up test webserver
-{
-    package TestWebServer;
-    use base qw(HTTP::Server::Simple::CGI);
-
-    sub handle_request {
-        my $self   = shift;
-        my $cgi    = shift;
-        my $path   = $cgi->path_info();
-        my $method = $cgi->request_method();
-        if($method eq 'GET' and $path =~ m|/code/(\d+)|) {
-            print "HTTP/1.0 $1\r\n\r\nrequest for response code $1\r\n";
-        }
-        elsif($method eq 'GET' and $path =~ m|/teststring|) {
-            print "HTTP/1.0 200 OK\r\n\r\nthis is just a teststring";
-        } else {
-            print "HTTP/1.0 400 Bad Request\r\n\r\n";
-            print "bad path: '$path'\r\n";
-        }
-    }
-}
-
-##################################################
-# stop our test webserver
-kill 2, $webserverpid if defined $webserverpid;
-END {
-    kill 2, $webserverpid if defined $webserverpid;
 }
