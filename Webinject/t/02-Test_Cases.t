@@ -54,8 +54,8 @@ sub test_case_01 {
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     $webinject->engine();
-    is($webinject->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
-    is($webinject->{'totalfailedcount'}, 1, '01-response_codes.xml - fail count');
+    is($webinject->{'result'}->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 1, '01-response_codes.xml - fail count');
 }
 
 ##################################################
@@ -65,8 +65,8 @@ sub test_case_02 {
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     $webinject->engine();
-    is($webinject->{'totalpassedcount'}, 9, '02-string_verification.xml - passed count');
-    is($webinject->{'totalfailedcount'}, 0, '02-string_verification.xml - fail count');
+    is($webinject->{'result'}->{'totalpassedcount'}, 9, '02-string_verification.xml - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 0, '02-string_verification.xml - fail count');
 }
 
 ##################################################
@@ -76,8 +76,8 @@ sub test_case_03 {
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     $webinject->engine();
-    is($webinject->{'totalpassedcount'}, 3, '03-parse_response.xml - passed count');
-    is($webinject->{'totalfailedcount'}, 0, '03-parse_response.xml - fail count');
+    is($webinject->{'result'}->{'totalpassedcount'}, 3, '03-parse_response.xml - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 0, '03-parse_response.xml - fail count');
 }
 
 ##################################################
@@ -87,8 +87,8 @@ sub test_case_04 {
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     $webinject->engine();
-    is($webinject->{'totalpassedcount'}, 5, '04-repeated_tests.xml - passed count');
-    is($webinject->{'totalfailedcount'}, 5, '04-repeated_tests.xml - fail count');
+    is($webinject->{'result'}->{'totalpassedcount'}, 5, '04-repeated_tests.xml - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 5, '04-repeated_tests.xml - fail count');
 }
 
 
@@ -104,8 +104,8 @@ sub test_case_05 {
         my $webinject = Webinject->new();
         $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
         $webinject->engine();
-        is($webinject->{'totalpassedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - passed count');
-        is($webinject->{'totalfailedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - fail count');
+        is($webinject->{'result'}->{'totalpassedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - passed count');
+        is($webinject->{'result'}->{'totalfailedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - fail count');
     }
 }
 
