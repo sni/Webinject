@@ -346,7 +346,7 @@ sub engine {
                         $self->_gui_status_failed();
                     }
                 }
-                if($self->{'result'}->{'iswarning'}) {
+                elsif($self->{'result'}->{'iswarning'}) {
                     push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
                     if( $case->{errormessage} ) {       # Add defined error message to the output
                         push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE WARNED : ".$case->{errormessage}."</span></b>" };
@@ -968,7 +968,7 @@ sub _verify {
         else {
             $response->as_string() =~ /(HTTP\/1.)(.*)/mxi;
             if($1) {    #this is true if an HTTP response returned
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', '<span class="fail">Failed HTTP Response Code Verification ('.$1.$2.')</span>' };
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification ('.$1.$2.')</span>' };
                 push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification ('.$1.$2.')' };
                 unless ( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
                     print STDOUT "Failed HTTP Response Code Verification ($1$2) \n";    #($1$2) is HTTP response code
