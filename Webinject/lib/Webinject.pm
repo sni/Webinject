@@ -237,15 +237,6 @@ sub engine {
                     }
                 }
 
-                # grab $self->{'case'}->{verifypositivenext} string from previous test case (if it exists)
-                if( $case->{'verifypositivenext'} ) {
-                    $self->{'verifylater'} = $case->{'verifypositivenext'};
-                }
-                # grab $self->{'case'}->{verifynegativenext} string from previous test case (if it exists)
-                if( $case->{'verifynegativenext'} ) {
-                    $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
-                }
-
                 if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
 
                 # skip regular STDOUT output
@@ -263,21 +254,8 @@ sub engine {
                 }
                 push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
 
-                for (
-                    qw/verifypositive verifypositive1 verifypositive2 verifypositive3
-                    verifynegative verifynegative1 verifynegative2 verifynegative3/
-                  )
-                {
-                    my $negative = $_ =~ /negative/mx ? "Negative" : "";
-                    next unless defined $case->{$_};
-                    # we suppress most logging when running in a plugin mode
-                    if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-                        print STDOUT qq|Verify $negative: "$case->{$_}" \n|;
-                    }
-                    push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "Verify ".$negative.": ".$case->{$_} };
-                }
-
                 if($case->{verifypositivenext}) {
+                    $self->{'verifylater'} = $case->{'verifypositivenext'};
                     # we suppress most logging when running in a plugin mode
                     if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
                         print STDOUT qq|Verify On Next Case: "$case->{verifypositivenext}" \n|;
@@ -286,19 +264,12 @@ sub engine {
                 }
 
                 if( $case->{verifynegativenext} ) {
+                    $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
                     # we suppress most logging when running in a plugin mode
                     if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
                         print STDOUT qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|;
                     }
                     push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
-                }
-
-                if( $case->{verifyresponsecode} ) {
-                    # we suppress most logging when running in a plugin mode
-                    if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-                        print STDOUT qq|Verify Response Code: "$case->{verifyresponsecode}" \n|;
-                    }
-                    push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode}, 'html' => "Verify Response Code: ".$case->{verifyresponsecode} };
                 }
 
                 my($latency,$request,$response);
@@ -825,6 +796,11 @@ sub _verify {
 
     for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
         if ( $case->{$_} ) {
+            # we suppress most logging when running in a plugin mode
+            if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
+                print STDOUT qq|Verify: "$case->{$_}" \n|;
+            }
+            push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "Verify: ".$case->{$_} };
             my $regex = $case->{$_};
             $regex =~ s/\ /\\ /gmx;
             # verify existence of string in response
@@ -848,6 +824,11 @@ sub _verify {
 
     for (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
         if ( $case->{$_} ) {
+            # we suppress most logging when running in a plugin mode
+            if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
+                print STDOUT qq|Verify Negative: "$case->{$_}" \n|;
+            }
+            push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "Verify Negative: ".$case->{$_} };
             my $regex = $case->{$_};
             $regex =~ s/\ /\\ /gmx;
             # verify existence of string in response
@@ -916,6 +897,11 @@ sub _verify {
     }
 
     if( $case->{verifyresponsecode} ) {
+        if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
+            print STDOUT qq|Verify Response Code: "$case->{verifyresponsecode}" \n|;
+        }
+        push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode}, 'html' => "Verify Response Code: ".$case->{verifyresponsecode} };
+
         # verify returned HTTP response code matches verifyresponsecode set in test case
         if ( $case->{verifyresponsecode} == $response->code() ) {
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification </span>' };
@@ -1249,56 +1235,39 @@ sub _httplog {
     my $response    = shift;
     my $case        = shift;
 
-
     # we suppress most logging when running in a plugin mode
     if($self->{'config'}->{'reporttype'} eq 'standard') {
-
-        open( my $httplogfile, ">>", $self->{'config'}->{'output_dir'}."http.log" )
-          or die "\nERROR: Failed to open http.log file: $!\n\n";
+        my $output = '';
 
         # http request - log setting per test case
         if($case->{logrequest} && $case->{logrequest} =~ /yes/mxi ) {
-            print $httplogfile $request->as_string, "\n\n";
+            $output .= $request->as_string."\n\n";
         }
 
         # http response - log setting per test case
         if($case->{logresponse} && $case->{logresponse} =~ /yes/mxi ) {
-            print $httplogfile $response->as_string, "\n\n";
+            $output .= $response->as_string."\n\n";
         }
 
         # global http log setting
         if($self->{'config'}->{globalhttplog} && $self->{'config'}->{globalhttplog} =~ /yes/mxi ) {
-            print $httplogfile $request->as_string,  "\n\n";
-            print $httplogfile $response->as_string, "\n\n";
+            $output .= $request->as_string."\n\n";
+            $output .= $response->as_string."\n\n";
         }
 
         # global http log setting - onfail mode
         if($self->{'config'}->{globalhttplog} && $self->{'config'}->{globalhttplog} =~ /onfail/mxi && $self->{'result'}->{'isfailure'}) {
-            print $httplogfile $request->as_string,  "\n\n";
-            print $httplogfile $response->as_string, "\n\n";
+            $output .= $request->as_string."\n\n";
+            $output .= $response->as_string."\n\n";
         }
 
-        if (
-            (
-                $case->{logrequest}
-                && ( $case->{logrequest} =~ /yes/mxi )
-            )
-            or ( $case->{logresponse}
-                && ( $case->{logresponse} =~ /yes/mxi ) )
-            or ( $self->{'config'}->{globalhttplog}
-                && ( $self->{'config'}->{globalhttplog} =~ /yes/mxi ) )
-            or (
-                (
-                    $self->{'config'}->{globalhttplog}
-                    && ( $self->{'config'}->{globalhttplog} =~ /onfail/mxi )
-                )
-                && ($self->{'result'}->{'isfailure'})
-            )
-          )
-        {
+        if($output ne '') {
+            open( my $httplogfile, ">>", $self->{'config'}->{'output_dir'}."http.log" )
+              or die "\nERROR: Failed to open http.log file: $!\n\n";
+            print $httplogfile $output;
             print $httplogfile "\n************************* LOG SEPARATOR *************************\n\n\n";
+            close($httplogfile);
         }
-        close($httplogfile);
     }
     return;
 }
@@ -1407,19 +1376,13 @@ sub _finaltasks {
     if($self->{'config'}->{'reporttype'} eq 'standard') {
         # write summary and closing tags for results file
         $self->_write_result_html();
-    }
-
-    # skip regular STDOUT output if using an XPath or $self->{'config'}->{'reporttype'} is set "standard"
-    unless( $self->{'xnode'} or $self->{'config'}->{'reporttype'} ne 'standard') {
-        $self->_writefinalstdout();   #write summary and closing tags for STDOUT
-    }
-
-    # we suppress most logging when running in a plugin mode
-    if($self->{'config'}->{'reporttype'} eq 'standard') {
 
         #write summary and closing tags for XML results file
         $self->_write_result_xml();
+    }
 
+    unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
+        $self->_writefinalstdout();   #write summary and closing tags for STDOUT
     }
 
     #plugin modes
@@ -1484,7 +1447,7 @@ sub _finaltasks {
 sub _whackoldfiles {
     my $self = shift;
 
-    for my $file (qw/plot.log plot.plt plot.png http.log/) {
+    for my $file (qw/plot.log plot.plt plot.png/) {
         unlink $self->{'config'}->{'output_dir'}.$file if -e $self->{'config'}->{'output_dir'}.$file;
     }
 
