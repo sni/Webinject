@@ -20,12 +20,5 @@ use strict;
 use Webinject;
 
 my $webinject = Webinject->new();
-
-if (($0 =~ /webinject.pl/) or ($0 =~ /webinject.exe/)) {  #set flag so we know if it is running standalone or from webinjectgui
-    $webinject->engine();
-}
-else {
-    $webinject->{'gui'} = Webinject::Gui->new();
-    $webinject->engine();
-    $webinject->whackoldfiles(); # delete files leftover from previous run (do this here so they are whacked on startup when running from gui)
-}
+my $rc = $webinject->engine();
+exit $rc;

@@ -80,7 +80,9 @@ sub new {
     # save command line for later restarts
     $self->{'command_line'} = $0." ".join(" ", @ARGV);
     $self->{'gui'}          = 1;
+
     $self->_set_defaults();
+    $self->_whackoldfiles();
     $self->_init_main_window();
 
     return $self;
@@ -96,27 +98,25 @@ sub _init_main_window {
     my $self = shift;
 
     $self->{'mainwindow'} = MainWindow->new(
-        -title => 'WebInject - HTTP Test Tool    (version '
-          . $Webinject::Gui::VERSION . ')',
+        -title => 'WebInject - HTTP Test Tool    (version '. $Webinject::Gui::VERSION . ')',
         -bg        => '#666699',
         -takefocus => '1',         #start on top
     );
 
-    $self->{'mainwindow'}->geometry("750x650+0+0");   #size and screen placement
+    $self->{'mainwindow'}->geometry("750x650+0+0");                     # size and screen placement
     if($self->{'stderrwindow'}) {
-        $self->{'mainwindow'}->InitStderr;    #redirect all STDERR to a window
+        $self->{'mainwindow'}->InitStderr;                              # redirect all STDERR to a window
     }
-    $self->{'mainwindow'}->raise;         #put application in front at startup
-    $self->{'mainwindow'}->bind( '<F5>' => sub { $self->engine(); } )
-      ;                                   #F5 key makes it run
+    $self->{'mainwindow'}->raise;                                       # put application in front at startup
+    $self->{'mainwindow'}->bind( '<F5>' => sub { $self->engine(); } );  # F5 key makes it run
 
-    if ( -e "icon.gif" ) {                #if icon graphic exists, use it
+    if ( -e "icon.gif" ) {                                              # if icon graphic exists, use it
         $self->{'mainwindow'}->update();
         my $icon = $self->{'mainwindow'}->Photo( -file => 'icon.gif' );
         $self->{'mainwindow'}->iconimage($icon);
     }
 
-    if ( -e "logo.gif" ) {                #if logo graphic exists, use it
+    if ( -e "logo.gif" ) {                                              # if logo graphic exists, use it
         $self->{'mainwindow'}->Photo( 'logogif', -file => "logo.gif" );
         $self->{'mainwindow'}->Label(
             -image => 'logogif',
@@ -127,7 +127,7 @@ sub _init_main_window {
 
     my $menubar = $self->{'mainwindow'}->Frame(qw/-relief flat -borderwidth 2/);
     $menubar->place(qw/-x 0 -y 0/);
-    $menubar->configure( -background => '#666699' );    #menu outline
+    $menubar->configure( -background => '#666699' );                    # menu outline
 
     my $filemenu = $menubar->Menubutton(
         -text             => 'File',
@@ -200,7 +200,7 @@ sub _init_main_window {
     $self->{'mainwindow'}->update();
 
     $self->{'out_window'} = $self->{'mainwindow'}->Scrolled(
-        'ROText',    #engine status window
+        'ROText',    # engine status window
         -scrollbars => 'e',
         -background => '#EFEFEF',
         -width      => '103',
@@ -210,10 +210,10 @@ sub _init_main_window {
 
     $self->{'tabs'} = $self->{'mainwindow'}->NoteBook(
         -backpagecolor      => '#666699',
-        -background         => '#EFEFEF',    #color for active tab
-        -foreground         => 'black',      #text color for active tab
-        -inactivebackground => '#BFBFBF',    #color for inactive tabs
-    )->place(qw/-x 12 -y 240/);              #outer notebook object
+        -background         => '#EFEFEF',    # color for active tab
+        -foreground         => 'black',      # text color for active tab
+        -inactivebackground => '#BFBFBF',    # color for inactive tabs
+    )->place(qw/-x 12 -y 240/);              # outer notebook object
 
     my $status_tab = $self->{'tabs'}->add( 'statustab', -label => 'Status' );
     $self->{'mainwindow'}->update();
@@ -224,16 +224,16 @@ sub _init_main_window {
         -highlightcolor => '#CCCCCC',
         -background     => '#EFEFEF',
     )->pack();
-    $self->{'mainwindow'}->update(); #canvas to fill tab (to place widgets into)
+    $self->{'mainwindow'}->update();        # canvas to fill tab (to place widgets into)
 
     my $statustab_buttoncanvas = $statustab_canvas->Canvas(
         -width      => '700',
         -height     => '24',
         -background => '#666699',
     )->place(qw/-x 10 -y 334/);
-    $self->{'mainwindow'}->update();    #canvas to place buttons into
+    $self->{'mainwindow'}->update();        # canvas to place buttons into
 
-    $self->{'minimalcheckbx'} = 'minimal_off';    #give it a default value
+    $self->{'minimalcheckbx'} = 'minimal_off';    # give it a default value
     $statustab_buttoncanvas->Label(
         -text => 'Minimal Output',
         -bg   => '#666699',
@@ -241,7 +241,7 @@ sub _init_main_window {
     )->place(qw/-x 49 -y 4/);
     $self->{'mainwindow'}->update();
     $statustab_buttoncanvas->Checkbutton(
-        -text       => '',                          #using a text widget instead
+        -text       => '',                  # using a text widget instead
         -onvalue    => 'minimal_on',
         -offvalue   => 'minimal_off',
         -variable   => \$self->{'minimalcheckbx'},
@@ -251,7 +251,7 @@ sub _init_main_window {
     )->place(qw/-x 20 -y 2/);
     $self->{'mainwindow'}->update();
 
-    $self->{'timercheckbx'} = 'timer_off';          #give it a default value
+    $self->{'timercheckbx'} = 'timer_off';      # give it a default value
     $statustab_buttoncanvas->Label(
         -text => 'Response Timer Output',
         -bg   => '#666699',
@@ -259,7 +259,7 @@ sub _init_main_window {
     )->place(qw/-x 199 -y 4/);
     $self->{'mainwindow'}->update();
     $statustab_buttoncanvas->Checkbutton(
-        -text       => '',                          #using a text widget instead
+        -text       => '',                      # using a text widget instead
         -onvalue    => 'timer_on',
         -offvalue   => 'timer_off',
         -variable   => \$self->{'timercheckbx'},
@@ -270,7 +270,7 @@ sub _init_main_window {
     $self->{'mainwindow'}->update();
 
     $self->{'status_window'} = $statustab_canvas->Scrolled(
-        'ROText',    #test case status monitor window
+        'ROText',                               # test case status monitor window
         -scrollbars => 'e',
         -background => '#EFEFEF',
         -width      => '102',
@@ -356,34 +356,17 @@ sub _init_main_window {
 sub _gui_initial {                   #this runs when engine is first loaded
     my $self = shift;
 
-    #vars set in test engine
-    $self->{'currentcasefile'}      = '';
-    $self->{'latency'}              = '';
-    $self->{'casecount'}            = 0;
-    $self->{'case'}->{description1} = '';
-    $self->{'totalruncount'}        = '';
-    $self->{'runcount'}             = 0;
-    $self->{'failedcount'}          = '';
-    $self->{'passedcount'}          = '';
-    $self->{'casefailedcount'}      = '';
-    $self->{'casepassedcount'}      = '';
-    $self->{'totalruntime'}         = '';
-    $self->{'stop'}                 = 'no';
-    $self->{'plotclear'}            = 'no';
+    $self->{'out_window'}->delete( '0.0', 'end' );    # clear window before starting
+    $self->{'status_window'}->delete( '0.0', 'end' ); # clear window before starting
 
-    $self->{'out_window'}->delete( '0.0', 'end' ); #clear window before starting
+    # change status color amber while running
+    $self->{'status_ind'}->configure( -background => '#FF9900' );
 
-    $self->{'status_window'}->delete( '0.0', 'end' )
-      ;                                            #clear window before starting
+    $self->{'rtc_button'}->placeForget;                 # remove the run button
+    $self->{'stop_button'}->place(qw/-x 110 -y 65/);    # place the stop button
 
-    $self->{'status_ind'}->configure( -background => '#FF9900' )
-      ;    #change status color amber while running
-
-    $self->{'rtc_button'}->placeForget;                 #remove the run button
-    $self->{'stop_button'}->place(qw/-x 110 -y 65/);    #place the stop button
-
-    $self->{'monitor_enabledchkbx'}->configure( -state => 'disabled' )
-      ;    #disable button while running
+    # disable button while running
+    $self->{'monitor_enabledchkbx'}->configure( -state => 'disabled' );
 
     $self->{'out_window'}->insert( "end", "Starting Webinject Engine... \n\n" );
     $self->{'out_window'}->see("end");
@@ -400,8 +383,8 @@ sub _gui_restart {    #kill the entire app and restart it
 ########################################
 sub _gui_processing_msg {
     my $self = shift;
-    $self->{'out_window'}->insert( "end",
-        "processing test case file:\n$self->{'currentcasefile'}\n\n", 'bold' );
+    my $file = shift;
+    $self->{'out_window'}->insert( "end", "processing test case file:\n".$file."\n\n", 'bold' );
     $self->{'out_window'}->see("end");
     return;
 }
@@ -409,18 +392,18 @@ sub _gui_processing_msg {
 ########################################
 sub _gui_statusbar {
     my $self            = shift;
-    my $percentcomplete = ( $self->{'runcount'} / $self->{'casecount'} ) * 100;
-    $self->{'progressbar'}->set($percentcomplete)
-      ;    #update progressbar with current status
+    my $percentcomplete = ( $self->{'result'}->{'runcount'} / $self->{'result'}->{'casecount'} ) * 100;
+    # update progressbar with current status
+    $self->{'progressbar'}->set($percentcomplete);
     return;
 }
 
 ########################################
 sub _gui_tc_descript {
     my $self = shift;
+    my $case = shift;
     unless ( $self->{'minimalcheckbx'} eq "minimal_on" ) {
-        $self->{'status_window'}
-          ->insert( "end", "- " . $self->{'case'}->{description1} . "\n" );
+        $self->{'status_window'}->insert( "end", "- " . $case->{description1} . "\n" );
         $self->{'status_window'}->see("end");
     }
     return;
@@ -450,9 +433,10 @@ sub _gui_status_failed {
 
 ########################################
 sub _gui_timer_output {
-    my $self = shift;
+    my $self    = shift;
+    my $latency = shift;
     if ( $self->{'timercheckbx'} eq "timer_on" ) {
-        $self->{'status_window'}->insert( "end", "$self->{'latency'} s\n" );
+        $self->{'status_window'}->insert( "end", $latency." s\n" );
         $self->{'status_window'}->see("end");
     }
     return;
@@ -462,29 +446,25 @@ sub _gui_timer_output {
 sub _gui_final {
     my $self = shift;
 
-    $self->{'out_window'}->insert( "end",
-        "Execution Finished... see results.html file for detailed output report"
-    );
+    $self->{'out_window'}->insert( "end", "Execution Finished... see results.html file for detailed output report");
     $self->{'out_window'}->see("end");
 
-    $self->{'status_window'}->insert( "end",
-"\n\n------------------------------\nTotal Run Time: $self->{'totalruntime'} seconds\n"
-    );
-    $self->{'status_window'}->insert( "end",
-"\nTest Cases Run: $self->{'totalruncount'}\nTest Cases Passed: $self->{'casepassedcount'}\nTest Cases Failed: $self->{'casefailedcount'}\nVerifications Passed: $self->{'passedcount'}\nVerifications Failed: $self->{'failedcount'}\n"
-    );
+    $self->{'status_window'}->insert( "end", "\n\n------------------------------\nTotal Run Time: $self->{'result'}->{'totalruntime'} seconds\n");
+    $self->{'status_window'}->insert( "end", "\nTest Cases Run: $self->{'result'}->{'totalruncount'}\nTest Cases Passed: $self->{'result'}->{'totalcasespassedcount'}\nTest Cases Failed: $self->{'result'}->{'totalcasesfailedcount'}\nVerifications Passed: $self->{'result'}->{'totalpassedcount'}\nVerifications Failed: $self->{'result'}->{'totalfailedcount'}\n" );
     $self->{'status_window'}->see("end");
 
-    if ( $self->{'failedcount'} > 0 )
-    {    #change status color to reflect failure or all tests passed
-        $self->{'status_ind'}->configure( -background => '#FF3333' );    #red
+    # change status color to reflect failure or all tests passed
+    if( $self->{'result'}->{'totalfailedcount'} > 0 ) {
+        # red
+        $self->{'status_ind'}->configure( -background => '#FF3333' );
     }
     else {
-        $self->{'status_ind'}->configure( -background => '#009900' );    #green
+        # green
+        $self->{'status_ind'}->configure( -background => '#009900' );
     }
 
-    $self->{'monitor_enabledchkbx'}->configure( -state => 'normal' )
-      ;    #re-enable button after finish
+    # re-enable button after finish
+    $self->{'monitor_enabledchkbx'}->configure( -state => 'normal' );
 
     return;
 }
@@ -493,20 +473,17 @@ sub _gui_final {
 sub _gui_updatemontab {
     my $self = shift;
 
-    if ( $self->{'monitorenabledchkbx'} ne 'monitor_off' )
-    {      #don't try to update if monitor is disabled in gui
-
+    # don't try to update if monitor is disabled in gui
+    if ( $self->{'monitorenabledchkbx'} ne 'monitor_off' ) {
         if (
-            ( -e "plot.png" )
-            and (  ( $self->{'graphtype'} ne 'nograph' )
-                or ( $self->{'plotclear'} ne 'yes' ) )
+            ( -e $self->{'config'}->{'output_dir'}."plot.png" )
+            and (  ( $self->{'config'}->{'graphtype'} ne 'nograph' )
+                or ( $self->{'switches'}->{'plotclear'} ne 'yes' ) )
           )
-        {    #if plot graphic exists, put it in canvas
-
-            $self->{'montab_plotcanvas'}
-              ->Photo( 'plotgraph', -file => "plot.png" );
-            $self->{'montab_plotcanvas'}->Label( -image => 'plotgraph' )
-              ->place(qw/-x 7 -y 0/);
+        {
+            # if plot graphic exists, put it in canvas
+            $self->{'montab_plotcanvas'}->Photo( 'plotgraph', -file => $self->{'config'}->{'output_dir'}."plot.png" );
+            $self->{'montab_plotcanvas'}->Label( -image => 'plotgraph' )->place(qw/-x 7 -y 0/);
         }
     }
     return;
@@ -516,27 +493,22 @@ sub _gui_updatemontab {
 sub _gui_updatemonstats {    #update timers and counts in monitor tab
     my $self = shift;
 
-    if ( $self->{'monitorenabledchkbx'} ne 'monitor_off' )
-    {                       #don't try to update if monitor is disabled in gui
+    #don't try to update if monitor is disabled in gui
+    if( $self->{'monitorenabledchkbx'} ne 'monitor_off' ) {
 
-        $self->{'mintime_text'}
-          ->configure( -text => "Min:  $self->{'minresponse'} sec" );
-        $self->{'maxtime_text'}
-          ->configure( -text => "Max:  $self->{'maxresponse'} sec" );
-        $self->{'avgtime_text'}
-          ->configure( -text => "Avg:  $self->{'avgresponse'} sec" );
-        $self->{'runcounttotal_text'}
-          ->configure( -text => "Total:  $self->{'totalruncount'}" );
-        $self->{'runcountcasespassed_text'}
-          ->configure( -text => "Passed:  $self->{'casepassedcount'}" );
-        $self->{'runcountcasespfailed_text'}
-          ->configure( -text => "Failed:  $self->{'casefailedcount'}" );
+        $self->{'mintime_text'}->configure( -text => "Min:  $self->{'result'}->{'minresponse'} sec" );
+        $self->{'maxtime_text'}->configure( -text => "Max:  $self->{'result'}->{'maxresponse'} sec" );
+        $self->{'avgtime_text'}->configure( -text => "Avg:  $self->{'result'}->{'avgresponse'} sec" );
+        $self->{'runcounttotal_text'}->configure( -text => "Total:  $self->{'result'}->{'totalruncount'}" );
+        $self->{'runcountcasespassed_text'}->configure( -text => "Passed:  $self->{'result'}->{'totalcasespassedcount'}" );
+        $self->{'runcountcasespfailed_text'}->configure( -text => "Failed:  $self->{'result'}->{'totalcasesfailedcount'}" );
     }
     return;
 }
 
 ########################################
-sub _gui_stop {    #flip button and do cleanup when user clicks Stop
+# flip button and do cleanup when user clicks Stop
+sub _gui_stop {
     my $self = shift;
 
     $self->{'stop_button'}->placeForget;               #remove the stop botton
@@ -551,32 +523,38 @@ sub _gui_stop {    #flip button and do cleanup when user clicks Stop
 }
 
 ########################################
-sub _gui_cleargraph {                    #remove graph
+# remove graph
+sub _gui_cleargraph {
     my $self = shift;
 
-    if ( -e "plot.png" ) {
-        unlink "plot.png";
-    }    #delete a plot file if it exists so an old one is never rendered
+    $self->_reset_result();
 
-    $self->{'montab_plotcanvas'}->destroy;    #destroy the canvas
+    # delete a plot file if it exists so an old one is never rendered
+    if ( -e $self->{'config'}->{'output_dir'}."plot.png" ) {
+        unlink $self->{'config'}->{'output_dir'}."plot.png";
+    }
+
+    $self->{'montab_plotcanvas'}->destroy;    # destroy the canvas
 
     $self->{'montab_plotcanvas'} = $self->{'montab_canvas'}->Canvas(
         -width      => '718',
         -height     => '240',
         -background => '#EFEFEF',
     )->place(qw/-x 0 -y 0/);
-    $self->{'mainwindow'}->update();          #canvas to place graph into
+    # canvas to place graph into
+    $self->{'mainwindow'}->update();
     return;
 }
 
 ########################################
-sub _gui_cleargraph_button {    #remove graph then set value to truncate log
+# remove graph then set value to truncate log
+sub _gui_cleargraph_button {
     my $self = shift;
 
     $self->_gui_cleargraph();
 
-    $self->{'plotclear'} =
-      'yes';                   #set value so engine knows to truncate plot log
+    # set value so engine knows to truncate plot log
+    $self->{'switches'}->{'plotclear'} = 'yes';
     return;
 }
 
@@ -656,9 +634,9 @@ sub _viewconfig {
     if(defined $file) {
         # open file handle
         open( my $config, '<', $file )
-          or die "\nERROR: Failed to open ".$file." file: $!\n\n"; 
+          or die "\nERROR: Failed to open ".$file." file: $!\n\n";
         # read the file into an array
-        my @configfile = <$config>;                                
+        my @configfile = <$config>;
         $config_text->insert( "end", @configfile );
         close($config);
     } else {

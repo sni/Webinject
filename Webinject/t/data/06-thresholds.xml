@@ -1,0 +1,29 @@
+<testcases repeat="1">
+<case
+    id                 = "1"
+    description1       = "test response sleep 0"
+    method             = "get"
+    url                = "{BASEURL}/sleep/0"
+    verifyresponsecode = "200"
+    warning            = "1"
+    critical           = "2"
+/>
+<case
+    id                 = "2"
+    description1       = "test response sleep 1"
+    method             = "get"
+    url                = "{BASEURL}/sleep/1"
+    verifyresponsecode = "200"
+    warning            = "1"
+    critical           = "2"
+/>
+<case
+    id                 = "3"
+    description1       = "test response sleep 2"
+    method             = "get"
+    url                = "{BASEURL}/sleep/2"
+    verifyresponsecode = "200"
+    warning            = "1"
+    critical           = "2"
+/>
+</testcases>
