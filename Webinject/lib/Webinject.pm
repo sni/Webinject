@@ -1516,6 +1516,7 @@ sub _getoptions {
         'o|output=s'      => \$self->{'config'}->{'output_dir'},
         'n|no-output'     => \$self->{'config'}->{'nooutput'},
         'r|report-type=s' => \$self->{'config'}->{'reporttype'},
+        't|timeout=i'     => \$self->{'config'}->{'timeout'},
         's=s'             => \@sets,
     );
     if(!$opt_rc or $opt_help) {
@@ -1539,7 +1540,13 @@ sub _usage {
     my $self = shift;
     print <<EOB;
     Usage:
-      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [-s key=value] [testcase_file [XPath]]
+      webinject.pl [-c|--config config_file]
+                   [-o|--output output_location]
+                   [-n|--no-output]
+                   [-t|--timeout]
+                   [-r|--report-type]
+                   [-s key=value]
+                   [testcase_file [XPath]]
       webinject.pl --version|-v
 EOB
     exit 3;
