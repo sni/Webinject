@@ -515,9 +515,9 @@ sub engine {
 
                 # break from sub if user presses stop button in gui
                 if( $self->{'stop'} eq 'yes' ) {
-                    $self->_finaltasks();
+                    my $rc = $self->_finaltasks();
                     $self->{'stop'} = 'no';
-                    return;    # break from sub
+                    return $rc;    # break from sub
                 }
 
                 # if a sleep value is set in the test case, sleep that amount
@@ -534,9 +534,7 @@ sub engine {
         }
     }
 
-    $self->_finaltasks();    # do return/cleanup tasks
-
-    return;
+    return $self->_finaltasks();    # do return/cleanup tasks
 }
 
 ################################################################################
@@ -799,7 +797,9 @@ sub _httppost_xml {
             print STDOUT "Passed XML Parser (content is well-formed) \n";
         }
         $self->{'passedcount'}++;
-        return;                                 # exit try block
+
+        # exit try block
+        return;
     }
     catch Error with {
         # get the exception object
@@ -1080,7 +1080,7 @@ sub _processcasefile {
     # parse config file and grab values it sets
     my $self = shift;
 
-    my @configfile;
+    my @configlines;
     my $comment_mode;
     my $firstparse;
     my $filename;
@@ -1089,7 +1089,6 @@ sub _processcasefile {
     my $config;
 
     undef $self->{'casefilelist'};    # empty the array of test case filenames
-    undef @configfile;
 
     # process the config file
     # if -c option was set on command line, use specified config file
@@ -1120,7 +1119,7 @@ sub _processcasefile {
                     $comment_mode = 0;
                 }
                 elsif ( !$comment_mode ) {
-                    push( @configfile, $_ );
+                    push( @configlines, $_ );
                 }
             }
         }
@@ -1130,9 +1129,9 @@ sub _processcasefile {
     if( ( $#ARGV + 1 ) < 1 ) {    #no command line args were passed
         # if testcase filename is not passed on the command line, use files in config.xml
         # parse test case file names from config.xml and build array
-        foreach (@configfile) {
+        foreach (@configlines) {
 
-            if (/<testcasefile>/mx) {
+            if(/<testcasefile>/mx) {
                 $firstparse = $';    #print "$' \n\n";
                 $firstparse =~ m~</testcasefile>~mx;
                 $filename = $`;      #string between tags will be in $filename
@@ -1180,13 +1179,13 @@ sub _processcasefile {
     }
 
     elsif ( ( $#ARGV + 1 ) > 2 ) {    #too many command line args were passed
-        die "\nERROR: Too many arguments\n\n";
+        die "\nERROR: Too many arguments, only 2 args are allowed.\n\n";
     }
 
     #print "\ntestcase file list: @{$self->{'casefilelist'}}\n\n";
 
     #grab values for constants in config file:
-    foreach (@configfile) {
+    foreach (@configlines) {
 
         for my $config (
             qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout
@@ -1519,7 +1518,7 @@ sub _finaltasks {
 
             if ( $self->{'case'}->{'failedcount'} > 0 ) {
                 print "WebInject CRITICAL - $self->{'returnmessage'} |time=$self->{'totalruntime'};$end\n";
-                exit $self->{'exit_codes'}->{'CRITICAL'};
+                return $self->{'exit_codes'}->{'CRITICAL'};
             }
             elsif (
                 ( $self->{'config'}->{globaltimeout} )
@@ -1528,11 +1527,11 @@ sub _finaltasks {
               )
             {
                 print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached |time=$self->{'totalruntime'};$end\n";
-                exit $self->{'exit_codes'}->{'WARNING'};
+                return $self->{'exit_codes'}->{'WARNING'};
             }
             else {
                 print "WebInject OK - All tests passed successfully in $self->{'totalruntime'} seconds |time=$self->{'totalruntime'};$end\n";
-                exit $self->{'exit_codes'}->{'OK'};
+                return $self->{'exit_codes'}->{'OK'};
             }
         }
 
@@ -1541,18 +1540,19 @@ sub _finaltasks {
         {    #report results in MRTG format
             if ( $self->{'case'}->{'failedcount'} > 0 ) {
                 print "$self->{'totalruntime'}\n$self->{'totalruntime'}\n\nWebInject CRITICAL - $self->{'returnmessage'} \n";
-                exit(0);
+                return(0);
             }
             else {
                 print "$self->{'totalruntime'}\n$self->{'totalruntime'}\n\nWebInject OK - All tests passed successfully in $self->{'totalruntime'} seconds \n";
-                exit(0);
+                return(0);
             }
         }
 
         #External plugin. To use it, add something like that in the config file:
         # <reporttype>external:/home/webinject/Plugin.pm</reporttype>
         elsif ( $self->{'config'}->{'reporttype'} =~ /^external:(.*)/mx ) {
-            unless ( my $return = do $1 ) {
+            our $webinject = $self; # set scope of $self to global, so it can be access in the external module
+            unless( my $return = do $1 ) {
                 die "couldn't parse $1: $@\n" if $@;
                 die "couldn't do $1: $!\n" unless defined $return;
                 die "couldn't run $1\n" unless $return;
@@ -1658,29 +1658,23 @@ sub _getdirname {
 sub _getoptions {
     my $self = shift;
 
-    my ( @sets, $opt_version );
+    my( @sets, $opt_version, $opt_help );
     Getopt::Long::Configure('bundling');
-    unless(
-        GetOptions(
-            'v|V|version' => \$opt_version,
-            'c|config=s'  => \$self->{'opt_configfile'},
-            'o|output=s'  => \$self->{'opt_output'},
-            'n|no-output' => \$self->{'nooutput'},
-            's=s'         => \@sets,
-        )
-      )
-    {
-        print <<EOB;
-    Usage:
-      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [-s key=value] [testcase_file [XPath]]
-      webinject.pl --version|-v
-EOB
-        exit(1);
+    my $opt_rc = GetOptions(
+        'h|help'          => \$opt_help,
+        'v|V|version'     => \$opt_version,
+        'c|config=s'      => \$self->{'opt_configfile'},
+        'o|output=s'      => \$self->{'opt_output'},
+        'n|no-output'     => \$self->{'nooutput'},
+        'r|report-type=s' => \$self->{'config'}->{'reporttype'},
+        's=s'             => \@sets,
+    );
+    if(!$opt_rc or $opt_help) {
+        $self->_usage();
     }
-    if ($opt_version) {
-        print
-"WebInject version $Webinject::VERSION\nFor more info: http://www.webinject.org\n";
-        exit();
+    if($opt_version) {
+        print "WebInject version $Webinject::VERSION\nFor more info: http://www.webinject.org\n";
+        exit 3;
     }
     for my $set (@sets) {
         my ( $key, $val ) = split /=/mx, $set, 2;
@@ -1688,6 +1682,19 @@ EOB
     }
     return;
 }
+
+################################################################################
+# print usage
+sub _usage {
+    my $self = shift;
+    print <<EOB;
+    Usage:
+      webinject.pl [-c|--config config_file] [-o|--output output_location] [-n|--no-output] [-s key=value] [testcase_file [XPath]]
+      webinject.pl --version|-v
+EOB
+    exit 3;
+}
+
 
 =head1 SEE ALSO
 
