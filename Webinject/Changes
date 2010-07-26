@@ -1,6 +1,7 @@
 WebInject
 
-Copyright 2004, 2005, 2006 Corey Goldberg (corey@goldb.org)
+Copyright 2010 Sven Nierlein (nierlein@cpan.org)
+Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 For information and documentation, visit the website at http://www.webinject.org
 
 ---------------------------------
@@ -9,6 +10,12 @@ Release History:
 Version 1.50 - Jul 24, 2010
     - changed layout to common cpan module style
     - seperated module into gui and core
+    - added timeout option
+    - added report-type option
+    - added warning / critical thresholds
+    - added generic option to set config.xml options
+    - added option for max_redirect
+    - fixed nagios performance data
 
 Version 1.41 - Jan 4, 2006
     - Added ability to add multiple HTTP Headers within an 'addheader' testcase parameter

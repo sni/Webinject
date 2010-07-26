@@ -110,7 +110,13 @@ sub engine {
     my $useragent  = LWP::UserAgent->new;
     $useragent->{'cookie_jar'} = HTTP::Cookies->new;  # store cookies in our LWP object
     $useragent->agent('WebInject');    # http useragent that will show up in webserver logs
-    $useragent->max_redirect('0');     # don't follow redirects for GET's (POST's already don't follow, by default)
+    if(defined $self->{'config'}->{'max_redirect'}) {
+        $useragent->max_redirect($self->{'config'}->{'max_redirect'});
+    }
+    else {
+        # don't follow redirects for GET's (POST's already don't follow, by default)
+        $useragent->max_redirect('0');
+    }
 
     if(!defined $self->{'gui'}) {
         # initialize so we don't get warnings when <standaloneplot> is not set in config
@@ -1115,7 +1121,7 @@ sub _read_config_xml {
 
         for my $key (
             qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout
-            globaltimeout globalhttplog standaloneplot/
+            globaltimeout globalhttplog standaloneplot max_redirect/
           )
         {
 
