@@ -15,7 +15,7 @@ if($ENV{TEST_AUTHOR}) {
         plan skip_all => 'HTTP::Server::Simple::CGI required';
     }
     else{
-        plan tests => 26;
+        plan tests => 35;
     }
 }
 else{
@@ -38,6 +38,7 @@ test_case_02();
 test_case_03();
 test_case_04();
 test_case_05();
+test_case_06();
 
 
 
@@ -93,8 +94,6 @@ sub test_case_04 {
     is($rc, 0, '04-repeated_tests.xml - return code');
 }
 
-
-
 ##################################################
 # Reporttypes
 sub test_case_05 {
@@ -111,4 +110,32 @@ sub test_case_05 {
         is($rc, 0, '05-report_types.xml - return code') if $type ne 'nagios';
         is($rc, 2, '05-report_types.xml - return code') if $type eq 'nagios';
     }
+}
+
+##################################################
+# Test File 06
+sub test_case_06 {
+    @ARGV = ('-r', 'nagios', $Bin."/data/06-thresholds.xml", "testcases/case[1]");
+    my $webinject = Webinject->new();
+    $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
+    my $rc = $webinject->engine();
+    is($webinject->{'result'}->{'totalpassedcount'}, 3, '06-thresholds.xml [1] - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 0, '06-thresholds.xml [1] - fail count');
+    is($rc, 0, '06-thresholds.xml [1] - return code');
+
+    @ARGV = ('-r', 'nagios', $Bin."/data/06-thresholds.xml", "testcases/case[2]");
+    $webinject = Webinject->new();
+    $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
+    $rc = $webinject->engine();
+    is($webinject->{'result'}->{'totalpassedcount'}, 2, '06-thresholds.xml [2] - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 1, '06-thresholds.xml [2] - fail count');
+    is($rc, 1, '06-thresholds.xml [2] - return code');
+
+    @ARGV = ('-r', 'nagios', $Bin."/data/06-thresholds.xml", "testcases/case[3]");
+    $webinject = Webinject->new();
+    $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
+    $rc = $webinject->engine();
+    is($webinject->{'result'}->{'totalpassedcount'}, 1, '06-thresholds.xml [3] - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 2, '06-thresholds.xml [3] - fail count');
+    is($rc, 2, '06-thresholds.xml [3] - return code');
 }

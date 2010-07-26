@@ -23,6 +23,10 @@ sub handle_request {
     }
     elsif($method eq 'GET' and $path =~ m|/teststring|) {
         print "HTTP/1.0 200 OK\r\n\r\nthis is just a teststring";
+    }
+    elsif($method eq 'GET' and $path =~ m|/sleep/(\d+)|) {
+        sleep($1);
+        print "HTTP/1.0 200 OK\r\n\r\nsleeped $1 seconds";
     } else {
         print "HTTP/1.0 400 Bad Request\r\n\r\n";
         print "bad path: '$path'\r\n";

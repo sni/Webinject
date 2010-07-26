@@ -228,7 +228,9 @@ sub engine {
                     verifynegative verifynegative1 verifynegative2 verifynegative3
                     parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5
                     verifyresponsecode logrequest logresponse sleep errormessage
-                    verifypositivenext verifynegativenext/
+                    verifypositivenext verifynegativenext
+                    warning critical
+                    /
                   )
                 {
                     $case->{$_} = $xmltestcases->{case}->{$testnum}->{$_};
@@ -287,6 +289,7 @@ sub engine {
                 else {
                     ($latency,$request) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
                 }
+                $case->{'latency'} = $latency;
 
                 # verify result from http response
                 $self->_verify($response, $case);
@@ -337,6 +340,37 @@ sub engine {
                         $self->_gui_status_failed();
                     }
                 }
+                if($self->{'result'}->{'iswarning'}) {
+                    push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
+                    if( $case->{errormessage} ) {       # Add defined error message to the output
+                        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE WARNED : ".$case->{errormessage}."</span></b>" };
+                        unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
+                            print STDOUT qq|TEST CASE WARNED : $case->{errormessage}\n|;
+                        }
+                    }
+                    else {    #print regular error output
+                        # we suppress most logging when running in a plugin mode
+                        if($self->{'config'}->{'reporttype'} eq 'standard') {
+                            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">TEST CASE WARNED</span></b>" };
+                        }
+                        unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
+                            print STDOUT qq|TEST CASE WARNED\n|;
+                        }
+                    }
+                    unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
+                        if( $case->{errormessage} ) {
+                            $self->{'result'}->{'returnmessage'} = $case->{errormessage};
+                        }
+                        else {
+                            $self->{'result'}->{'returnmessage'} = "Test case number $testnum warned";
+                        }
+
+                        #print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
+                    }
+                    if( $self->{'gui'} ) {
+                        $self->_gui_status_failed();
+                    }
+                }
                 else {
                     unless ( $self->{'config'}->{'nooutput'} ) { #skip regular STDOUT output
                         print STDOUT qq|TEST CASE PASSED \n|;
@@ -377,14 +411,6 @@ sub engine {
                 # avg response rounded to thousandths
                 $self->{'result'}->{'avgresponse'} = ( int( 1000 * ( $self->{'result'}->{'totalresponse'} / $self->{'result'}->{'totalruncount'} ) ) / 1000 );
 
-                push @{$self->{'result'}->{'cases'}}, {
-                    'id'          => $run_nr,
-                    'latency'     => $latency,
-                    'code'        => $response->code,
-                    'failedtests' => $case->{'failedcount'},
-                    'passedtests' => $case->{'passedcount'},
-                };
-
                 if( $self->{'gui'} ) {
                     $self->_gui_updatemonstats(); # update timers and counts in monitor tab
                 }
@@ -400,7 +426,6 @@ sub engine {
                 if( $case->{sleep} ) {
                     sleep( $case->{sleep} );
                 }
-
 
                 $self->{'result'}->{'totalpassedcount'} += $case->{'passedcount'};
                 $self->{'result'}->{'totalfailedcount'} += $case->{'failedcount'};
@@ -956,6 +981,51 @@ sub _verify {
             $self->{'result'}->{'iscritical'} = 1;
         }
     }
+
+    if($case->{'warning'}) {
+        unless($self->{'config'}->{'nooutput'} ) {
+            print STDOUT "Verify Warning Threshold: ".$case->{'warning'}."\n";
+        }
+        push @{$case->{'messages'}}, {'key' => "Warning Threshold", 'value' => $case->{''}, 'html' => "Verify Warning Threshold: ".$case->{'warning'} };
+        if($case->{'latency'} > $case->{'warning'}) {
+            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Warning Threshold</span>" };
+            unless($self->{'config'}->{'nooutput'}) {    # skip regular STDOUT output
+                print STDOUT "Failed Warning Threshold \n";
+            }
+            $case->{'failedcount'}++;
+            $self->{'result'}->{'iswarning'} = 1;
+        }
+        else {
+            unless( $self->{'config'}->{'nooutput'} ) {    # skip regular STDOUT output
+                print STDOUT "Passed Warning Threshold \n";
+            }
+            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Warning Threshold</span>" };
+            $case->{'passedcount'}++;
+        }
+    }
+
+    if($case->{'critical'}) {
+        unless($self->{'config'}->{'nooutput'} ) {
+            print STDOUT "Verify Critical Threshold: ".$case->{'critical'}."\n";
+        }
+        push @{$case->{'messages'}}, {'key' => "Critical Threshold", 'value' => $case->{''}, 'html' => "Verify Critical Threshold: ".$case->{'critical'} };
+        if($case->{'latency'} > $case->{'critical'}) {
+            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Critical Threshold</span>" };
+            unless($self->{'config'}->{'nooutput'}) {    # skip regular STDOUT output
+                print STDOUT "Failed Critical Threshold \n";
+            }
+            $case->{'failedcount'}++;
+            $self->{'result'}->{'iscritical'} = 1;
+        }
+        else {
+            unless( $self->{'config'}->{'nooutput'} ) {    # skip regular STDOUT output
+                print STDOUT "Passed Critical Threshold \n";
+            }
+            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Critical Threshold</span>" };
+            $case->{'passedcount'}++;
+        }
+    }
+
     return;
 }
 
@@ -1391,21 +1461,35 @@ sub _finaltasks {
         # return value is set which corresponds to a monitoring program
         #Nagios plugin compatibility
         if($self->{'config'}->{'reporttype'} eq 'nagios') {
-            my $end =
-              defined $self->{'config'}->{globaltimeout}
-              ? "$self->{'config'}->{globaltimeout};;0"
-              : ";;0";
+            # nagios perf data has following format
+            # 'label'=value[UOM];[warn];[crit];[min];[max]
+            my $crit = 0;
+            if(defined $self->{'config'}->{globaltimeout}) {
+                $crit = $self->{'config'}->{globaltimeout};
+            }
+            my $perfdata = '|time='.$self->{'result'}->{'totalruntime'}.';0;'.$crit.';0;0';
+            for my $file (@{$self->{'result'}->{'files'}}) {
+                for my $case (@{$file->{'cases'}}) {
+                    my $warn = $case->{'warning'}  || 0;
+                    my $crit = $case->{'critical'} || 0;
+                    $perfdata .= ' case'.$case->{'id'}.'='.$case->{'latency'}.';'.$warn.';'.$crit.';0;0';
+                }
+            }
 
-            if( $self->{'result'}->{'totalcasesfailedcount'} > 0 ) {
-                print "WebInject CRITICAL - $self->{'result'}->{'returnmessage'} |time=$self->{'result'}->{'totalruntime'};$end\n";
+            if($self->{'result'}->{'iscritical'}) {
+                print "WebInject CRITICAL - $self->{'result'}->{'returnmessage'}$perfdata\n";
                 return $self->{'exit_codes'}->{'CRITICAL'};
             }
+            elsif($self->{'result'}->{'iswarning'}) {
+                print "WebInject WARNING - $self->{'result'}->{'returnmessage'}$perfdata\n";
+                return $self->{'exit_codes'}->{'WARNING'};
+            }
             elsif( $self->{'config'}->{globaltimeout} && $self->{'result'}->{'totalruntime'} > $self->{'config'}->{globaltimeout} ) {
-                print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached |time=$self->{'result'}->{'totalruntime'};$end\n";
+                print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached |$perfdata\n";
                 return $self->{'exit_codes'}->{'WARNING'};
             }
             else {
-                print "WebInject OK - All tests passed successfully in $self->{'result'}->{'totalruntime'} seconds |time=$self->{'result'}->{'totalruntime'};$end\n";
+                print "WebInject OK - All tests passed successfully in $self->{'result'}->{'totalruntime'} seconds$perfdata\n";
                 return $self->{'exit_codes'}->{'OK'};
             }
         }
