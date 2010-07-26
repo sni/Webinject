@@ -103,19 +103,16 @@ sub engine {
     my ($curgraphtype);
     my ($xmltestcases);
 
-    # undef local values
-    map { $self->{'case'}->{$_} = undef } qw/method description1 description2 sleep/;
-
     if( $self->{'gui'} ) { $self->_gui_initial(); }
 
     $self->_getdirname();       # get the directory webinject engine is running from
     $self->_whackoldfiles();    # delete files leftover from previous run (do this here so they are whacked each run)
 
     #construct objects
-    $self->{'useragent'}  = LWP::UserAgent->new;
+    my $useragent  = LWP::UserAgent->new;
     $self->{'cookie_jar'} = HTTP::Cookies->new;
-    $self->{'useragent'}->agent('WebInject');    # http useragent that will show up in webserver logs
-    $self->{'useragent'}->max_redirect('0');     # don't follow redirects for GET's (POST's already don't follow, by default)
+    $useragent->agent('WebInject');    # http useragent that will show up in webserver logs
+    $useragent->max_redirect('0');     # don't follow redirects for GET's (POST's already don't follow, by default)
 
     if(!defined $self->{'gui'}) {
         $self->{'config'}->{standaloneplot} = 'off'; # initialize so we don't get warnings when <standaloneplot> is not set in config
@@ -125,25 +122,25 @@ sub engine {
 
     # add proxy support if it is set in config.xml
     if( $self->{'config'}->{proxy} ) {
-        $self->{'useragent'}->proxy( [ 'http', 'https' ], $self->{'config'}->{proxy} );
+        $useragent->proxy( [ 'http', 'https' ], $self->{'config'}->{proxy} );
     }
 
     # add http basic authentication support
     # corresponds to:
-    # $self->{'useragent'}->credentials('servername:portnumber', 'realm-name', 'username' => 'password');
+    # $useragent->credentials('servername:portnumber', 'realm-name', 'username' => 'password');
     if( scalar @{ $self->{'config'}->{'httpauth'} } ) {
 
         # add the credentials to the user agent here. The foreach gives the reference to the tuple ($elem), and we
         # deref $elem to get the array elements.
         for my $elem ( @{ $self->{'config'}->{'httpauth'} } ) {
             #print "adding credential: $elem->[0]:$elem->[1], $elem->[2], $elem->[3] => $elem->[4]\n";
-            $self->{'useragent'}->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
+            $useragent->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
         }
     }
 
     # change response delay timeout in seconds if it is set in config.xml
     if($self->{'config'}->{timeout}) {
-        $self->{'useragent'}->timeout($self->{'config'}->{timeout});    #default LWP timeout is 180 secs.
+        $useragent->timeout($self->{'config'}->{timeout});    #default LWP timeout is 180 secs.
     }
 
     #open file handles
@@ -187,10 +184,10 @@ sub engine {
     $self->_gnuplotcfg();    #create the gnuplot config file
 
     $self->{'totalruncount'}         = 0;
-    $self->{'case'}->{'passedcount'} = 0;
-    $self->{'case'}->{'failedcount'} = 0;
-    $self->{'passedcount'}           = 0;
-    $self->{'failedcount'}           = 0;
+    $self->{'totalcasespassedcount'} = 0;
+    $self->{'totalcasesfailedcount'} = 0;
+    $self->{'totalpassedcount'}      = 0;
+    $self->{'totalfailedcount'}      = 0;
     $self->{'totalresponse'}         = 0;
     $self->{'avgresponse'}           = 0;
     $self->{'maxresponse'}           = 0;
@@ -202,8 +199,6 @@ sub engine {
 
     for my $currentcasefile ( @{ $self->{'casefilelist'} } ) { #process test case files named in config
         #print "\n$currentcasefile\n\n";
-
-        $self->{'case'}->{'filecheck'} = ' ';
 
         if($self->{'gui'}) { $self->_gui_processing_msg(); }
 
@@ -233,6 +228,12 @@ sub engine {
 
             # process cases in sorted order
             for my $testnum ( sort { $a <=> $b } keys %{ $xmltestcases->{case} } ) {
+
+                my $case = {
+                    'filecheck'   => '',
+                    'failedcount' => 0,
+                    'passedcount' => 0,
+                };
 
                 # if an XPath Node is defined, only process the single Node
                 if( $self->{'xnode'} ) {
@@ -275,9 +276,9 @@ sub engine {
                     verifypositivenext verifynegativenext/
                   )
                 {
-                    $self->{'case'}->{$_} = $xmltestcases->{case}->{$testnum}->{$_};
-                    if( defined $self->{'case'}->{$_} ) {
-                        $self->{'case'}->{$_} = $self->_convertbackxml( $self->{'case'}->{$_}, $timestamp );
+                    $case->{$_} = $xmltestcases->{case}->{$testnum}->{$_};
+                    if(defined $case->{$_} ) {
+                        $case->{$_} = $self->_convertbackxml($case->{$_}, $timestamp);
                     }
                 }
 
@@ -295,7 +296,7 @@ sub engine {
 
                 # we suppress most logging when running in a plugin mode
                 if($self->{'config'}->{'reporttype'} eq 'standard') {
-                    unless( $self->{'case'}->{'filecheck'} eq $currentcasefile ) {
+                    unless( $case->{'filecheck'} eq $currentcasefile ) {
                         # if this is the first test case file, skip printing the closing tag for the previous one
                         unless ( $currentcasefile eq $self->{'casefilelist'}->[0] ) {
                             print $resultsxml qq|    </testcases>\n\n|;
@@ -306,14 +307,14 @@ sub engine {
                 }
 
                 for(qw/description1 description2/) {
-                    next unless defined $self->{'case'}->{$_};
+                    next unless defined $case->{$_};
                     # we suppress most logging when running in a plugin mode
                     if($self->{'config'}->{'reporttype'} eq 'standard') {
-                        print $results qq|$self->{'case'}->{$_} <br />\n|;
+                        print $results qq|$case->{$_} <br />\n|;
                         unless ( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|$self->{'case'}->{$_} \n|;
+                            print STDOUT qq|$case->{$_} \n|;
                         }
-                        print $resultsxml qq|            <$_>$self->{'case'}->{$_}</$_>\n|;
+                        print $resultsxml qq|            <$_>$case->{$_}</$_>\n|;
                     }
                 }
 
@@ -328,91 +329,91 @@ sub engine {
                   )
                 {
                     my $negative = $_ =~ /negative/mx ? "Negative" : "";
-                    if( $self->{'case'}->{$_} ) {
+                    if( $case->{$_} ) {
                         # we suppress most logging when running in a plugin mode
                         if($self->{'config'}->{'reporttype'} eq 'standard') {
-                            print $results qq|Verify $negative: "$self->{'case'}->{$_}" <br />\n|;
+                            print $results qq|Verify $negative: "$case->{$_}" <br />\n|;
                             unless ( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                                print STDOUT qq|Verify $negative: "$self->{'case'}->{$_}" \n|;
+                                print STDOUT qq|Verify $negative: "$case->{$_}" \n|;
                             }
-                            print $resultsxml qq|            <$_>$self->{'case'}->{$_}</$_>\n|;
+                            print $resultsxml qq|            <$_>$case->{$_}</$_>\n|;
                         }
                     }
                 }
 
-                if( $self->{'case'}->{verifypositivenext} ) {
+                if($case->{verifypositivenext}) {
                     # we suppress most logging when running in a plugin mode
                     if($self->{'config'}->{'reporttype'} eq 'standard') {
-                        print $results qq|Verify On Next Case: "$self->{'case'}->{verifypositivenext}" <br />\n|;
+                        print $results qq|Verify On Next Case: "$case->{verifypositivenext}" <br />\n|;
                         unless ( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|Verify On Next Case: "$self->{'case'}->{verifypositivenext}" \n|;
+                            print STDOUT qq|Verify On Next Case: "$case->{verifypositivenext}" \n|;
                         }
-                        print $resultsxml qq|            <verifypositivenext>$self->{'case'}->{verifypositivenext}</verifypositivenext>\n|;
+                        print $resultsxml qq|            <verifypositivenext>$case->{verifypositivenext}</verifypositivenext>\n|;
                     }
                 }
 
-                if( $self->{'case'}->{verifynegativenext} ) {
+                if( $case->{verifynegativenext} ) {
                     # we suppress most logging when running in a plugin mode
                     if($self->{'config'}->{'reporttype'} eq 'standard') {
-                        print $results qq|Verify Negative On Next Case: "$self->{'case'}->{verifynegativenext}" <br />\n|;
+                        print $results qq|Verify Negative On Next Case: "$case->{verifynegativenext}" <br />\n|;
                         unless ( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|Verify Negative On Next Case: "$self->{'case'}->{verifynegativenext}" \n|;
+                            print STDOUT qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|;
                         }
-                        print $resultsxml qq|            <verifynegativenext>$self->{'case'}->{verifynegativenext}</verifynegativenext>\n|;
+                        print $resultsxml qq|            <verifynegativenext>$case->{verifynegativenext}</verifynegativenext>\n|;
                     }
                 }
 
-                if( $self->{'case'}->{verifyresponsecode} ) {
+                if( $case->{verifyresponsecode} ) {
                     # we suppress most logging when running in a plugin mode
                     if($self->{'config'}->{'reporttype'} eq 'standard') {
-                        print $results qq|Verify Response Code: "$self->{'case'}->{verifyresponsecode}" <br />\n|;
+                        print $results qq|Verify Response Code: "$case->{verifyresponsecode}" <br />\n|;
                         unless ( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|Verify Response Code: "$self->{'case'}->{verifyresponsecode}" \n|;
+                            print STDOUT qq|Verify Response Code: "$case->{verifyresponsecode}" \n|;
                         }
-                        print $resultsxml qq|            <verifyresponsecode>$self->{'case'}->{verifyresponsecode}</verifyresponsecode>\n|;
+                        print $resultsxml qq|            <verifyresponsecode>$case->{verifyresponsecode}</verifyresponsecode>\n|;
                     }
                 }
 
-                my($latency,$request);
-                if( $self->{'case'}->{method} ) {
-                    if ( $self->{'case'}->{method} eq "get" ) {
-                        ($latency,$request) = $self->_httpget();
+                my($latency,$request,$response);
+                if( $case->{method} ) {
+                    if ( $case->{method} eq "get" ) {
+                        ($latency,$request,$response) = $self->_httpget($useragent, $case);
                     }
-                    elsif ( $self->{'case'}->{method} eq "post" ) {
-                        ($latency,$request) = $self->_httppost();
+                    elsif ( $case->{method} eq "post" ) {
+                        ($latency,$request,$response) = $self->_httppost($useragent, $case);
                     }
                     else {
                         print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;
                     }
                 }
                 else {
-                    ($latency,$request) = $self->_httpget();       # use "get" if no method is specified
+                    ($latency,$request) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
                 }
 
-                $self->_verify();                       # verify result from http response
-                $self->_httplog($request);              # write to http.log file
-                $self->_plotlog($latency);              # send perf data to log file for plotting
-                $self->_plotit();                       # call the external plotter to create a graph
+                $self->_verify($response, $case);               # verify result from http response
+                $self->_httplog($request, $response, $case);    # write to http.log file
+                $self->_plotlog($latency);                      # send perf data to log file for plotting
+                $self->_plotit();                               # call the external plotter to create a graph
 
                 if( $self->{'gui'} ) {
-                    $self->_gui_updatemontab(); # update monitor with the newly rendered plot graph
+                    $self->_gui_updatemontab();                 # update monitor with the newly rendered plot graph
                 }
 
-                $self->_parseresponse();                # grab string from response to send later
+                $self->_parseresponse($response, $case);        # grab string from response to send later
 
-                if( $self->{'isfailure'} > 0 ) {       # if any verification fails, test case is considered a failure
+                if( $self->{'isfailure'} > 0 ) {                # if any verification fails, test case is considered a failure
                     # we suppress most logging when running in a plugin mode
                     if($self->{'config'}->{'reporttype'} eq 'standard') {
                         print $resultsxml qq|            <success>false</success>\n|;
                     }
-                    if( $self->{'case'}->{errormessage} ) {    # Add defined error message to the output
+                    if( $case->{errormessage} ) {       # Add defined error message to the output
                         # we suppress most logging when running in a plugin mode
                         if($self->{'config'}->{'reporttype'} eq 'standard') {
-                            print $results qq|<b><span class="fail">TEST CASE FAILED : $self->{'case'}->{errormessage}</span></b><br />\n|;
-                            print $resultsxml qq|            <result-message>$self->{'case'}->{errormessage}</result-message>\n|;
+                            print $results qq|<b><span class="fail">TEST CASE FAILED : $case->{errormessage}</span></b><br />\n|;
+                            print $resultsxml qq|            <result-message>$case->{errormessage}</result-message>\n|;
                         }
                         unless( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|TEST CASE FAILED : $self->{'case'}->{errormessage}\n|;
+                            print STDOUT qq|TEST CASE FAILED : $case->{errormessage}\n|;
                         }
                     }
                     else {    #print regular error output
@@ -426,8 +427,8 @@ sub engine {
                         }
                     }
                     unless( $self->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
-                        if ( $self->{'case'}->{errormessage} ) {
-                            $self->{'returnmessage'} = $self->{'case'}->{errormessage};
+                        if( $case->{errormessage} ) {
+                            $self->{'returnmessage'} = $case->{errormessage};
                         }
                         else {
                             $self->{'returnmessage'} = "Test case number $testnum failed";
@@ -438,7 +439,6 @@ sub engine {
                     if( $self->{'gui'} ) {
                         $self->_gui_status_failed();
                     }
-                    $self->{'case'}->{'failedcount'}++;
                 }
                 else {
                     # we suppress most logging when running in a plugin mode
@@ -456,7 +456,6 @@ sub engine {
                     if( $self->{'gui'} ) {
                         $self->_gui_status_passed();
                     }
-                    $self->{'case'}->{'passedcount'}++;
                 }
 
                 # we suppress most logging when running in a plugin mode
@@ -481,7 +480,7 @@ sub engine {
                     print STDOUT qq|------------------------------------------------------- \n|;
                 }
 
-                $self->{'case'}->{'filecheck'} = $currentcasefile ; #set this so <testcases> xml is only closed after each file is done processing
+                $case->{'filecheck'} = $currentcasefile ; #set this so <testcases> xml is only closed after each file is done processing
 
                 $endruntimer = time();
                 $self->{'totalruntime'} = ( int( 1000 * ( $endruntimer - $startruntimer ) ) / 1000 );    #elapsed time rounded to thousandths
@@ -507,6 +506,7 @@ sub engine {
                 push @{$self->{'result'}}, {
                     'label'   => $run_nr,
                     'latency' => $latency,
+                    'code'    => $response->code,
                 };
 
                 if( $self->{'gui'} ) {
@@ -521,10 +521,19 @@ sub engine {
                 }
 
                 # if a sleep value is set in the test case, sleep that amount
-                if( $self->{'case'}->{sleep} ) {
-                    sleep( $self->{'case'}->{sleep} );
+                if( $case->{sleep} ) {
+                    sleep( $case->{sleep} );
                 }
 
+
+                $self->{'totalpassedcount'} += $case->{'passedcount'};
+                $self->{'totalfailedcount'} += $case->{'failedcount'};
+
+                if($self->{'isfailure'}) {
+                    $self->{'totalcasesfailedcount'}++;
+                } else {
+                    $self->{'totalcasespassedcount'}++;
+                }
 
                 # if an XPath Node is defined, only process the single Node
                 if( $self->{'xnode'} ) {
@@ -546,6 +555,9 @@ sub _set_defaults {
         'graphtype'                 => 'lines',
         'httpauth'                  => [],
         'reporttype'                => 'standard',
+        'baseurl'                   => '',
+        'baseurl1'                  => '',
+        'baseurl2'                  => '',
     };
     $self->{exit_codes}         = {
         'UNKNOWN'  => 3,
@@ -619,10 +631,10 @@ Start Time: $self->{'currentdatetime'} <br />
 Total Run Time: $self->{'totalruntime'} seconds <br />
 <br />
 Test Cases Run: $self->{'totalruncount'} <br />
-Test Cases Passed: $self->{'case'}->{'passedcount'} <br />
-Test Cases Failed: $self->{'case'}->{'failedcount'} <br />
-Verifications Passed: $self->{'passedcount'} <br />
-Verifications Failed: $self->{'failedcount'} <br />
+Test Cases Passed: $self->{'totalcasespassedcount'} <br />
+Test Cases Failed: $self->{'totalcasesfailedcount'} <br />
+Verifications Passed: $self->{'totalpassedcount'} <br />
+Verifications Failed: $self->{'totalfailedcount'} <br />
 <br />
 Average Response Time: $self->{'avgresponse'} seconds <br />
 Max Response Time: $self->{'maxresponse'} seconds <br />
@@ -649,10 +661,10 @@ sub _writefinalxml {
         <start-time>$self->{'currentdatetime'}</start-time>
         <total-run-time>$self->{'totalruntime'}</total-run-time>
         <test-cases-run>$self->{'totalruncount'}</test-cases-run>
-        <test-cases-passed>$self->{'case'}->{'passedcount'}</test-cases-passed>
-        <test-cases-failed>$self->{'case'}->{'failedcount'}</test-cases-failed>
-        <verifications-passed>$self->{'passedcount'}</verifications-passed>
-        <verifications-failed>$self->{'failedcount'}</verifications-failed>
+        <test-cases-passed>$self->{'totalcasespassedcount'}</test-cases-passed>
+        <test-cases-failed>$self->{'totalcasesfailedcount'}</test-cases-failed>
+        <verifications-passed>$self->{'totalpassedcount'}</verifications-passed>
+        <verifications-failed>$self->{'totalfailedcount'}</verifications-failed>
         <average-response-time>$self->{'avgresponse'}</average-response-time>
         <max-response-time>$self->{'maxresponse'}</max-response-time>
         <min-response-time>$self->{'minresponse'}</min-response-time>
@@ -673,10 +685,10 @@ Start Time: $self->{'currentdatetime'}
 Total Run Time: $self->{'totalruntime'} seconds
 
 Test Cases Run: $self->{'totalruncount'}
-Test Cases Passed: $self->{'case'}->{'passedcount'}
-Test Cases Failed: $self->{'case'}->{'failedcount'}
-Verifications Passed: $self->{'passedcount'}
-Verifications Failed: $self->{'failedcount'}
+Test Cases Passed: $self->{'totalcasespassedcount'}
+Test Cases Failed: $self->{'totalcasesfailedcount'}
+Verifications Passed: $self->{'totalpassedcount'}
+Verifications Failed: $self->{'totalfailedcount'}
 
 |;
     return;
@@ -684,18 +696,20 @@ Verifications Failed: $self->{'failedcount'}
 
 ################################################################################
 sub _http_defaults {
-    my $self    = shift;
-    my $request = shift;
+    my $self      = shift;
+    my $request   = shift;
+    my $useragent = shift;
+    my $case      = shift;
 
     # add an additional HTTP Header if specified
-    if( $self->{'case'}->{addheader} ) {
+    if($case->{addheader}) {
         # can add multiple headers with a pipe delimiter
-        my @addheaders = split( /\|/mx, $self->{'case'}->{addheader} );
+        my @addheaders = split( /\|/mx, $case->{addheader} );
         foreach (@addheaders) {
             $_ =~ m~(.*): (.*)~mx;
             $request->header( $1 => $2 );   # using HTTP::Headers Class
         }
-        $self->{'case'}->{addheader} = '';
+        $case->{addheader} = '';
     }
 
     $self->{'cookie_jar'}->add_cookie_header( $request );
@@ -703,42 +717,47 @@ sub _http_defaults {
     # print $self->{'request'}->as_string; print "\n\n";
 
     my $starttimer        = time();
-    $self->{'response'}   = $self->{'useragent'}->request( $request );
+    my $response          = $useragent->request($request);
     my $endtimer          = time();
     my $latency           = ( int( 1000 * ( $endtimer - $starttimer ) ) / 1000 ); # elapsed time rounded to thousandths
-    # print $self->{'response'}->as_string; print "\n\n";
+    # print $response->as_string; print "\n\n";
 
     $self->{'cookie_jar'}->extract_cookies( $self->{'response'} );
 
     #print $self->{'cookie_jar'}->as_string; print "\n\n";
-    return($latency,$request);
+    return($latency,$request,$response);
 }
 
 ################################################################################
 # send http request and read response
 sub _httpget {
-    my $self = shift;
+    my $self      = shift;
+    my $useragent = shift;
+    my $case      = shift;
 
-    my $request = new HTTP::Request( 'GET', $self->{'case'}->{url} );
-    return $self->_http_defaults($request);
+    my $request = new HTTP::Request( 'GET', $case->{url} );
+    return $self->_http_defaults($request, $useragent, $case);
 }
 
 ################################################################################
 # post request based on specified encoding
 sub _httppost {
-    my $self = shift;
+    my $self      = shift;
+    my $useragent = shift;
+    my $case      = shift;
 
-    if ( $self->{'case'}->{posttype} ) {
-        if ( $self->{'case'}->{posttype} =~ m~application/x-www-form-urlencoded~mx ) {
-            return $self->_httppost_form_urlencoded();
+    if($case->{posttype} ) {
+        if($case->{posttype} =~ m~application/x-www-form-urlencoded~mx) {
+            return $self->_httppost_form_urlencoded($useragent, $case);
         }
-        elsif ( $self->{'case'}->{posttype} =~ m~multipart/form-data~mx ) {
-            return $self->_httppost_form_data();
+        elsif($case->{posttype} =~ m~multipart/form-data~mx) {
+            return $self->_httppost_form_data($useragent, $case);
         }
-        elsif (( $self->{'case'}->{posttype} =~ m~text/xml~mx )
-            or ( $self->{'case'}->{posttype} =~ m~application/soap+xml~mx ) )
+        elsif(   ($case->{posttype} =~ m~text/xml~mx)
+              or ($case->{posttype} =~ m~application/soap+xml~mx)
+             )
         {
-            return $self->_httppost_xml();
+            return $self->_httppost_xml($useragent, $case);
         }
         else {
             print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|;
@@ -746,8 +765,8 @@ sub _httppost {
     }
     else {
         # use "x-www-form-urlencoded" if no encoding is specified
-        $self->{'case'}->{posttype} = 'application/x-www-form-urlencoded';
-        return $self->_httppost_form_urlencoded();
+        $case->{posttype} = 'application/x-www-form-urlencoded';
+        return $self->_httppost_form_urlencoded($useragent, $case);
     }
     return;
 }
@@ -755,37 +774,42 @@ sub _httppost {
 ################################################################################
 # send application/x-www-form-urlencoded HTTP request and read response
 sub _httppost_form_urlencoded {
-    my $self = shift;
+    my $self      = shift;
+    my $useragent = shift;
+    my $case      = shift;
 
-    my $request = new HTTP::Request( 'POST', "$self->{'case'}->{url}" );
-    $request->content_type("$self->{'case'}->{posttype}");
-    $request->content("$self->{'case'}->{postbody}");
+    my $request = new HTTP::Request( 'POST', $case->{url} );
+    $request->content_type($case->{posttype});
+    $request->content($case->{postbody});
 
-    return $self->_http_defaults($request);
+    return $self->_http_defaults($request,$useragent, $case);
 }
 
 ################################################################################
 # send text/xml HTTP request and read response
 sub _httppost_xml {
     my $self       = shift;
+    my $useragent  = shift;
+    my $case      = shift;
     my $resultsxml = $self->{'RESULTSXML'};
     my $results    = $self->{'RESULTS'};
+    my($latency,$request,$response);
 
     # read the xml file specified in the testcase
-    $self->{'case'}->{postbody} =~ m~file=>(.*)~imx;
+    $case->{postbody} =~ m~file=>(.*)~imx;
     open( my $xmlbody, "<", $self->{'dirname'} . $1 ) or die "\nError: Failed to open text/xml file\n\n";    # open file handle
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
-    my $request = new HTTP::Request( 'POST', "$self->{'case'}->{url}" );
-    $request->content_type("$self->{'case'}->{posttype}");
+    $request = new HTTP::Request( 'POST', $case->{url} );
+    $request->content_type($case->{posttype});
     $request->content( join( " ", @xmlbody ) );    # load the contents of the file into the request body
 
-    my $latency = $self->_http_defaults($request);
+    ($latency,$request,$response) = $self->_http_defaults($request, $useragent, $case);
 
     my $xmlparser = new XML::Parser;
     try {    # see if the XML parses properly
-        $xmlparser->parse( $self->{'response'}->content );
+        $xmlparser->parse($response->content);
 
         # print "good xml\n";
         # we suppress most logging when running in a plugin mode
@@ -796,7 +820,7 @@ sub _httppost_xml {
         unless ( $self->{'nooutput'} ) {        # skip regular STDOUT output
             print STDOUT "Passed XML Parser (content is well-formed) \n";
         }
-        $self->{'passedcount'}++;
+        $case->{'passedcount'}++;
 
         # exit try block
         return;
@@ -813,38 +837,43 @@ sub _httppost_xml {
         unless ( $self->{'nooutput'} ) {      # skip regular STDOUT output
             print STDOUT "Failed XML Parser: $ex \n";
         }
-        $self->{'failedcount'}++;
+        $case->{'failedcount'}++;
         $self->{'isfailure'}++;
     };    # <-- remember the semicolon
 
-    return($latency,$request);
+    return($latency,$request,$response);
 }
 
 ################################################################################
 # send multipart/form-data HTTP request and read response
 sub _httppost_form_data {
-    my $self = shift;
+    my $self      = shift;
+    my $useragent = shift;
+    my $case      = shift;
 
-    my $request = POST "$self->{'case'}->{url}",
-      Content_Type => "$self->{'case'}->{posttype}",
-      Content      => $self->{'case'}->{postbody};
+    my $request = new HTTP::Request( 'POST', $case->{url},
+                                    Content_Type => $case->{posttype},
+                                    Content      => $case->{postbody},
+    );
 
-    return $self->_http_defaults($request);
+    return $self->_http_defaults($request, $useragent, $case);
 }
 
 ################################################################################
 # do verification of http response and print status to HTML/XML/STDOUT/UI
 sub _verify {
     my $self       = shift;
+    my $response   = shift;
+    my $case       = shift;
     my $resultsxml = $self->{'RESULTSXML'};
     my $results    = $self->{'RESULTS'};
 
     for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
-        if ( $self->{'case'}->{$_} ) {
-            my $regex = $self->{'case'}->{$_};
+        if ( $case->{$_} ) {
+            my $regex = $case->{$_};
             $regex =~ s/\ /\\ /gmx;
             # verify existence of string in response
-            if( $self->{'response'}->as_string() =~ m~$regex~simx ) {
+            if( $response->as_string() =~ m~$regex~simx ) {
                 # we suppress most logging when running in a plugin mode
                 if($self->{'config'}->{'reporttype'} eq 'standard') {
                     print $results    qq|<span class="pass">Passed Positive Verification</span><br />\n|;
@@ -853,7 +882,7 @@ sub _verify {
                 unless( $self->{'nooutput'} ) {    # skip regular STDOUT output
                     print STDOUT "Passed Positive Verification \n";
                 }
-                $self->{'passedcount'}++;
+                $case->{'passedcount'}++;
             }
             else {
                 # we suppress most logging when running in a plugin mode
@@ -864,18 +893,18 @@ sub _verify {
                 unless( $self->{'nooutput'} ) {    # skip regular STDOUT output
                     print STDOUT "Failed Positive Verification \n";
                 }
-                $self->{'failedcount'}++;
+                $case->{'failedcount'}++;
                 $self->{'isfailure'}++;
             }
         }
     }
 
     for (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
-        if ( $self->{'case'}->{$_} ) {
-            my $regex = $self->{'case'}->{$_};
+        if ( $case->{$_} ) {
+            my $regex = $case->{$_};
             $regex =~ s/\ /\\ /gmx;
             # verify existence of string in response
-            if( $self->{'response'}->as_string() =~ m~$regex~simx ) {
+            if( $response->as_string() =~ m~$regex~simx ) {
                 # we suppress most logging when running in a plugin mode
                 if($self->{'config'}->{'reporttype'} eq 'standard') {
                     print $results    qq|<span class="fail">Failed Negative Verification</span><br />\n|;
@@ -884,7 +913,7 @@ sub _verify {
                 unless ( $self->{'nooutput'} ) {      # skip regular STDOUT output
                     print STDOUT "Failed Negative Verification \n";
                 }
-                $self->{'failedcount'}++;
+                $case->{'failedcount'}++;
                 $self->{'isfailure'}++;
             }
             else {
@@ -896,7 +925,7 @@ sub _verify {
                 unless ( $self->{'nooutput'} ) {      # skip regular STDOUT output
                     print STDOUT "Passed Negative Verification \n";
                 }
-                $self->{'passedcount'}++;
+                $case->{'passedcount'}++;
             }
         }
     }
@@ -905,7 +934,7 @@ sub _verify {
         my $regex = $self->{'verifylater'};
         $regex =~ s/\ /\\ /gmx;
         # verify existence of string in response
-        if( $self->{'response'}->as_string() =~ m~$regex~simx ) {
+        if($response->as_string() =~ m~$regex~simx ) {
             # we suppress most logging when running in a plugin mode
             if($self->{'config'}->{'reporttype'} eq 'standard') {
                 print $results    qq|<span class="pass">Passed Positive Verification (verification set in previous test case)</span><br />\n|;
@@ -914,7 +943,7 @@ sub _verify {
             unless ( $self->{'xnode'} or $self->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'nooutput'} is set
                 print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
             }
-            $self->{'passedcount'}++;
+            $case->{'passedcount'}++;
         }
         else {
             # we suppress most logging when running in a plugin mode
@@ -925,7 +954,7 @@ sub _verify {
             unless( $self->{'xnode'} or $self->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'nooutput'} is set
                 print STDOUT "Failed Positive Verification (verification set in previous test case) \n";
             }
-            $self->{'failedcount'}++;
+            $case->{'failedcount'}++;
             $self->{'isfailure'}++;
         }
         $self->{'verifylater'} = '';    #set to null after verification
@@ -935,7 +964,7 @@ sub _verify {
         my $regex = $self->{'verifylaterneg'};
         $regex =~ s/\ /\\ /gmx;
         # verify existence of string in response
-        if( $self->{'response'}->as_string() =~ m~$regex~simx ) {
+        if($response->as_string() =~ m~$regex~simx) {
             # we suppress most logging when running in a plugin mode
             if($self->{'config'}->{'reporttype'} eq 'standard') {
                 print $results    qq|<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span><br />\n|;
@@ -944,7 +973,7 @@ sub _verify {
             unless ( $self->{'xnode'} or $self->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'nooutput'} is set
                 print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";
             }
-            $self->{'failedcount'}++;
+            $case->{'failedcount'}++;
             $self->{'isfailure'}++;
         }
         else {
@@ -956,14 +985,14 @@ sub _verify {
             unless ( $self->{'xnode'} or $self->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'nooutput'} is set
                 print STDOUT "Passed Negative Verification (negative verification set in previous test case) \n";
             }
-            $self->{'passedcount'}++;
+            $case->{'passedcount'}++;
         }
         $self->{'verifylaterneg'} = '';    # set to null after verification
     }
 
-    if( $self->{'case'}->{verifyresponsecode} ) {
+    if( $case->{verifyresponsecode} ) {
         # verify returned HTTP response code matches verifyresponsecode set in test case
-        if ( $self->{'case'}->{verifyresponsecode} == $self->{'response'}->code() )
+        if ( $case->{verifyresponsecode} == $response->code() )
         {
             # we suppress most logging when running in a plugin mode
             if($self->{'config'}->{'reporttype'} eq 'standard') {
@@ -974,25 +1003,25 @@ sub _verify {
             unless ( $self->{'nooutput'} ) {    # skip regular STDOUT output
                 print STDOUT qq|Passed HTTP Response Code Verification \n|;
             }
-            $self->{'passedcount'}++;
+            $case->{'passedcount'}++;
         }
         else {
             # we suppress most logging when running in a plugin mode
             if($self->{'config'}->{'reporttype'} eq 'standard') {
-                print $results qq|<span class="fail">Failed HTTP Response Code Verification (received |. $self->{'response'}->code().qq|, expecting $self->{'case'}->{verifyresponsecode})</span><br />\n|;
+                print $results qq|<span class="fail">Failed HTTP Response Code Verification (received |. $response->code().qq|, expecting $case->{verifyresponsecode})</span><br />\n|;
                 print $resultsxml qq|            <verifyresponsecode-success>false</verifyresponsecode-success>\n|;
-                print $resultsxml qq|            <verifyresponsecode-message>Failed HTTP Response Code Verification (received |.$self->{'response'}->code().qq|, expecting $self->{'case'}->{verifyresponsecode})</verifyresponsecode-message>\n|;
+                print $resultsxml qq|            <verifyresponsecode-message>Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode})</verifyresponsecode-message>\n|;
             }
             unless ( $self->{'nooutput'} ) {    #skip regular STDOUT output
-                print STDOUT qq|Failed HTTP Response Code Verification (received |.$self->{'response'}->code().qq|, expecting $self->{'case'}->{verifyresponsecode}) \n|;
+                print STDOUT qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|;
             }
-            $self->{'failedcount'}++;
+            $case->{'failedcount'}++;
             $self->{'isfailure'}++;
         }
     }
     else {
         # verify http response code is in the 100-399 range
-        if( $self->{'response'}->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx ) {     # verify existance of string in response
+        if($response->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx ) {     # verify existance of string in response
             # we suppress most logging when running in a plugin mode
             if($self->{'config'}->{'reporttype'} eq 'standard') {
                 print $results qq|<span class="pass">Passed HTTP Response Code Verification (not in error range)</span><br />\n|;
@@ -1004,10 +1033,10 @@ sub _verify {
             }
 
             # succesful response codes: 100-399
-            $self->{'passedcount'}++;
+            $case->{'passedcount'}++;
         }
         else {
-            $self->{'response'}->as_string() =~ /(HTTP\/1.)(.*)/mxi;
+            $response->as_string() =~ /(HTTP\/1.)(.*)/mxi;
             if ($1) {    #this is true if an HTTP response returned
                 # we suppress most logging when running in a plugin mode
                 if($self->{'config'}->{'reporttype'} eq 'standard') {
@@ -1032,7 +1061,7 @@ sub _verify {
                     print STDOUT "Failed - No Response \n";   #($1$2) is HTTP response code
                 }
             }
-            $self->{'failedcount'}++;
+            $case->{'failedcount'}++;
             $self->{'isfailure'}++;
         }
     }
@@ -1042,22 +1071,24 @@ sub _verify {
 ################################################################################
 # parse values from responses for use in future request (for session id's, dynamic URL rewriting, etc)
 sub _parseresponse {
-    my $self = shift;
+    my $self     = shift;
+    my $response = shift;
+    my $case     = shift;
 
     my ( $resptoparse, @parseargs );
     my ( $leftboundary, $rightboundary, $escape );
 
     for( qw/parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5/ ) {
 
-        next unless $self->{'case'}->{$_};
+        next unless $case->{$_};
 
-        @parseargs = split( /\|/mx, $self->{'case'}->{$_} );
+        @parseargs = split( /\|/mx, $case->{$_} );
 
         $leftboundary  = $parseargs[0];
         $rightboundary = $parseargs[1];
         $escape        = $parseargs[2];
 
-        $resptoparse = $self->{'response'}->as_string;
+        $resptoparse = $response->as_string;
         if ( $resptoparse =~ m~$leftboundary(.*?)$rightboundary~smx ) {
             $self->{'parsedresult'}->{$_} = $1;
         }
@@ -1085,7 +1116,6 @@ sub _processcasefile {
     my $firstparse;
     my $filename;
     my $xpath;
-    my $setuseragent;
     my $config;
 
     undef $self->{'casefilelist'};    # empty the array of test case filenames
@@ -1212,14 +1242,11 @@ sub _processcasefile {
         }
 
         if (/<useragent>/mx) {
-            $_ =~ m~<useragent>(.*)</useragent>~mx;
-            $setuseragent = $1;
-            if ($setuseragent)
-            {    #http useragent that will show up in webserver logs
-                $self->{'useragent'}->agent($setuseragent);
+            # http useragent that will show up in webserver logs
+            if(m~<useragent>(.*)</useragent>~mx) {
+                $self->{'config'}->{'useragent'} = $1;
+                # print "\nuseragent : $self->{'config'}->{'useragent'} \n\n";
             }
-
-            #print "\nuseragent : $setuseragent \n\n";
         }
 
         if (/<httpauth>/mx) {
@@ -1325,27 +1352,29 @@ sub _url_escape {
 sub _httplog {
     my $self        = shift;
     my $request     = shift;
+    my $response    = shift;
+    my $case        = shift;
     my $httplogfile = $self->{'HTTPLOGFILE'};
 
     # we suppress most logging when running in a plugin mode
     if($self->{'config'}->{'reporttype'} eq 'standard') {
-        if ( $self->{'case'}->{logrequest}
-            && ( $self->{'case'}->{logrequest} =~ /yes/mxi ) )
+        if ( $case->{logrequest}
+            && ( $case->{logrequest} =~ /yes/mxi ) )
         {    # http request - log setting per test case
             print $httplogfile $request->as_string, "\n\n";
         }
 
-        if ( $self->{'case'}->{logresponse}
-            && ( $self->{'case'}->{logresponse} =~ /yes/mxi ) )
+        if ( $case->{logresponse}
+            && ( $case->{logresponse} =~ /yes/mxi ) )
         {    # http response - log setting per test case
-            print $httplogfile $self->{'response'}->as_string, "\n\n";
+            print $httplogfile $response->as_string, "\n\n";
         }
 
         if ( $self->{'config'}->{globalhttplog}
             && ( $self->{'config'}->{globalhttplog} =~ /yes/mxi ) )
         {    # global http log setting
             print $httplogfile $request->as_string,  "\n\n";
-            print $httplogfile $self->{'response'}->as_string, "\n\n";
+            print $httplogfile $response->as_string, "\n\n";
         }
 
         if (
@@ -1357,16 +1386,16 @@ sub _httplog {
           )
         {    # global http log setting - onfail mode
             print $httplogfile $request->as_string,  "\n\n";
-            print $httplogfile $self->{'response'}->as_string, "\n\n";
+            print $httplogfile $response->as_string, "\n\n";
         }
 
         if (
             (
-                $self->{'case'}->{logrequest}
-                && ( $self->{'case'}->{logrequest} =~ /yes/mxi )
+                $case->{logrequest}
+                && ( $case->{logrequest} =~ /yes/mxi )
             )
-            or ( $self->{'case'}->{logresponse}
-                && ( $self->{'case'}->{logresponse} =~ /yes/mxi ) )
+            or ( $case->{logresponse}
+                && ( $case->{logresponse} =~ /yes/mxi ) )
             or ( $self->{'config'}->{globalhttplog}
                 && ( $self->{'config'}->{globalhttplog} =~ /yes/mxi ) )
             or (
@@ -1516,16 +1545,11 @@ sub _finaltasks {
               ? "$self->{'config'}->{globaltimeout};;0"
               : ";;0";
 
-            if ( $self->{'case'}->{'failedcount'} > 0 ) {
+            if( $self->{'totalcasesfailedcount'} > 0 ) {
                 print "WebInject CRITICAL - $self->{'returnmessage'} |time=$self->{'totalruntime'};$end\n";
                 return $self->{'exit_codes'}->{'CRITICAL'};
             }
-            elsif (
-                ( $self->{'config'}->{globaltimeout} )
-                && ( $self->{'totalruntime'} >
-                    $self->{'config'}->{globaltimeout} )
-              )
-            {
+            elsif( $self->{'config'}->{globaltimeout} && $self->{'totalruntime'} > $self->{'config'}->{globaltimeout} ) {
                 print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached |time=$self->{'totalruntime'};$end\n";
                 return $self->{'exit_codes'}->{'WARNING'};
             }
@@ -1536,15 +1560,15 @@ sub _finaltasks {
         }
 
         #MRTG plugin compatibility
-        elsif ( $self->{'config'}->{'reporttype'} eq 'mrtg' )
+        elsif( $self->{'config'}->{'reporttype'} eq 'mrtg' )
         {    #report results in MRTG format
-            if ( $self->{'case'}->{'failedcount'} > 0 ) {
+            if( $self->{'totalcasesfailedcount'} > 0 ) {
                 print "$self->{'totalruntime'}\n$self->{'totalruntime'}\n\nWebInject CRITICAL - $self->{'returnmessage'} \n";
-                return(0);
+                return 0;
             }
             else {
                 print "$self->{'totalruntime'}\n$self->{'totalruntime'}\n\nWebInject OK - All tests passed successfully in $self->{'totalruntime'} seconds \n";
-                return(0);
+                return 0;
             }
         }
 
@@ -1564,7 +1588,7 @@ sub _finaltasks {
         }
 
     }
-    return;
+    return 0;
 }
 
 ################################################################################
