@@ -106,10 +106,23 @@ sub engine {
     if( $self->{'gui'} ) { $self->_gui_initial(); }
 
 
-    #construct objects
+    # construct LWP object
     my $useragent  = LWP::UserAgent->new;
-    $useragent->{'cookie_jar'} = HTTP::Cookies->new;  # store cookies in our LWP object
-    $useragent->agent('WebInject');    # http useragent that will show up in webserver logs
+
+    # store cookies in our LWP object
+    $useragent->cookie_jar(HTTP::Cookies->new(
+                                                 file     => "lwpcookies.txt",
+                                                 autosave => 1,
+                                              ));
+
+    # set useragent
+    if(defined $self->{'config'}->{'useragent'}) {
+        $useragent->agent($self->{'config'}->{'useragent'});
+    } else {
+        # http useragent that will show up in webserver logs
+        $useragent->agent('WebInject');
+    }
+
     if(defined $self->{'config'}->{'max_redirect'}) {
         $useragent->max_redirect($self->{'config'}->{'max_redirect'});
     }
@@ -677,8 +690,6 @@ sub _http_defaults {
         $case->{addheader} = '';
     }
 
-    $useragent->{'cookie_jar'}->add_cookie_header( $request );
-
     # print $self->{'request'}->as_string; print "\n\n";
 
     my $starttimer        = time();
@@ -687,9 +698,6 @@ sub _http_defaults {
     my $latency           = ( int( 1000 * ( $endtimer - $starttimer ) ) / 1000 ); # elapsed time rounded to thousandths
     # print $response->as_string; print "\n\n";
 
-    $useragent->{'cookie_jar'}->extract_cookies( $self->{'response'} );
-
-    #print $useragent->{'cookie_jar'}->as_string; print "\n\n";
     return($latency,$request,$response);
 }
 
