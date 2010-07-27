@@ -110,8 +110,10 @@ sub engine {
     my $useragent  = LWP::UserAgent->new;
 
     # store cookies in our LWP object
+    my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
+    unlink ($cookietempfilename);
     $useragent->cookie_jar(HTTP::Cookies->new(
-                                                 file     => "lwpcookies.txt",
+                                                 file     => $cookietempfilename,
                                                  autosave => 1,
                                               ));
 
