@@ -248,7 +248,7 @@ sub engine {
                     parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5
                     verifyresponsecode logrequest logresponse sleep errormessage
                     verifypositivenext verifynegativenext
-                    warning critical
+                    warning critical label
                     /
                   )
                 {
@@ -1486,7 +1486,8 @@ sub _finaltasks {
                 for my $case (@{$file->{'cases'}}) {
                     my $warn = $case->{'warning'}  || 0;
                     my $crit = $case->{'critical'} || 0;
-                    $perfdata .= ' case'.$case->{'id'}.'='.$case->{'latency'}.';'.$warn.';'.$crit.';0;0';
+                    my $label = $case->{'label'}    || 'case'.$case->{'id'};
+                    $perfdata .= ' '.$label.'='.$case->{'latency'}.';'.$warn.';'.$crit.';0;0';
                 }
             }
 
