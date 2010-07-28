@@ -102,39 +102,7 @@ sub engine {
     #wrap the whole engine in a subroutine so it can be integrated with the gui
     my $self = shift;
 
-    my ($startruntimer, $endruntimer);
-    my ($curgraphtype);
-    my ($xmltestcases);
-
     if( $self->{'gui'} ) { $self->_gui_initial(); }
-
-
-    # construct LWP object
-    my $useragent  = LWP::UserAgent->new;
-
-    # store cookies in our LWP object
-    my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
-    unlink ($cookietempfilename);
-    $useragent->cookie_jar(HTTP::Cookies->new(
-                                                 file     => $cookietempfilename,
-                                                 autosave => 1,
-                                              ));
-
-    # set useragent
-    if(defined $self->{'config'}->{'useragent'}) {
-        $useragent->agent($self->{'config'}->{'useragent'});
-    } else {
-        # http useragent that will show up in webserver logs
-        $useragent->agent('WebInject');
-    }
-
-    if(defined $self->{'config'}->{'max_redirect'}) {
-        $useragent->max_redirect($self->{'config'}->{'max_redirect'});
-    }
-    else {
-        # don't follow redirects for GET's (POST's already don't follow, by default)
-        $useragent->max_redirect('0');
-    }
 
     if(!defined $self->{'gui'}) {
         # initialize so we don't get warnings when <standaloneplot> is not set in config
@@ -146,45 +114,16 @@ sub engine {
 
     $self->_processcasefile();
 
-    # add proxy support if it is set in config.xml
-    if( $self->{'config'}->{'proxy'} ) {
-        $useragent->proxy( [ 'http', 'https' ], $self->{'config'}->{proxy} );
-    }
+    my $useragent = $self->_get_useragent();
 
-    # add http basic authentication support
-    # corresponds to:
-    # $useragent->credentials('servername:portnumber', 'realm-name', 'username' => 'password');
-    if( scalar @{ $self->{'config'}->{'httpauth'} } ) {
-
-        # add the credentials to the user agent here. The foreach gives the reference to the tuple ($elem), and we
-        # deref $elem to get the array elements.
-        for my $elem ( @{ $self->{'config'}->{'httpauth'} } ) {
-            #print "adding credential: $elem->[0]:$elem->[1], $elem->[2], $elem->[3] => $elem->[4]\n";
-            $useragent->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
-        }
-    }
-
-    # change response delay timeout in seconds if it is set in config.xml
-    if($self->{'config'}->{'timeout'}) {
-        $useragent->timeout($self->{'config'}->{'timeout'});    #default LWP timeout is 180 secs.
-    }
-
-    # skip regular STDOUT output if using an XPath or $self->{'config'}->{'nooutput'} is set
-    unless( $self->{'xnode'} or $self->{'config'}->{'nooutput'} ) {
-        # write opening tags for STDOUT.
-        $self->_writeinitialstdout();                   
-    }
-
-    # set the initial value so we know if the user changes the graph setting from the gui
-    if($self->{'gui'}) {
-        $curgraphtype = $self->{'config'}->{'graphtype'};
-    }
+    # write opening tags for STDOUT.
+    $self->_writeinitialstdout();
 
     # create the gnuplot config file
     $self->_plotcfg();
 
     # timer for entire test run
-    $startruntimer = time();
+    my $startruntimer = time();
 
     # process test case files named in config
     for my $currentcasefile ( @{ $self->{'casefilelist'} } ) {
@@ -199,7 +138,7 @@ sub engine {
 
         my $tempfile = $self->_convtestcases($currentcasefile);
 
-        $xmltestcases = XMLin( $tempfile, VarAttr => 'varname' );    # slurp test case file to parse (and specify variables tag)
+        my $xmltestcases = XMLin( $tempfile, VarAttr => 'varname' );    # slurp test case file to parse (and specify variables tag)
         # fix case if there is only one case
         if( defined $xmltestcases->{'case'}->{'id'} ) {
             my $tmpcase = $xmltestcases->{'case'};
@@ -216,6 +155,8 @@ sub engine {
             $repeat = $xmltestcases->{repeat};
         }
 
+        my $useragent = $self->_get_useragent();
+
         for my $run_nr (1 .. $repeat) {
 
             # process cases in sorted order
@@ -226,20 +167,6 @@ sub engine {
                     $testnum = $self->{'xnode'};
                 }
 
-                if( $self->{'gui'} ) {
-                    # don't do this if monitor is disabled in gui
-                    unless( $self->{'monitorenabledchkbx'} eq 'monitor_off' ) {
-                        # check to see if the user changed the graph setting
-                        if(!defined $curgraphtype or $curgraphtype ne $self->{'config'}->{'graphtype'} ) {
-                            $self->_plotcfg(); # create the gnuplot config file since graph setting changed
-                            $curgraphtype = $self->{'config'}->{'graphtype'};
-                        }
-                    }
-                }
-
-                # used to replace parsed {timestamp} with real timestamp value
-                my $timestamp = time();
-
                 my $case = {
                     'id'          => $testnum,
                     'failedcount' => 0,
@@ -248,171 +175,13 @@ sub engine {
                 };
 
                 # populate variables with values from testcase file, do substitutions, and revert converted values back
-                for (
-                    qw/method description1 description2 url postbody posttype addheader
-                    verifypositive verifypositive1 verifypositive2 verifypositive3
-                    verifynegative verifynegative1 verifynegative2 verifynegative3
-                    parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5
-                    verifyresponsecode logrequest logresponse sleep errormessage
-                    verifypositivenext verifynegativenext
-                    warning critical label
-                    /
-                  )
-                {
-                    $case->{$_} = $xmltestcases->{case}->{$testnum}->{$_};
-                    if(defined $case->{$_} ) {
-                        $case->{$_} = $self->_convertbackxml($case->{$_}, $timestamp);
-                    }
+                for my $key (keys %{$xmltestcases->{'case'}->{$testnum}}) {
+                    $case->{$key} = $xmltestcases->{'case'}->{$testnum}->{$key};
                 }
-
-                if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
 
                 $self->_out(qq|Test:  $currentcasefile - $testnum \n|);
-
-                for(qw/description1 description2/) {
-                    next unless defined $case->{$_};
-                    $self->_out(qq|$case->{$_} \n|);
-                    push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => $case->{$_} };
-                }
-                push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
-
-                my($latency,$request,$response);
-                if($case->{method} ){
-                    if ( $case->{method} eq "get" ) {
-                        ($latency,$request,$response) = $self->_httpget($useragent, $case);
-                    }
-                    elsif ( $case->{method} eq "post" ) {
-                        ($latency,$request,$response) = $self->_httppost($useragent, $case);
-                    }
-                    else {
-                        die(qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|);
-                    }
-                }
-                else {
-                    ($latency,$request) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
-                }
-                $case->{'latency'} = $latency;
-
-                if($case->{verifypositivenext}) {
-                    $self->{'verifylater'} = $case->{'verifypositivenext'};
-                    $self->_out(qq|Verify On Next Case: "$case->{verifypositivenext}" \n|);
-                    push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext} };
-                }
-
-                if($case->{verifynegativenext}) {
-                    $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
-                    $self->_out(qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|);
-                    push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
-                }
-
-                # verify result from http response
-                $self->_verify($response, $case);
-
-                # write to http.log file
-                $self->_httplog($request, $response, $case);
-
-                # send perf data to log file for plotting
-                $self->_plotlog($latency);
-
-                # call the external plotter to create a graph
-                $self->_plotit();
-
-                if( $self->{'gui'} ) {
-                    $self->_gui_updatemontab();                 # update monitor with the newly rendered plot graph
-                }
-
-                $self->_parseresponse($response, $case);        # grab string from response to send later
-
-                if($self->{'result'}->{'iscritical'}) {                # if any verification fails, test case is considered a failure
-                    push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
-                    if( $case->{errormessage} ) {       # Add defined error message to the output
-                        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>" };
-                        $self->_out(qq|TEST CASE FAILED : $case->{errormessage}\n|);
-                    }
-                    # print regular error output
-                    else {    
-                        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE FAILED', 'html' => "<b><span class=\"fail\">TEST CASE FAILED</span></b>" };
-                        $self->_out(qq|TEST CASE FAILED\n|);
-                    }
-                    unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
-                        if( $case->{errormessage} ) {
-                            $self->{'result'}->{'returnmessage'} = $case->{errormessage};
-                        }
-                        else {
-                            $self->{'result'}->{'returnmessage'} = "Test case number $testnum failed";
-                        }
-
-                        #print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
-                    }
-                    if( $self->{'gui'} ) {
-                        $self->_gui_status_failed();
-                    }
-                }
-                elsif($self->{'result'}->{'iswarning'}) {
-                    push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
-                    if( $case->{errormessage} ) {       # Add defined error message to the output
-                        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE WARNED : ".$case->{errormessage}."</span></b>" };
-                        $self->_out(qq|TEST CASE WARNED : $case->{errormessage}\n|);
-                    }
-                    # print regular error output
-                    else {    
-                        # we suppress most logging when running in a plugin mode
-                        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">TEST CASE WARNED</span></b>" };
-                        $self->_out(qq|TEST CASE WARNED\n|);
-                    }
-                    unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
-                        if( $case->{errormessage} ) {
-                            $self->{'result'}->{'returnmessage'} = $case->{errormessage};
-                        }
-                        else {
-                            $self->{'result'}->{'returnmessage'} = "Test case number $testnum warned";
-                        }
-
-                        # print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
-                    }
-                    if( $self->{'gui'} ) {
-                        $self->_gui_status_failed();
-                    }
-                }
-                else {
-                    $self->_out(qq|TEST CASE PASSED \n|);
-                    push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'true' };
-                    push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE PASSED', 'html' => "<b><span class=\"pass\">TEST CASE PASSED</span></b>" };
-                    if( $self->{'gui'} ) {
-                        $self->_gui_status_passed();
-                    }
-                }
-
-                if( $self->{'gui'} ) { $self->_gui_timer_output($latency); }
-
-                $self->_out(qq|Response Time = $latency sec \n|);
-                $self->_out(qq|------------------------------------------------------- \n|);
-                push @{$case->{'messages'}}, {'key' => 'responsetime', 'value' => $latency, 'html' => "Response Time = ".$latency." sec <br />\n<br />\n-------------------------------------------------------" };
-
-                $endruntimer = time();
-                $self->{'result'}->{'totalruntime'} = ( int( 1000 * ( $endruntimer - $startruntimer ) ) / 1000 );    #elapsed time rounded to thousandths
-
-                $self->{'result'}->{'runcount'}++;
-                $self->{'result'}->{'totalruncount'}++;
-
-                if( $self->{'gui'} ) {
-                    $self->_gui_statusbar();    #update the statusbar
-                }
-
-                if( $latency > $self->{'result'}->{'maxresponse'} ) {
-                    $self->{'result'}->{'maxresponse'} = $latency; # set max response time
-                }
-                if(!defined $self->{'result'}->{'minresponse'} or $latency < $self->{'result'}->{'minresponse'} ) {
-                    $self->{'result'}->{'minresponse'} = $latency; # set min response time
-                }
-                # keep total of response times for calculating avg
-                $self->{'result'}->{'totalresponse'} = ( $self->{'result'}->{'totalresponse'} + $latency );
-                # avg response rounded to thousandths
-                $self->{'result'}->{'avgresponse'} = ( int( 1000 * ( $self->{'result'}->{'totalresponse'} / $self->{'result'}->{'totalruncount'} ) ) / 1000 );
-
-                if( $self->{'gui'} ) {
-                    $self->_gui_updatemonstats(); # update timers and counts in monitor tab
-                }
+                $case = $self->_run_case_num($case);
+                push @{$resultfile->{'cases'}}, $case;
 
                 # break from sub if user presses stop button in gui
                 if( $self->{'switches'}->{'stop'} eq 'yes' ) {
@@ -420,22 +189,6 @@ sub engine {
                     $self->{'switches'}->{'stop'} = 'no';
                     return $rc;    # break from sub
                 }
-
-                # if a sleep value is set in the test case, sleep that amount
-                if( $case->{sleep} ) {
-                    sleep( $case->{sleep} );
-                }
-
-                $self->{'result'}->{'totalpassedcount'} += $case->{'passedcount'};
-                $self->{'result'}->{'totalfailedcount'} += $case->{'failedcount'};
-
-                if($self->{'result'}->{'iscritical'} or $self->{'result'}->{'iswarning'}) {
-                    $self->{'result'}->{'totalcasesfailedcount'}++;
-                } else {
-                    $self->{'result'}->{'totalcasespassedcount'}++;
-                }
-
-                push @{$resultfile->{'cases'}}, $case;
 
                 # if an XPath Node is defined, only process the single Node
                 if( $self->{'xnode'} ) {
@@ -447,8 +200,249 @@ sub engine {
         push @{$self->{'result'}->{'files'}}, $resultfile;
     }
 
+    my $endruntimer = time();
+    $self->{'result'}->{'totalruntime'} = ( int( 1000 * ( $endruntimer - $startruntimer ) ) / 1000 );    #elapsed time rounded to thousandths
+
+
     # do return/cleanup tasks
     return $self->_finaltasks();
+}
+
+################################################################################
+# runs a single test case
+sub _run_case_num {
+    my($self,$case,$useragent) =@_;
+
+    $useragent = $self->_get_useragent() unless defined $useragent;
+
+    # don't do this if monitor is disabled in gui
+    if($self->{'gui'} and $self->{'monitorenabledchkbx'} ne 'monitor_off') {
+        my $curgraphtype = $self->{'config'}->{'graphtype'};
+    }
+
+    # used to replace parsed {timestamp} with real timestamp value
+    my $timestamp = time();
+
+    for my $key (keys %{$case}) {
+        $case->{$key} = $self->_convertbackxml($case->{$key}, $timestamp);
+    }
+
+    if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
+
+    for(qw/description1 description2/) {
+        next unless defined $case->{$_};
+        $self->_out(qq|$case->{$_} \n|);
+        push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => $case->{$_} };
+    }
+    push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
+
+    my($latency,$request,$response);
+    if($case->{method} ){
+        if ( $case->{method} eq "get" ) {
+            ($latency,$request,$response) = $self->_httpget($useragent, $case);
+        }
+        elsif ( $case->{method} eq "post" ) {
+            ($latency,$request,$response) = $self->_httppost($useragent, $case);
+        }
+        else {
+            die(qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|);
+        }
+    }
+    else {
+        ($latency,$request) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
+    }
+    $case->{'latency'} = $latency;
+
+    if($case->{verifypositivenext}) {
+        $self->{'verifylater'} = $case->{'verifypositivenext'};
+        $self->_out(qq|Verify On Next Case: "$case->{verifypositivenext}" \n|);
+        push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext} };
+    }
+
+    if($case->{verifynegativenext}) {
+        $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
+        $self->_out(qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|);
+        push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
+    }
+
+    # verify result from http response
+    $self->_verify($response, $case);
+
+    # write to http.log file
+    $self->_httplog($request, $response, $case);
+
+    # send perf data to log file for plotting
+    $self->_plotlog($latency);
+
+    # call the external plotter to create a graph
+    $self->_plotit();
+
+    if( $self->{'gui'} ) {
+        $self->_gui_updatemontab();                 # update monitor with the newly rendered plot graph
+    }
+
+    $self->_parseresponse($response, $case);        # grab string from response to send later
+
+    if($self->{'result'}->{'iscritical'}) {                # if any verification fails, test case is considered a failure
+        push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
+        if( $case->{errormessage} ) {       # Add defined error message to the output
+            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>" };
+            $self->_out(qq|TEST CASE FAILED : $case->{errormessage}\n|);
+        }
+        # print regular error output
+        else {
+            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE FAILED', 'html' => "<b><span class=\"fail\">TEST CASE FAILED</span></b>" };
+            $self->_out(qq|TEST CASE FAILED\n|);
+        }
+        unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
+            if( $case->{errormessage} ) {
+                $self->{'result'}->{'returnmessage'} = $case->{errormessage};
+            }
+            else {
+                $self->{'result'}->{'returnmessage'} = "Test case number ".$case->{'id'}." failed";
+            }
+
+            #print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
+        }
+        if( $self->{'gui'} ) {
+            $self->_gui_status_failed();
+        }
+    }
+    elsif($self->{'result'}->{'iswarning'}) {
+        push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
+        if( $case->{errormessage} ) {       # Add defined error message to the output
+            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE WARNED : ".$case->{errormessage}."</span></b>" };
+            $self->_out(qq|TEST CASE WARNED : $case->{errormessage}\n|);
+        }
+        # print regular error output
+        else {
+            # we suppress most logging when running in a plugin mode
+            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">TEST CASE WARNED</span></b>" };
+            $self->_out(qq|TEST CASE WARNED\n|);
+        }
+        unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
+            if( $case->{errormessage} ) {
+                $self->{'result'}->{'returnmessage'} = $case->{errormessage};
+            }
+            else {
+                $self->{'result'}->{'returnmessage'} = "Test case number ".$case->{'id'}." warned";
+            }
+
+            # print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
+        }
+        if( $self->{'gui'} ) {
+            $self->_gui_status_failed();
+        }
+    }
+    else {
+        $self->_out(qq|TEST CASE PASSED \n|);
+        push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'true' };
+        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE PASSED', 'html' => "<b><span class=\"pass\">TEST CASE PASSED</span></b>" };
+        if( $self->{'gui'} ) {
+            $self->_gui_status_passed();
+        }
+    }
+
+    if( $self->{'gui'} ) { $self->_gui_timer_output($latency); }
+
+    $self->_out(qq|Response Time = $latency sec \n|);
+    $self->_out(qq|------------------------------------------------------- \n|);
+    push @{$case->{'messages'}}, {'key' => 'responsetime', 'value' => $latency, 'html' => "Response Time = ".$latency." sec <br />\n<br />\n-------------------------------------------------------" };
+
+    $self->{'result'}->{'runcount'}++;
+    $self->{'result'}->{'totalruncount'}++;
+
+    if( $self->{'gui'} ) {
+        $self->_gui_statusbar();    #update the statusbar
+    }
+
+    if( $latency > $self->{'result'}->{'maxresponse'} ) {
+        $self->{'result'}->{'maxresponse'} = $latency; # set max response time
+    }
+    if(!defined $self->{'result'}->{'minresponse'} or $latency < $self->{'result'}->{'minresponse'} ) {
+        $self->{'result'}->{'minresponse'} = $latency; # set min response time
+    }
+                # keep total of response times for calculating avg
+    $self->{'result'}->{'totalresponse'} = ( $self->{'result'}->{'totalresponse'} + $latency );
+    # avg response rounded to thousandths
+    $self->{'result'}->{'avgresponse'} = ( int( 1000 * ( $self->{'result'}->{'totalresponse'} / $self->{'result'}->{'totalruncount'} ) ) / 1000 );
+
+    if( $self->{'gui'} ) {
+        $self->_gui_updatemonstats(); # update timers and counts in monitor tab
+    }
+
+
+    # if a sleep value is set in the test case, sleep that amount
+    if( $case->{sleep} ) {
+        sleep( $case->{sleep} );
+    }
+
+    $self->{'result'}->{'totalpassedcount'} += $case->{'passedcount'};
+    $self->{'result'}->{'totalfailedcount'} += $case->{'failedcount'};
+
+    if($self->{'result'}->{'iscritical'} or $self->{'result'}->{'iswarning'}) {
+        $self->{'result'}->{'totalcasesfailedcount'}++;
+    } else {
+        $self->{'result'}->{'totalcasespassedcount'}++;
+    }
+
+    return $case;
+}
+
+################################################################################
+sub _get_useragent {
+    my $self = shift;
+
+    # construct LWP object
+    my $useragent  = LWP::UserAgent->new;
+
+    # store cookies in our LWP object
+    my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
+    unlink ($cookietempfilename);
+    $useragent->cookie_jar(HTTP::Cookies->new(
+                                                 file     => $cookietempfilename,
+                                                 autosave => 1,
+                                              ));
+
+    # http useragent that will show up in webserver logs
+    unless(defined $self->{'config'}->{'useragent'}) {
+        $useragent->agent('WebInject');
+    } else {
+        $useragent->agent($self->{'config'}->{'useragent'});
+    }
+
+    # don't follow redirects for GET's (POST's already don't follow, by default)
+    unless(defined $self->{'config'}->{'max_redirect'}) {
+        $useragent->max_redirect('0');
+    }
+    else {
+        $useragent->max_redirect($self->{'config'}->{'max_redirect'});
+    }
+
+    # add proxy support if it is set in config.xml
+    if( $self->{'config'}->{'proxy'} ) {
+        $useragent->proxy( [ 'http', 'https' ], $self->{'config'}->{proxy} );
+    }
+
+    # add http basic authentication support
+    # corresponds to:
+    # $useragent->credentials('servername:portnumber', 'realm-name', 'username' => 'password');
+    if(scalar @{$self->{'config'}->{'httpauth'}}) {
+
+        # add the credentials to the user agent here. The foreach gives the reference to the tuple ($elem), and we
+        # deref $elem to get the array elements.
+        for my $elem ( @{ $self->{'config'}->{'httpauth'} } ) {
+            #print "adding credential: $elem->[0]:$elem->[1], $elem->[2], $elem->[3] => $elem->[4]\n";
+            $useragent->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
+        }
+    }
+
+    # change response delay timeout in seconds if it is set in config.xml
+    if($self->{'config'}->{'timeout'}) {
+        $useragent->timeout($self->{'config'}->{'timeout'});    #default LWP timeout is 180 secs.
+    }
+
+    return $useragent;
 }
 
 ################################################################################
@@ -896,9 +890,7 @@ sub _verify {
     }
 
     if( $case->{verifyresponsecode} ) {
-        if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-            $self->_out(qq|Verify Response Code: "$case->{verifyresponsecode}" \n|);
-        }
+        $self->_out(qq|Verify Response Code: "$case->{verifyresponsecode}" \n|);
         push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode}, 'html' => "Verify Response Code: ".$case->{verifyresponsecode} };
 
         # verify returned HTTP response code matches verifyresponsecode set in test case
@@ -1403,9 +1395,8 @@ sub _finaltasks {
         $self->_write_result_xml();
     }
 
-    unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-        $self->_writefinalstdout();   #write summary and closing tags for STDOUT
-    }
+    # write summary and closing tags for STDOUT
+    $self->_writefinalstdout();
 
     #plugin modes
     if($self->{'config'}->{'reporttype'} ne 'standard') {
