@@ -1,5 +1,6 @@
 package Webinject;
 
+#    Copyright 2010 Sven Nierlein (nierlein@cpan.org)
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
 #    This file is part of WebInject.
@@ -67,6 +68,7 @@ sub new {
     $|            = 1;     # don't buffer output to STDOUT
 
     my $self      = {
+        'reporttype' => undef,
     };
 
     for my $opt_key ( keys %options ) {
@@ -81,6 +83,7 @@ sub new {
     bless $self, $class;
 
     $self->_set_defaults();
+    $self->{'config'}->{'reporttype'} = $self->{'reporttype'} if defined $self->{'reporttype'};
 
     return $self;
 }

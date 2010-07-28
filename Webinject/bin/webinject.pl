@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+#    Copyright 2010 Sven Nierlein (nierlein@cpan.org)
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
 #    This file is part of WebInject.

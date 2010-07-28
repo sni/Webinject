@@ -9,4 +9,4 @@ http.log
 results.html
 results.xml
 testcases.xml.*.tmp
-
+check_webinject
