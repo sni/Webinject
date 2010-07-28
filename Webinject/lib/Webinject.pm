@@ -166,8 +166,10 @@ sub engine {
         $useragent->timeout($self->{'config'}->{'timeout'});    #default LWP timeout is 180 secs.
     }
 
-    unless( $self->{'xnode'} or $self->{'config'}->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'config'}->{'nooutput'} is set
-        $self->_writeinitialstdout();                   # write opening tags for STDOUT.
+    # skip regular STDOUT output if using an XPath or $self->{'config'}->{'nooutput'} is set
+    unless( $self->{'xnode'} or $self->{'config'}->{'nooutput'} ) {
+        # write opening tags for STDOUT.
+        $self->_writeinitialstdout();                   
     }
 
     # set the initial value so we know if the user changes the graph setting from the gui
@@ -262,36 +264,24 @@ sub engine {
 
                 if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
 
-                # skip regular STDOUT output
-                unless( $self->{'config'}->{'nooutput'} ) {
-                    print STDOUT qq|Test:  $currentcasefile - $testnum \n|;
-                }
+                $self->_out(qq|Test:  $currentcasefile - $testnum \n|);
 
                 for(qw/description1 description2/) {
                     next unless defined $case->{$_};
-                    # we suppress most logging when running in a plugin mode
-                    if($self->{'config'}->{'reporttype'} eq 'standard' && !$self->{'config'}->{'nooutput'} ) {
-                        print STDOUT qq|$case->{$_} \n|;
-                    }
+                    $self->_out(qq|$case->{$_} \n|);
                     push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => $case->{$_} };
                 }
                 push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
 
                 if($case->{verifypositivenext}) {
                     $self->{'verifylater'} = $case->{'verifypositivenext'};
-                    # we suppress most logging when running in a plugin mode
-                    if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-                        print STDOUT qq|Verify On Next Case: "$case->{verifypositivenext}" \n|;
-                    }
+                    $self->_out(qq|Verify On Next Case: "$case->{verifypositivenext}" \n|);
                     push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext} };
                 }
 
                 if( $case->{verifynegativenext} ) {
                     $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
-                    # we suppress most logging when running in a plugin mode
-                    if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-                        print STDOUT qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|;
-                    }
+                    $self->_out(qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|);
                     push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
                 }
 
@@ -334,18 +324,12 @@ sub engine {
                     push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
                     if( $case->{errormessage} ) {       # Add defined error message to the output
                         push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>" };
-                        unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|TEST CASE FAILED : $case->{errormessage}\n|;
-                        }
+                        $self->_out(qq|TEST CASE FAILED : $case->{errormessage}\n|);
                     }
-                    else {    #print regular error output
-                        # we suppress most logging when running in a plugin mode
-                        if($self->{'config'}->{'reporttype'} eq 'standard') {
-                            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE FAILED', 'html' => "<b><span class=\"fail\">TEST CASE FAILED</span></b>" };
-                        }
-                        unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|TEST CASE FAILED\n|;
-                        }
+                    # print regular error output
+                    else {    
+                        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE FAILED', 'html' => "<b><span class=\"fail\">TEST CASE FAILED</span></b>" };
+                        $self->_out(qq|TEST CASE FAILED\n|);
                     }
                     unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
                         if( $case->{errormessage} ) {
@@ -365,18 +349,13 @@ sub engine {
                     push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
                     if( $case->{errormessage} ) {       # Add defined error message to the output
                         push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE WARNED : ".$case->{errormessage}."</span></b>" };
-                        unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|TEST CASE WARNED : $case->{errormessage}\n|;
-                        }
+                        $self->_out(qq|TEST CASE WARNED : $case->{errormessage}\n|);
                     }
-                    else {    #print regular error output
+                    # print regular error output
+                    else {    
                         # we suppress most logging when running in a plugin mode
-                        if($self->{'config'}->{'reporttype'} eq 'standard') {
-                            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">TEST CASE WARNED</span></b>" };
-                        }
-                        unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                            print STDOUT qq|TEST CASE WARNED\n|;
-                        }
+                        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">TEST CASE WARNED</span></b>" };
+                        $self->_out(qq|TEST CASE WARNED\n|);
                     }
                     unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
                         if( $case->{errormessage} ) {
@@ -386,16 +365,14 @@ sub engine {
                             $self->{'result'}->{'returnmessage'} = "Test case number $testnum warned";
                         }
 
-                        #print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
+                        # print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
                     }
                     if( $self->{'gui'} ) {
                         $self->_gui_status_failed();
                     }
                 }
                 else {
-                    unless ( $self->{'config'}->{'nooutput'} ) { #skip regular STDOUT output
-                        print STDOUT qq|TEST CASE PASSED \n|;
-                    }
+                    $self->_out(qq|TEST CASE PASSED \n|);
                     push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'true' };
                     push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE PASSED', 'html' => "<b><span class=\"pass\">TEST CASE PASSED</span></b>" };
                     if( $self->{'gui'} ) {
@@ -405,10 +382,8 @@ sub engine {
 
                 if( $self->{'gui'} ) { $self->_gui_timer_output($latency); }
 
-                unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                    print STDOUT qq|Response Time = $latency sec \n|;
-                    print STDOUT qq|------------------------------------------------------- \n|;
-                }
+                $self->_out(qq|Response Time = $latency sec \n|);
+                $self->_out(qq|------------------------------------------------------- \n|);
                 push @{$case->{'messages'}}, {'key' => 'responsetime', 'value' => $latency, 'html' => "Response Time = ".$latency." sec <br />\n<br />\n-------------------------------------------------------" };
 
                 $endruntimer = time();
@@ -494,10 +469,11 @@ sub _set_defaults {
         'WARNING'  => 1,
         'CRITICAL' => 2,
     };
-    $self->{'switches'}       = {
-        'stop'                   => 'no',
-        'plotclear'              => 'no',
+    $self->{'switches'}           = {
+        'stop'                      => 'no',
+        'plotclear'                 => 'no',
     };
+    $self->{'out'}                = '';
     $self->_reset_result();
     $self->_getoptions(); # get command line options
     return;
@@ -533,11 +509,11 @@ sub _reset_result {
 sub _writeinitialstdout {
     my $self = shift;
 
-    print STDOUT qq|
-Starting WebInject Engine...
+    $self->_out(qq|
+Starting WebInject Engine (v$Webinject::VERSION)...
 
 -------------------------------------------------------
-|;
+|);
     return;
 }
 
@@ -660,7 +636,7 @@ sub _write_result_xml {
 sub _writefinalstdout {
     my $self = shift;
 
-    print STDOUT qq|
+    $self->_out(qq|
 Start Time: $self->{'config'}->{'currentdatetime'}
 Total Run Time: $self->{'result'}->{'totalruntime'} seconds
 
@@ -670,7 +646,7 @@ Test Cases Failed: $self->{'result'}->{'totalcasesfailedcount'}
 Verifications Passed: $self->{'result'}->{'totalpassedcount'}
 Verifications Failed: $self->{'result'}->{'totalfailedcount'}
 
-|;
+|);
     return;
 }
 
@@ -788,9 +764,7 @@ sub _httppost_xml {
 
         # print "good xml\n";
         push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'true', '<span class="pass">Passed XML Parser (content is well-formed)</span>' };
-        unless ( $self->{'config'}->{'nooutput'} ) {        # skip regular STDOUT output
-            print STDOUT "Passed XML Parser (content is well-formed) \n";
-        }
+        $self->_out("Passed XML Parser (content is well-formed) \n");
         $case->{'passedcount'}++;
 
         # exit try block
@@ -804,9 +778,7 @@ sub _httppost_xml {
         if($self->{'config'}->{'reporttype'} eq 'standard') {
             push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed XML Parser: ".$ex."</span>" };
         }
-        unless ( $self->{'config'}->{'nooutput'} ) {      # skip regular STDOUT output
-            print STDOUT "Failed XML Parser: $ex \n";
-        }
+        $self->_out("Failed XML Parser: $ex \n");
         $case->{'failedcount'}++;
         $self->{'result'}->{'iscritical'} = 1;
     };    # <-- remember the semicolon
@@ -838,26 +810,19 @@ sub _verify {
 
     for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
         if ( $case->{$_} ) {
-            # we suppress most logging when running in a plugin mode
-            if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-                print STDOUT qq|Verify: "$case->{$_}" \n|;
-            }
+            $self->_out(qq|Verify: "$case->{$_}" \n|);
             push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "Verify: ".$case->{$_} };
             my $regex = $case->{$_};
             $regex =~ s/\ /\\ /gmx;
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
                 push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Positive Verification</span>" };
-                unless( $self->{'config'}->{'nooutput'} ) {    # skip regular STDOUT output
-                    print STDOUT "Passed Positive Verification \n";
-                }
+                $self->_out("Passed Positive Verification \n");
                 $case->{'passedcount'}++;
             }
             else {
                 push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Positive Verification</span>" };
-                unless( $self->{'config'}->{'nooutput'} ) {    # skip regular STDOUT output
-                    print STDOUT "Failed Positive Verification \n";
-                }
+                $self->_out("Failed Positive Verification \n");
                 $case->{'failedcount'}++;
                 $self->{'result'}->{'iscritical'} = 1;
             }
@@ -866,27 +831,20 @@ sub _verify {
 
     for (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
         if ( $case->{$_} ) {
-            # we suppress most logging when running in a plugin mode
-            if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-                print STDOUT qq|Verify Negative: "$case->{$_}" \n|;
-            }
+            $self->_out(qq|Verify Negative: "$case->{$_}" \n|);
             push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "Verify Negative: ".$case->{$_} };
             my $regex = $case->{$_};
             $regex =~ s/\ /\\ /gmx;
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
                 push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification</span>' };
-                unless ( $self->{'config'}->{'nooutput'} ) {      # skip regular STDOUT output
-                    print STDOUT "Failed Negative Verification \n";
-                }
+                $self->_out("Failed Negative Verification \n");
                 $case->{'failedcount'}++;
                 $self->{'result'}->{'iscritical'} = 1;
             }
             else {
                 push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification</span>' };
-                unless ( $self->{'config'}->{'nooutput'} ) {      # skip regular STDOUT output
-                    print STDOUT "Passed Negative Verification \n";
-                }
+                $self->_out("Passed Negative Verification \n");
                 $case->{'passedcount'}++;
             }
         }
@@ -898,16 +856,12 @@ sub _verify {
         # verify existence of string in response
         if($response->as_string() =~ m~$regex~simx ) {
             push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'true', '<span class="pass">Passed Positive Verification (verification set in previous test case)</span>' };
-            unless ( $self->{'xnode'} or $self->{'config'}->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'config'}->{'nooutput'} is set
-                print STDOUT "Passed Positive Verification (verification set in previous test case) \n";
-            }
+            $self->_out("Passed Positive Verification (verification set in previous test case) \n");
             $case->{'passedcount'}++;
         }
         else {
             push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'false', 'html' => '<span class="fail">Failed Positive Verification (verification set in previous test case)</span>' };
-            unless( $self->{'xnode'} or $self->{'config'}->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'config'}->{'nooutput'} is set
-                print STDOUT "Failed Positive Verification (verification set in previous test case) \n";
-            }
+            $self->_out("Failed Positive Verification (verification set in previous test case) \n");
             $case->{'failedcount'}++;
             $self->{'result'}->{'iscritical'} = 1;
         }
@@ -921,17 +875,13 @@ sub _verify {
         # verify existence of string in response
         if($response->as_string() =~ m~$regex~simx) {
             push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span>' };
-            unless ( $self->{'xnode'} or $self->{'config'}->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'config'}->{'nooutput'} is set
-                print STDOUT "Failed Negative Verification (negative verification set in previous test case) \n";
-            }
+            $self->_out("Failed Negative Verification (negative verification set in previous test case) \n");
             $case->{'failedcount'}++;
             $self->{'result'}->{'iscritical'} = 1;
         }
         else {
             push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span>' };
-            unless ( $self->{'xnode'} or $self->{'config'}->{'nooutput'} ) { # skip regular STDOUT output if using an XPath or $self->{'config'}->{'nooutput'} is set
-                print STDOUT "Passed Negative Verification (negative verification set in previous test case) \n";
-            }
+            $self->_out("Passed Negative Verification (negative verification set in previous test case) \n");
             $case->{'passedcount'}++;
         }
         # set to null after verification
@@ -940,7 +890,7 @@ sub _verify {
 
     if( $case->{verifyresponsecode} ) {
         if($self->{'config'}->{'reporttype'} eq 'standard' and !$self->{'config'}->{'nooutput'} ) {
-            print STDOUT qq|Verify Response Code: "$case->{verifyresponsecode}" \n|;
+            $self->_out(qq|Verify Response Code: "$case->{verifyresponsecode}" \n|);
         }
         push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode}, 'html' => "Verify Response Code: ".$case->{verifyresponsecode} };
 
@@ -948,17 +898,13 @@ sub _verify {
         if ( $case->{verifyresponsecode} == $response->code() ) {
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification </span>' };
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification' };
-            unless ( $self->{'config'}->{'nooutput'} ) {    # skip regular STDOUT output
-                print STDOUT qq|Passed HTTP Response Code Verification \n|;
-            }
+            $self->_out(qq|Passed HTTP Response Code Verification \n|);
             $case->{'passedcount'}++;
         }
         else {
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')</span>' };
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')' };
-            unless ( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                print STDOUT qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|;
-            }
+            $self->_out(qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|);
             $case->{'failedcount'}++;
             $self->{'result'}->{'iscritical'} = 1;
         }
@@ -968,9 +914,7 @@ sub _verify {
         if($response->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx ) {     # verify existance of string in response
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification (not in error range)</span>' };
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification (not in error range)' };
-            unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                print STDOUT qq|Passed HTTP Response Code Verification (not in error range) \n|;
-            }
+            $self->_out(qq|Passed HTTP Response Code Verification (not in error range) \n|);
 
             # succesful response codes: 100-399
             $case->{'passedcount'}++;
@@ -980,18 +924,14 @@ sub _verify {
             if($1) {    #this is true if an HTTP response returned
                 push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification ('.$1.$2.')</span>' };
                 push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification ('.$1.$2.')' };
-                unless ( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                    print STDOUT "Failed HTTP Response Code Verification ($1$2) \n";    #($1$2) is HTTP response code
-                }
+                $self->_out("Failed HTTP Response Code Verification ($1$2) \n");    #($1$2) is HTTP response code
             }
             #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
             else
             {
                 push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed - No Response</span>' };
                 push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed - No Response' };
-                unless( $self->{'config'}->{'nooutput'} ) {    #skip regular STDOUT output
-                    print STDOUT "Failed - No Response \n";   #($1$2) is HTTP response code
-                }
+                $self->_out("Failed - No Response \n");   #($1$2) is HTTP response code
             }
             $case->{'failedcount'}++;
             $self->{'result'}->{'iscritical'} = 1;
@@ -999,44 +939,32 @@ sub _verify {
     }
 
     if($case->{'warning'}) {
-        unless($self->{'config'}->{'nooutput'} ) {
-            print STDOUT "Verify Warning Threshold: ".$case->{'warning'}."\n";
-        }
+        $self->_out("Verify Warning Threshold: ".$case->{'warning'}."\n");
         push @{$case->{'messages'}}, {'key' => "Warning Threshold", 'value' => $case->{''}, 'html' => "Verify Warning Threshold: ".$case->{'warning'} };
         if($case->{'latency'} > $case->{'warning'}) {
             push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Warning Threshold</span>" };
-            unless($self->{'config'}->{'nooutput'}) {    # skip regular STDOUT output
-                print STDOUT "Failed Warning Threshold \n";
-            }
+            $self->_out("Failed Warning Threshold \n");
             $case->{'failedcount'}++;
             $self->{'result'}->{'iswarning'} = 1;
         }
         else {
-            unless( $self->{'config'}->{'nooutput'} ) {    # skip regular STDOUT output
-                print STDOUT "Passed Warning Threshold \n";
-            }
+            $self->_out("Passed Warning Threshold \n");
             push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Warning Threshold</span>" };
             $case->{'passedcount'}++;
         }
     }
 
     if($case->{'critical'}) {
-        unless($self->{'config'}->{'nooutput'} ) {
-            print STDOUT "Verify Critical Threshold: ".$case->{'critical'}."\n";
-        }
+        $self->_out("Verify Critical Threshold: ".$case->{'critical'}."\n");
         push @{$case->{'messages'}}, {'key' => "Critical Threshold", 'value' => $case->{''}, 'html' => "Verify Critical Threshold: ".$case->{'critical'} };
         if($case->{'latency'} > $case->{'critical'}) {
             push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Critical Threshold</span>" };
-            unless($self->{'config'}->{'nooutput'}) {    # skip regular STDOUT output
-                print STDOUT "Failed Critical Threshold \n";
-            }
+            $self->_out("Failed Critical Threshold \n");
             $case->{'failedcount'}++;
             $self->{'result'}->{'iscritical'} = 1;
         }
         else {
-            unless( $self->{'config'}->{'nooutput'} ) {    # skip regular STDOUT output
-                print STDOUT "Passed Critical Threshold \n";
-            }
+            $self->_out("Passed Critical Threshold \n");
             push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Critical Threshold</span>" };
             $case->{'passedcount'}++;
         }
@@ -1475,7 +1403,7 @@ sub _finaltasks {
     #plugin modes
     if($self->{'config'}->{'reporttype'} ne 'standard') {
         # return value is set which corresponds to a monitoring program
-        #Nagios plugin compatibility
+        # Nagios plugin compatibility
         if($self->{'config'}->{'reporttype'} eq 'nagios') {
             # nagios perf data has following format
             # 'label'=value[UOM];[warn];[crit];[min];[max]
@@ -1493,22 +1421,25 @@ sub _finaltasks {
                 }
             }
 
+            my $rc;
             if($self->{'result'}->{'iscritical'}) {
                 print "WebInject CRITICAL - $self->{'result'}->{'returnmessage'}$perfdata\n";
-                return $self->{'exit_codes'}->{'CRITICAL'};
+                $rc = $self->{'exit_codes'}->{'CRITICAL'};
             }
             elsif($self->{'result'}->{'iswarning'}) {
                 print "WebInject WARNING - $self->{'result'}->{'returnmessage'}$perfdata\n";
-                return $self->{'exit_codes'}->{'WARNING'};
+                $rc = $self->{'exit_codes'}->{'WARNING'};
             }
             elsif( $self->{'config'}->{globaltimeout} && $self->{'result'}->{'totalruntime'} > $self->{'config'}->{globaltimeout} ) {
                 print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached |$perfdata\n";
-                return $self->{'exit_codes'}->{'WARNING'};
+                $rc = $self->{'exit_codes'}->{'WARNING'};
             }
             else {
                 print "WebInject OK - All tests passed successfully in $self->{'result'}->{'totalruntime'} seconds$perfdata\n";
-                return $self->{'exit_codes'}->{'OK'};
+                $rc = $self->{'exit_codes'}->{'OK'};
             }
+            print $self->{'out'};
+            return $rc;
         }
 
         #MRTG plugin compatibility
@@ -1636,18 +1567,31 @@ sub _getoptions {
 }
 
 ################################################################################
+# _out -  print text to STDOUT and save it for later retrieval
+sub _out {
+    my $self = shift;
+    my $text = shift;
+    if($self->{'config'}->{'reporttype'} ne 'nagios' and !$self->{'config'}->{'nooutput'}) {
+        print $text;
+    }
+    $self->{'out'} .= $text;
+    return;
+}
+
+################################################################################
 # print usage
 sub _usage {
     my $self = shift;
     print <<EOB;
     Usage:
-      webinject.pl [-c|--config config_file]
-                   [-o|--output output_location]
-                   [-n|--no-output]
-                   [-t|--timeout]
-                   [-r|--report-type]
-                   [-s key=value]
-                   [testcase_file [XPath]]
+      $0
+                [-c|--config config_file]
+                [-o|--output output_location]
+                [-n|--no-output]
+                [-t|--timeout]
+                [-r|--report-type]
+                [-s key=value]
+                [testcase_file [XPath]]
       webinject.pl --version|-v
 EOB
     exit 3;
