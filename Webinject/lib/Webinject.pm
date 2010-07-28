@@ -102,12 +102,10 @@ sub engine {
     #wrap the whole engine in a subroutine so it can be integrated with the gui
     my $self = shift;
 
-    if( $self->{'gui'} ) { $self->_gui_initial(); }
-
-    if(!defined $self->{'gui'}) {
-        # initialize so we don't get warnings when <standaloneplot> is not set in config
-        $self->{'config'}->{'standaloneplot'} = 'off';
-
+    if($self->{'gui'}) {
+        $self->_gui_initial();
+    }
+    else {
         # delete files leftover from previous run (do this here so they are whacked each run)
         $self->_whackoldfiles();
     }
@@ -167,12 +165,8 @@ sub engine {
                     $testnum = $self->{'xnode'};
                 }
 
-                my $case = {
-                    'id'          => $testnum,
-                    'failedcount' => 0,
-                    'passedcount' => 0,
-                    'messages'    => [],
-                };
+                # create testcase
+                my $case = { 'id' => $testnum };
 
                 # populate variables with values from testcase file, do substitutions, and revert converted values back
                 for my $key (keys %{$xmltestcases->{'case'}->{$testnum}}) {
@@ -180,7 +174,7 @@ sub engine {
                 }
 
                 $self->_out(qq|Test:  $currentcasefile - $testnum \n|);
-                $case = $self->_run_case_num($case);
+                $case = $self->_run_case_num($case, $useragent);
                 push @{$resultfile->{'cases'}}, $case;
 
                 # break from sub if user presses stop button in gui
@@ -212,6 +206,13 @@ sub engine {
 # runs a single test case
 sub _run_case_num {
     my($self,$case,$useragent) =@_;
+    
+    confess("no testcase!") unless defined $case;
+
+    $case->{'id'}          = 1 unless defined $case->{'id'};
+    $case->{'passedcount'} = 0;
+    $case->{'failedcount'} = 0;
+    $case->{'messages'}    = [];
 
     $useragent = $self->_get_useragent() unless defined $useragent;
 
@@ -237,19 +238,19 @@ sub _run_case_num {
     push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
 
     my($latency,$request,$response);
-    if($case->{method} ){
-        if ( $case->{method} eq "get" ) {
+    if($case->{method}){
+        if(lc $case->{method} eq "get") {
             ($latency,$request,$response) = $self->_httpget($useragent, $case);
         }
-        elsif ( $case->{method} eq "post" ) {
+        elsif(lc $case->{method} eq "post") {
             ($latency,$request,$response) = $self->_httppost($useragent, $case);
         }
         else {
-            die(qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|);
+            carp(qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|);
         }
     }
     else {
-        ($latency,$request) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
+        ($latency,$request,$response) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
     }
     $case->{'latency'} = $latency;
 
@@ -335,7 +336,7 @@ sub _run_case_num {
         }
     }
     else {
-        $self->_out(qq|TEST CASE PASSED \n|);
+        $self->_out(qq|TEST CASE PASSED\n|);
         push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'true' };
         push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE PASSED', 'html' => "<b><span class=\"pass\">TEST CASE PASSED</span></b>" };
         if( $self->{'gui'} ) {
@@ -451,6 +452,7 @@ sub _set_defaults {
     my $self = shift;
     $self->{'config'}             = {
         'currentdatetime'           => scalar localtime time,    #get current date and time for results report
+        'standaloneplot'            => 'off',
         'graphtype'                 => 'lines',
         'httpauth'                  => [],
         'reporttype'                => 'standard',
@@ -520,7 +522,7 @@ sub _write_result_html {
     my $self    = shift;
 
     open( my $resultshtml, ">", $self->{'config'}->{'output_dir'}."results.html" )
-      or die "\nERROR: Failed to open results.html file: $!\n\n";
+      or carp "\nERROR: Failed to open results.html file: $!\n\n";
 
     print $resultshtml
       qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -591,7 +593,7 @@ sub _write_result_xml {
     my $self    = shift;
 
     open( my $resultsxml, ">", $self->{'config'}->{'output_dir'}."results.xml" )
-      or die "\nERROR: Failed to open results.xml file: $!\n\n";
+      or carp "\nERROR: Failed to open results.xml file: $!\n\n";
 
     print $resultsxml "<results>\n\n";
 
@@ -709,7 +711,7 @@ sub _httppost {
             return $self->_httppost_xml($useragent, $case);
         }
         else {
-            die(qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|);
+            carp(qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|);
         }
     }
     else {
@@ -746,7 +748,7 @@ sub _httppost_xml {
 
     # read the xml file specified in the testcase
     $case->{postbody} =~ m~file=>(.*)~imx;
-    open( my $xmlbody, "<", $1 ) or die "\nError: Failed to open text/xml file: $!\n\n";    # open file handle
+    open( my $xmlbody, "<", $1 ) or carp "\nError: Failed to open text/xml file: $!\n\n";    # open file handle
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
@@ -808,6 +810,9 @@ sub _verify {
     my $self        = shift;
     my $response    = shift;
     my $case        = shift;
+
+    confess("no response") unless defined $response;
+    confess("no case")     unless defined $case;
 
     for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
         if ( $case->{$_} ) {
@@ -1021,13 +1026,13 @@ sub _read_config_xml {
     # if -c option was set on command line, use specified config file
     if(defined $config_file) {
         open( $config, '<', $config_file )
-          or die "\nERROR: Failed to open ".$config_file." file: $!\n\n";
+          or carp "\nERROR: Failed to open ".$config_file." file: $!\n\n";
         $self->{'config'}->{'exists'} = 1;   # flag we are going to use a config file
     }
     # if config.xml exists, read it
     elsif( -e "config.xml" ) {
         open( $config, '<', "config.xml" )
-          or die "\nERROR: Failed to open config.xml file: $!\n\n";
+          or carp "\nERROR: Failed to open config.xml file: $!\n\n";
         $self->{'config'}->{'exists'} = 1; # flag we are going to use a config file
     }
 
@@ -1097,7 +1102,7 @@ sub _read_config_xml {
             $_ =~ m~<httpauth>(.*)</httpauth>~mx;
             @authentry = split( /:/mx, $1 );
             if ( $#authentry != 4 ) {
-                die("\nError: httpauth should have 5 fields delimited by colons\n\n");
+                carp("\nError: httpauth should have 5 fields delimited by colons\n\n");
             }
             else {
                 push( @{ $self->{'config'}->{'httpauth'} }, [@authentry] );
@@ -1133,7 +1138,7 @@ sub _processcasefile {
                 push @{ $self->{'casefilelist'} }, "testcases.xml";
             }
             else {
-                die "\nERROR: I can't find any test case files to run.\nYou must either use a config file or pass a filename "
+                carp "\nERROR: I can't find any test case files to run.\nYou must either use a config file or pass a filename "
                   . "on the command line if you are not using the default testcase file (testcases.xml).";
             }
         }
@@ -1152,7 +1157,7 @@ sub _processcasefile {
             # print "\nXPath Node is: $self->{'xnode'} \n";
         }
         else {
-            die("\nSorry, $xpath is not in the XPath format I was expecting, I'm ignoring it...\n");
+            carp("\nSorry, $xpath is not in the XPath format I was expecting, I'm ignoring it...\n");
         }
 
         # use testcase filename passed on command line (config.xml is only used for other options)
@@ -1160,7 +1165,7 @@ sub _processcasefile {
     }
 
     elsif ( ( $#ARGV + 1 ) > 2 ) {    #too many command line args were passed
-        die "\nERROR: Too many arguments.\n\n";
+        carp "\nERROR: Too many arguments.\n\n";
     }
 
     #print "\ntestcase file list: @{$self->{'casefilelist'}}\n\n";
@@ -1180,7 +1185,7 @@ sub _convtestcases {
     my ( $fh, $tempfilename ) = tempfile();
     my $filename = $currentcasefile;
     open( my $xmltoconvert, '<', $filename )
-      or die "\nError: Failed to open test case file: ".$filename.": $!\n\n";
+      or carp "\nError: Failed to open test case file: ".$filename.": $!\n\n";
     # read the file into an array
     @xmltoconvert = <$xmltoconvert>;
 
@@ -1201,7 +1206,7 @@ sub _convtestcases {
 
     # open file handle to temp file
     open( $xmltoconvert, '>', $tempfilename )
-      or die "\nERROR: Failed to open temp file for writing: $!\n\n";
+      or carp "\nERROR: Failed to open temp file for writing: $!\n\n";
     print $xmltoconvert @xmltoconvert;  # overwrite file with converted array
     close($xmltoconvert);
     return $tempfilename;
@@ -1277,7 +1282,7 @@ sub _httplog {
 
         if($output ne '') {
             open( my $httplogfile, ">>", $self->{'config'}->{'output_dir'}."http.log" )
-              or die "\nERROR: Failed to open http.log file: $!\n\n";
+              or carp "\nERROR: Failed to open http.log file: $!\n\n";
             print $httplogfile $output;
             print $httplogfile "\n************************* LOG SEPARATOR *************************\n\n\n";
             close($httplogfile);
@@ -1294,15 +1299,9 @@ sub _plotlog {
     my ( %months, $date, $time, $mon, $mday, $hours, $min, $sec, $year );
 
     # do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting
-    unless(
-        (
-                ( $self->{'gui'} )
-            and ( $self->{'monitorenabledchkbx'} eq 'monitor_off' )
-        )
-        or (    ( !defined $self->{'gui'} )
-            and ( $self->{'config'}->{standaloneplot} ne 'on' ) )
-      )
-    {
+    if(   ( $self->{'gui'} and $self->{'monitorenabledchkbx'} ne 'monitor_off')
+       or (!$self->{'gui'} and $self->{'config'}->{'standaloneplot'} eq 'on')
+    ) {
 
         %months = (
             "Jan" => 1,
@@ -1328,12 +1327,12 @@ sub _plotlog {
         if( $self->{'switches'}->{'plotclear'} eq 'yes' ) {
             # open in clobber mode so log gets truncated
             open( $plotlog, '>', $self->{'config'}->{'output_dir'}."plot.log" )
-              or die "ERROR: Failed to open file plot.log: $!\n";
+              or carp "ERROR: Failed to open file plot.log: $!\n";
             $self->{'switches'}->{'plotclear'} = 'no';    # reset the value
         }
         else {
             open( $plotlog, '>>', $self->{'config'}->{'output_dir'}."plot.log" )
-              or die "ERROR: Failed to open file plot.log: $!\n";  #open in append mode
+              or carp "ERROR: Failed to open file plot.log: $!\n";  #open in append mode
         }
 
         printf $plotlog "%s %2.4f\n", $time, $value;
@@ -1348,18 +1347,11 @@ sub _plotcfg {
     my $self = shift;
 
     # do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting
-    unless (
-        (
-                ( $self->{'gui'} )
-            and ( $self->{'monitorenabledchkbx'} eq 'monitor_off' )
-        )
-        or (    ( !defined $self->{'gui'} )
-            and ( $self->{'config'}->{standaloneplot} ne 'on' ) )
-      )
-    {
-
+    if(   ( $self->{'gui'} and $self->{'monitorenabledchkbx'} ne 'monitor_off')
+       or (!$self->{'gui'} and $self->{'config'}->{'standaloneplot'} eq 'on')
+    ) {
         open( my $gnuplotplt, ">", $self->{'config'}->{'output_dir'}."plot.plt" )
-          or die "Could not open file\n";
+          or carp "Could not open file\n";
         print $gnuplotplt qq|
 set term png
 set output \"$self->{'config'}->{'output_dir'}plot.png\"
@@ -1458,14 +1450,14 @@ sub _finaltasks {
         elsif ( $self->{'config'}->{'reporttype'} =~ /^external:(.*)/mx ) {
             our $webinject = $self; # set scope of $self to global, so it can be access in the external module
             unless( my $return = do $1 ) {
-                die "couldn't parse $1: $@\n" if $@;
-                die "couldn't do $1: $!\n" unless defined $return;
-                die "couldn't run $1\n" unless $return;
+                carp "couldn't parse $1: $@\n" if $@;
+                carp "couldn't do $1: $!\n" unless defined $return;
+                carp "couldn't run $1\n" unless $return;
             }
         }
 
         else {
-            die("\nError: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values\n\n");
+            carp("\nError: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values\n\n");
         }
 
     }
@@ -1497,15 +1489,9 @@ sub _plotit {
     my $self = shift;
 
     # do this unless: monitor is disabled in gui, or running standalone mode without config setting to turn on plotting
-    unless (
-        (
-                ( $self->{'gui'} )
-            and ( $self->{'monitorenabledchkbx'} eq 'monitor_off' )
-        )
-        or (    ( !defined $self->{'gui'} )
-            and ( $self->{'config'}->{standaloneplot} ne 'on' ) )
-      )
-    {
+    if(   ( $self->{'gui'} and $self->{'monitorenabledchkbx'} ne 'monitor_off')
+       or (!$self->{'gui'} and $self->{'config'}->{'standaloneplot'} eq 'on')
+    ) {
         # do this unless its being called from the gui with No Graph set
         unless ( $self->{'config'}->{'graphtype'} eq 'nograph' )
         {
