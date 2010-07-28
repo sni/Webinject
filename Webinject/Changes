@@ -15,6 +15,7 @@ Version 1.50 - Jul 24, 2010
     - added warning / critical thresholds
     - added generic option to set config.xml options
     - added option for max_redirect
+    - added label setting for nagios perf data
     - fixed nagios performance data
 
 Version 1.41 - Jan 4, 2006

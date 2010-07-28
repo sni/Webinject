@@ -1,21 +1,27 @@
 <testcases repeat="1">
 
 <case
-    id="1"
-    description1="SAMPLE TEST CASE - load WebInject dev page"
-    description2="verify string 'Corey Goldberg' exists in response"
-    method="get"
-    url="http://www.webinject.org/dev.html"
-    verifypositive="Corey Goldberg"
+    id             = "1"
+    description1   = "SAMPLE TEST CASE - load WebInject dev page"
+    description2   = "verify string 'Corey Goldberg' exists in response"
+    method         = "get"
+    url            = "http://www.webinject.org/dev.html"
+    verifypositive = "Corey Goldberg"
+    warning        = "5"
+    critical       = "15"
+    label          = "devpage"
 />
 
 <case
-    id="2"
-    description1="SAMPLE [NEGATIVE] TEST CASE - load WebInject dev page"
-    description2="verify string 'bogus string' does not exist in response"
-    method="get"
-    url="http://www.webinject.org/dev.html"
-    verifynegative="bogus string"
+    id             = "2"
+    description1   = "SAMPLE [NEGATIVE] TEST CASE - load WebInject dev page"
+    description2   = "verify string 'bogus string' does not exist in response"
+    method         = "get"
+    url            = "http://www.webinject.org/dev.html"
+    verifynegative = "bogus string"
+    warning        = "5"
+    critical       = "15"
+    label          = "devpage2"
 />
 
 <case
@@ -24,15 +30,21 @@
     description2="case should fail with an HTTP 404 (not found) error"
     method="get"
     url="http://www.webinject.org/bogus.html"
+    warning        = "5"
+    critical       = "15"
+    label          = "boguspage"
 />
 
 <case
-    id="4"
-    description1="SAMPLE TEST CASE THAT FAILS - valid page with bogus verification"
-    description2="case should fail"
-    method="get"
-    url="http://www.webinject.org/dev.html"
-    verifypositive="I am a bogus string"
+    id             = "4"
+    description1   = "SAMPLE TEST CASE THAT FAILS - valid page with bogus verification"
+    description2   = "case should fail"
+    method         = "get"
+    url            = "http://www.webinject.org/dev.html"
+    verifypositive = "I am a bogus string"
+    warning        = "5"
+    critical       = "15"
+    label          = "devpage3"
 />
 
 </testcases>

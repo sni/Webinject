@@ -276,20 +276,8 @@ sub engine {
                 }
                 push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
 
-                if($case->{verifypositivenext}) {
-                    $self->{'verifylater'} = $case->{'verifypositivenext'};
-                    $self->_out(qq|Verify On Next Case: "$case->{verifypositivenext}" \n|);
-                    push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext} };
-                }
-
-                if( $case->{verifynegativenext} ) {
-                    $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
-                    $self->_out(qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|);
-                    push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
-                }
-
                 my($latency,$request,$response);
-                if( $case->{method} ) {
+                if($case->{method} ){
                     if ( $case->{method} eq "get" ) {
                         ($latency,$request,$response) = $self->_httpget($useragent, $case);
                     }
@@ -304,6 +292,18 @@ sub engine {
                     ($latency,$request) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
                 }
                 $case->{'latency'} = $latency;
+
+                if($case->{verifypositivenext}) {
+                    $self->{'verifylater'} = $case->{'verifypositivenext'};
+                    $self->_out(qq|Verify On Next Case: "$case->{verifypositivenext}" \n|);
+                    push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext} };
+                }
+
+                if($case->{verifynegativenext}) {
+                    $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
+                    $self->_out(qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|);
+                    push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
+                }
 
                 # verify result from http response
                 $self->_verify($response, $case);
@@ -689,6 +689,7 @@ sub _httpget {
     my $useragent = shift;
     my $case      = shift;
 
+    $self->_out("GET Request: ".$case->{url}."\n");
     my $request = new HTTP::Request( 'GET', $case->{url} );
     return $self->_http_defaults($request, $useragent, $case);
 }
@@ -732,7 +733,8 @@ sub _httppost_form_urlencoded {
     my $useragent = shift;
     my $case      = shift;
 
-    my $request = new HTTP::Request( 'POST', $case->{url} );
+    $self->_out("POST Request: ".$case->{url}."\n");
+    my $request = new HTTP::Request('POST', $case->{url} );
     $request->content_type($case->{posttype});
     $request->content($case->{postbody});
 
@@ -754,6 +756,7 @@ sub _httppost_xml {
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
+    $self->_out("POST Request: ".$case->{url}."\n");
     $request = new HTTP::Request( 'POST', $case->{url} );
     $request->content_type($case->{posttype});
     $request->content( join( " ", @xmlbody ) );    # load the contents of the file into the request body
@@ -796,7 +799,8 @@ sub _httppost_form_data {
     my $useragent = shift;
     my $case      = shift;
 
-    my $request = new HTTP::Request( 'POST', $case->{url},
+    $self->_out("POST Request: ".$case->{url}."\n");
+    my $request = new HTTP::Request('POST', $case->{url},
                                     Content_Type => $case->{posttype},
                                     Content      => $case->{postbody},
     );
