@@ -294,7 +294,7 @@ sub engine {
                         ($latency,$request,$response) = $self->_httppost($useragent, $case);
                     }
                     else {
-                        print STDERR qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|;
+                        die(qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|);
                     }
                 }
                 else {
@@ -711,7 +711,7 @@ sub _httppost {
             return $self->_httppost_xml($useragent, $case);
         }
         else {
-            print STDERR qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|;
+            die(qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|);
         }
     }
     else {
@@ -1098,7 +1098,7 @@ sub _read_config_xml {
             $_ =~ m~<httpauth>(.*)</httpauth>~mx;
             @authentry = split( /:/mx, $1 );
             if ( $#authentry != 4 ) {
-                print STDERR "\nError: httpauth should have 5 fields delimited by colons\n\n";
+                die("\nError: httpauth should have 5 fields delimited by colons\n\n");
             }
             else {
                 push( @{ $self->{'config'}->{'httpauth'} }, [@authentry] );
@@ -1153,7 +1153,7 @@ sub _processcasefile {
             # print "\nXPath Node is: $self->{'xnode'} \n";
         }
         else {
-            print STDERR "\nSorry, $xpath is not in the XPath format I was expecting, I'm ignoring it...\n";
+            die("\nSorry, $xpath is not in the XPath format I was expecting, I'm ignoring it...\n");
         }
 
         # use testcase filename passed on command line (config.xml is only used for other options)
@@ -1467,7 +1467,7 @@ sub _finaltasks {
         }
 
         else {
-            print STDERR "\nError: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values\n\n";
+            die("\nError: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values\n\n");
         }
 
     }
