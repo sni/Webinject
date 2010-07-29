@@ -1,0 +1,6 @@
+.gitignore
+MANIFEST.bak
+check_webinject
+http.log
+results.html
+results.xml
