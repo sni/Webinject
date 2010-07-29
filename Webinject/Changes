@@ -7,14 +7,15 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
-Version 1.50 - Jul 24, 2010
+Version 1.50 - Jul 29, 2010
     - changed layout to common cpan module style
     - seperated module into gui and core
     - added timeout option
     - added report-type option
-    - added warning / critical thresholds
+    - added break_on_errors option
+    - added warning / critical threshold option
+    - added max_redirect option
     - added generic option to set config.xml options
-    - added option for max_redirect
     - added label setting for nagios perf data
     - fixed nagios performance data
 

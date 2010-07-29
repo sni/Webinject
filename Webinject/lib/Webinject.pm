@@ -67,23 +67,20 @@ sub new {
     my (%options) = @_;
     $|            = 1;     # don't buffer output to STDOUT
 
-    my $self      = {
-        'reporttype' => undef,
-    };
-
-    for my $opt_key ( keys %options ) {
-        if ( exists $self->{$opt_key} ) {
-            $self->{$opt_key} = $options{$opt_key};
-        }
-        else {
-            croak("unknown option: $opt_key");
-        }
-    }
-
+    my $self = {};
     bless $self, $class;
 
+    # set default config options
     $self->_set_defaults();
-    $self->{'config'}->{'reporttype'} = $self->{'reporttype'} if defined $self->{'reporttype'};
+
+    for my $opt_key ( keys %options ) {
+        if( exists $self->{'config'}->{$opt_key} ) {
+            $self->{'config'}->{$opt_key} = $options{$opt_key};
+        }
+        else {
+            $self->_usage("ERROR: unknown option: ".$opt_key);
+        }
+    }
 
     return $self;
 }
@@ -174,7 +171,9 @@ sub engine {
                 }
 
                 $self->_out(qq|Test:  $currentcasefile - $testnum \n|);
-                $case = $self->_run_case_num($case, $useragent);
+
+                $case = $self->_run_test_case($case, $useragent);
+
                 push @{$resultfile->{'cases'}}, $case;
 
                 # break from sub if user presses stop button in gui
@@ -182,6 +181,11 @@ sub engine {
                     my $rc = $self->_finaltasks();
                     $self->{'switches'}->{'stop'} = 'no';
                     return $rc;    # break from sub
+                }
+
+                # break here if the last result was an error
+                if($self->{'config'}->{'break_on_errors'} and $self->{'result'}->{'iscritical'}) {
+                    last;
                 }
 
                 # if an XPath Node is defined, only process the single Node
@@ -204,9 +208,9 @@ sub engine {
 
 ################################################################################
 # runs a single test case
-sub _run_case_num {
+sub _run_test_case {
     my($self,$case,$useragent) =@_;
-    
+
     confess("no testcase!") unless defined $case;
 
     $case->{'id'}          = 1 unless defined $case->{'id'};
@@ -246,7 +250,7 @@ sub _run_case_num {
             ($latency,$request,$response) = $self->_httppost($useragent, $case);
         }
         else {
-            carp(qq|ERROR: bad HTTP Request Method Type, you must use "get" or "post"\n|);
+            $self->_usage('ERROR: bad HTTP Request Method Type, you must use "get" or "post"');
         }
     }
     else {
@@ -440,7 +444,7 @@ sub _get_useragent {
 
     # change response delay timeout in seconds if it is set in config.xml
     if($self->{'config'}->{'timeout'}) {
-        $useragent->timeout($self->{'config'}->{'timeout'});    #default LWP timeout is 180 secs.
+        $useragent->timeout($self->{'config'}->{'timeout'});    # default LWP timeout is 180 secs.
     }
 
     return $useragent;
@@ -461,6 +465,7 @@ sub _set_defaults {
         'baseurl'                   => '',
         'baseurl1'                  => '',
         'baseurl2'                  => '',
+        'break_on_errors'           => 0,
     };
     $self->{'exit_codes'}         = {
         'UNKNOWN'  => 3,
@@ -522,7 +527,7 @@ sub _write_result_html {
     my $self    = shift;
 
     open( my $resultshtml, ">", $self->{'config'}->{'output_dir'}."results.html" )
-      or carp "\nERROR: Failed to open results.html file: $!\n\n";
+      or croak "\nERROR: Failed to open results.html file: $!\n\n";
 
     print $resultshtml
       qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -593,7 +598,7 @@ sub _write_result_xml {
     my $self    = shift;
 
     open( my $resultsxml, ">", $self->{'config'}->{'output_dir'}."results.xml" )
-      or carp "\nERROR: Failed to open results.xml file: $!\n\n";
+      or croak "\nERROR: Failed to open results.xml file: $!\n\n";
 
     print $resultsxml "<results>\n\n";
 
@@ -711,7 +716,7 @@ sub _httppost {
             return $self->_httppost_xml($useragent, $case);
         }
         else {
-            carp(qq|ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml" \n|);
+            $self->_usage('ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml"');
         }
     }
     else {
@@ -748,7 +753,7 @@ sub _httppost_xml {
 
     # read the xml file specified in the testcase
     $case->{postbody} =~ m~file=>(.*)~imx;
-    open( my $xmlbody, "<", $1 ) or carp "\nError: Failed to open text/xml file: $!\n\n";    # open file handle
+    open( my $xmlbody, "<", $1 ) or croak "\nError: Failed to open text/xml file: $!\n\n";    # open file handle
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
@@ -1026,13 +1031,13 @@ sub _read_config_xml {
     # if -c option was set on command line, use specified config file
     if(defined $config_file) {
         open( $config, '<', $config_file )
-          or carp "\nERROR: Failed to open ".$config_file." file: $!\n\n";
+          or croak "\nERROR: Failed to open ".$config_file." file: $!\n\n";
         $self->{'config'}->{'exists'} = 1;   # flag we are going to use a config file
     }
     # if config.xml exists, read it
     elsif( -e "config.xml" ) {
         open( $config, '<', "config.xml" )
-          or carp "\nERROR: Failed to open config.xml file: $!\n\n";
+          or croak "\nERROR: Failed to open config.xml file: $!\n\n";
         $self->{'config'}->{'exists'} = 1; # flag we are going to use a config file
     }
 
@@ -1102,7 +1107,7 @@ sub _read_config_xml {
             $_ =~ m~<httpauth>(.*)</httpauth>~mx;
             @authentry = split( /:/mx, $1 );
             if ( $#authentry != 4 ) {
-                carp("\nError: httpauth should have 5 fields delimited by colons\n\n");
+                $self->_usage("ERROR: httpauth should have 5 fields delimited by colons");
             }
             else {
                 push( @{ $self->{'config'}->{'httpauth'} }, [@authentry] );
@@ -1138,8 +1143,8 @@ sub _processcasefile {
                 push @{ $self->{'casefilelist'} }, "testcases.xml";
             }
             else {
-                carp "\nERROR: I can't find any test case files to run.\nYou must either use a config file or pass a filename "
-                  . "on the command line if you are not using the default testcase file (testcases.xml).";
+                $self->_usage("ERROR: I can't find any test case files to run.\nYou must either use a config file or pass a filename "
+                  . "on the command line if you are not using the default testcase file (testcases.xml).");
             }
         }
     }
@@ -1157,7 +1162,7 @@ sub _processcasefile {
             # print "\nXPath Node is: $self->{'xnode'} \n";
         }
         else {
-            carp("\nSorry, $xpath is not in the XPath format I was expecting, I'm ignoring it...\n");
+            $self->_usage("ERROR: Sorry, $xpath is not in the XPath format I was expecting, I'm ignoring it...");
         }
 
         # use testcase filename passed on command line (config.xml is only used for other options)
@@ -1165,7 +1170,7 @@ sub _processcasefile {
     }
 
     elsif ( ( $#ARGV + 1 ) > 2 ) {    #too many command line args were passed
-        carp "\nERROR: Too many arguments.\n\n";
+        $self->_usage("ERROR: Too many arguments.");
     }
 
     #print "\ntestcase file list: @{$self->{'casefilelist'}}\n\n";
@@ -1185,7 +1190,7 @@ sub _convtestcases {
     my ( $fh, $tempfilename ) = tempfile();
     my $filename = $currentcasefile;
     open( my $xmltoconvert, '<', $filename )
-      or carp "\nError: Failed to open test case file: ".$filename.": $!\n\n";
+      or $self->_usage("ERROR: Failed to open test case file: ".$filename.": ".$!);
     # read the file into an array
     @xmltoconvert = <$xmltoconvert>;
 
@@ -1206,7 +1211,7 @@ sub _convtestcases {
 
     # open file handle to temp file
     open( $xmltoconvert, '>', $tempfilename )
-      or carp "\nERROR: Failed to open temp file for writing: $!\n\n";
+      or croak("ERROR: Failed to open temp file for writing: $!\n");
     print $xmltoconvert @xmltoconvert;  # overwrite file with converted array
     close($xmltoconvert);
     return $tempfilename;
@@ -1282,7 +1287,7 @@ sub _httplog {
 
         if($output ne '') {
             open( my $httplogfile, ">>", $self->{'config'}->{'output_dir'}."http.log" )
-              or carp "\nERROR: Failed to open http.log file: $!\n\n";
+              or croak("\nERROR: Failed to open http.log file: $!\n");
             print $httplogfile $output;
             print $httplogfile "\n************************* LOG SEPARATOR *************************\n\n\n";
             close($httplogfile);
@@ -1327,12 +1332,12 @@ sub _plotlog {
         if( $self->{'switches'}->{'plotclear'} eq 'yes' ) {
             # open in clobber mode so log gets truncated
             open( $plotlog, '>', $self->{'config'}->{'output_dir'}."plot.log" )
-              or carp "ERROR: Failed to open file plot.log: $!\n";
+              or croak("ERROR: Failed to open file plot.log: $!\n");
             $self->{'switches'}->{'plotclear'} = 'no';    # reset the value
         }
         else {
             open( $plotlog, '>>', $self->{'config'}->{'output_dir'}."plot.log" )
-              or carp "ERROR: Failed to open file plot.log: $!\n";  #open in append mode
+              or croak "ERROR: Failed to open file plot.log: $!\n";  #open in append mode
         }
 
         printf $plotlog "%s %2.4f\n", $time, $value;
@@ -1351,7 +1356,7 @@ sub _plotcfg {
        or (!$self->{'gui'} and $self->{'config'}->{'standaloneplot'} eq 'on')
     ) {
         open( my $gnuplotplt, ">", $self->{'config'}->{'output_dir'}."plot.plt" )
-          or carp "Could not open file\n";
+          or croak "Could not open file\n";
         print $gnuplotplt qq|
 set term png
 set output \"$self->{'config'}->{'output_dir'}plot.png\"
@@ -1450,14 +1455,14 @@ sub _finaltasks {
         elsif ( $self->{'config'}->{'reporttype'} =~ /^external:(.*)/mx ) {
             our $webinject = $self; # set scope of $self to global, so it can be access in the external module
             unless( my $return = do $1 ) {
-                carp "couldn't parse $1: $@\n" if $@;
-                carp "couldn't do $1: $!\n" unless defined $return;
-                carp "couldn't run $1\n" unless $return;
+                croak "couldn't parse $1: $@\n" if $@;
+                croak "couldn't do $1: $!\n" unless defined $return;
+                croak "couldn't run $1\n" unless $return;
             }
         }
 
         else {
-            carp("\nError: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values\n\n");
+            $self->_usage("ERROR: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values");
         }
 
     }
@@ -1566,6 +1571,10 @@ sub _out {
 # print usage
 sub _usage {
     my $self = shift;
+    my $text = shift;
+
+    print "\n".$text."\n\n" if defined $text;
+
     print <<EOB;
     Usage:
       $0

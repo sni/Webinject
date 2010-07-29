@@ -55,7 +55,7 @@ sub test_case_01 {
         'failedcount' => 0,
         'url'         => 'http://localhost:58080/sleep/2',
     };
-    my $result = $webinject->_run_case_num($case);
+    my $result = $webinject->_run_test_case($case);
     is($result->{'latency'} > 2, 1, 'timeouts - latency');
     delete $result->{'messages'};
     delete $result->{'latency'};
@@ -79,7 +79,7 @@ sub test_case_02 {
         'url'         => 'http://localhost:58080/sleep/2',
         'warning'     => 1,
     };
-    my $result = $webinject->_run_case_num($case);
+    my $result = $webinject->_run_test_case($case);
     is($result->{'latency'} > 2, 1, 'timeouts - latency');
     delete $result->{'messages'};
     delete $result->{'latency'};
