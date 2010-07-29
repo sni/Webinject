@@ -1505,7 +1505,9 @@ sub _finaltasks {
                 print "WebInject OK - All tests passed successfully in $self->{'result'}->{'totalruntime'} seconds$perfdata\n";
                 $rc = $self->{'exit_codes'}->{'OK'};
             }
-            print $self->{'out'};
+            if($self->{'result'}->{'iscritical'} or $self->{'result'}->{'iswarning'}) {
+                print $self->{'out'};
+            }
             return $rc;
         }
 
