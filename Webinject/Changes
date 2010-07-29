@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.51 - xxx
+    - added EPN support for check_webinject
+
 Version 1.50 - Jul 29, 2010
     - changed layout to common cpan module style
     - seperated module into gui and core

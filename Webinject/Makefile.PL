@@ -27,8 +27,9 @@ WriteAll;
 open(my $fh, '>>', 'Makefile') or die('cannot write to Makefile');
 print $fh <<EOT;
 check_webinject ::
-	echo '#!/usr/bin/env perl' > ./check_webinject
-	echo ''                   >> ./check_webinject
+	echo '#!/usr/bin/env perl'  > ./check_webinject
+	echo '# nagios: +epn'      >> ./check_webinject
+	echo ''                    >> ./check_webinject
 	cat ./lib/Webinject.pm ./bin/webinject.pl | grep -v '^use Webinject' | grep -v '__END__' | sed -e 's/my \$\$webinject = Webinject->new\(\);/my \$\$webinject = Webinject->new(reporttype => \\"nagios\\", timeout => 30, break_on_errors => 1);/' >> ./check_webinject
 	chmod 755 ./check_webinject
 EOT
