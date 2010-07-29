@@ -879,11 +879,13 @@ For more information about webinject visit http://www.webinject.org
 =head1 AUTHOR
 
 Corey Goldberg, E<lt>corey@goldb.orgE<gt>
+
 Sven Nierlein, E<lt>nierlein@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2010 by Sven Nierlein
+
 Copyright (C) 2004-2006 by Corey Goldberg
 
 This library is free software; you can redistribute it under the GPL2 license.

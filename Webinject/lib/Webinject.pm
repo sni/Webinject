@@ -60,6 +60,78 @@ system response times.
 
 Creates an C<Webinject> object.
 
+=over 4
+
+=item reporttype
+
+possible values are 'standard', 'nagios', 'mrtg' or 'external:'
+
+=item nooutput
+
+suppress all output to STDOUT, create only logilfes
+
+=item break_on_errors
+
+stop after the first testcase fails, otherwise Webinject would go on and
+execute all tests regardless of the previous case.
+
+=item timeout
+
+Default timeout is 180seconds. Timeout starts again for every testcase.
+
+=item useragent
+
+Set the useragent used in HTTP requests. Default is 'Webinject'.
+
+=item max_redirect
+
+Set maximum number of HTTP redirects. Default is 0.
+
+=item proxy
+
+Sets a proxy which is then used for http and https requests.
+
+=item output_dir
+
+Output directory where all logfiles will go to. Defaults to current directory.
+
+=item globalhttplog
+
+Can be 'yes' or 'onfail'. Will log the http request and response to a http.log file.
+
+=item httpauth
+
+Provides credentials for webserver authentications. The format is:
+
+  ['servername', 'portnumber', 'realm-name', 'username', 'password']
+
+=item baseurl
+
+the value can be used as {BASEURL} in the test cases
+
+=item baseurl1
+
+the value can be used as {BASEURL1} in the test cases
+
+=item baseurl2
+
+the value can be used as {BASEURL2} in the test cases
+
+=item standaloneplot
+
+can be "on" or "off". Default is off.
+Create gnuplot graphs when enabled.
+
+=item graphtype
+
+Defaults to 'lines'
+
+=item gnuplot
+
+Defines the path to your gnuplot binary.
+
+=back
+
 =cut
 
 sub new {
@@ -1590,6 +1662,25 @@ EOB
     exit 3;
 }
 
+=head1 EXAMPLES
+
+=head2 example test case
+
+  <testcases>
+    <case
+      id             = "1"
+      description1   = "Sample Test Case"
+      method         = "get"
+      url            = "{BASEURL}/test.jsp"
+      verifypositive = "All tests succeded"
+      warning        = "5"
+      critical       = "15"
+      label          = "testpage"
+    />
+  </testcases>
+
+detailed description about the syntax of testcases can be found on the Webinject homepage.
+
 
 =head1 SEE ALSO
 
@@ -1598,11 +1689,13 @@ For more information about webinject visit http://www.webinject.org
 =head1 AUTHOR
 
 Corey Goldberg, E<lt>corey@goldb.orgE<gt>
+
 Sven Nierlein, E<lt>nierlein@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2010 by Sven Nierlein
+
 Copyright (C) 2004-2006 by Corey Goldberg
 
 This library is free software; you can redistribute it under the GPL2 license.
