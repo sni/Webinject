@@ -537,6 +537,7 @@ sub _set_defaults {
         'baseurl2'                  => '',
         'break_on_errors'           => 0,
         'max_redirect'              => 0,
+        'globalhttplog'             => 'no',
     };
     $self->{'exit_codes'}         = {
         'UNKNOWN'  => 3,
@@ -1338,41 +1339,38 @@ sub _httplog {
     my $request     = shift;
     my $response    = shift;
     my $case        = shift;
+    my $output      = '';
 
-    # we suppress most logging when running in a plugin mode
-    if($self->{'config'}->{'reporttype'} eq 'standard') {
-        my $output = '';
-
-        # http request - log setting per test case
-        if($case->{logrequest} && $case->{logrequest} =~ /yes/mxi ) {
-            $output .= $request->as_string."\n\n";
-        }
-
-        # http response - log setting per test case
-        if($case->{logresponse} && $case->{logresponse} =~ /yes/mxi ) {
-            $output .= $response->as_string."\n\n";
-        }
-
-        # global http log setting
-        if($self->{'config'}->{globalhttplog} && $self->{'config'}->{globalhttplog} =~ /yes/mxi ) {
-            $output .= $request->as_string."\n\n";
-            $output .= $response->as_string."\n\n";
-        }
-
-        # global http log setting - onfail mode
-        if($self->{'config'}->{globalhttplog} && $self->{'config'}->{globalhttplog} =~ /onfail/mxi && $self->{'result'}->{'iscritical'}) {
-            $output .= $request->as_string."\n\n";
-            $output .= $response->as_string."\n\n";
-        }
-
-        if($output ne '') {
-            open( my $httplogfile, ">>", $self->{'config'}->{'output_dir'}."http.log" )
-              or croak("\nERROR: Failed to open http.log file: $!\n");
-            print $httplogfile $output;
-            print $httplogfile "\n************************* LOG SEPARATOR *************************\n\n\n";
-            close($httplogfile);
-        }
+    # http request - log setting per test case
+    if($case->{'logrequest'} && $case->{'logrequest'} =~ /yes/mxi ) {
+        $output .= $request->as_string."\n\n";
     }
+
+    # http response - log setting per test case
+    if($case->{'logresponse'} && $case->{'logresponse'} =~ /yes/mxi ) {
+        $output .= $response->as_string."\n\n";
+    }
+
+    # global http log setting
+    if($self->{'config'}->{'globalhttplog'} && $self->{'config'}->{'globalhttplog'} =~ /yes/mxi ) {
+        $output .= $request->as_string."\n\n";
+        $output .= $response->as_string."\n\n";
+    }
+
+    # global http log setting - onfail mode
+    if($self->{'config'}->{'globalhttplog'} && $self->{'config'}->{'globalhttplog'} =~ /onfail/mxi && $self->{'result'}->{'iscritical'}) {
+        $output .= $request->as_string."\n\n";
+        $output .= $response->as_string."\n\n";
+    }
+
+    if($output ne '') {
+        open( my $httplogfile, ">>", $self->{'config'}->{'output_dir'}."http.log" )
+          or croak("\nERROR: Failed to open http.log file: $!\n");
+        print $httplogfile $output;
+        print $httplogfile "\n************************* LOG SEPARATOR *************************\n\n\n";
+        close($httplogfile);
+    }
+
     return;
 }
 

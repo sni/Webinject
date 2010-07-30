@@ -7,10 +7,11 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
-Version 1.51 - xxx
+Version 1.51 - Jul 30, 2010
     - added EPN support for check_webinject
     - remove the long nagios output for non failed checks
     - fixed http authentication
+    - fixed http.log with custom report types
 
 Version 1.50 - Jul 29, 2010
     - changed layout to common cpan module style
