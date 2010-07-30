@@ -1,0 +1,40 @@
+<testcases repeat="1">
+  <testvar varname="TESTSTRING">teststring1</testvar>
+  <case
+    id                 = "1"
+    description1       = "description"
+    description2       = "description2"
+    method             = "post"
+    url                = "{BASEURL}/post"
+    posttype           = "application/x-www-form-urlencoded"
+    postbody           = "a=1;b=2;c=3;c=4;test=postbodytestmessage;test2=${TESTSTRING}"
+    verifyresponsecode = "200"
+    verifypositive     = "postbodytestmessage"
+    verifypositive2    = "teststring1"
+    verifypositive3    = "Client\-Response\-Num:\ 1"
+    verifynegative     = "this should be not visible"
+    verifynegative1    = "this should be not visible"
+    verifynegative2    = "this should be not visible"
+    verifynegative3    = "this should be not visible"
+    verifypositivenext = "bad path:"
+    verifynegativenext = "this test is also not available"
+    logrequest         = "yes"
+    logresponse        = "yes"
+    parseresponse      = "Authorization:|\n"
+    parseresponse1     = "HTTP|\n"
+    parseresponse2     = "HTTP|\n"
+    parseresponse3     = "HTTP|\n"
+    parseresponse4     = "HTTP|\n"
+    parseresponse5     = "HTTP|\n"
+    sleep              = "1"
+    errormessage       = "in case of errors display this"
+    addheader          = "Blah: Blurbs"
+  />
+  <case
+    id                 = "2"
+    description1       = "description"
+    method             = "get"
+    url                = "{BASEURL}/badpath"
+    verifyresponsecode = "400"
+  />
+</testcases>

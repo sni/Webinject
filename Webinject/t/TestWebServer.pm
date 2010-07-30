@@ -18,6 +18,8 @@ sub handle_request {
     my $cgi    = shift;
     my $path   = $cgi->path_info();
     my $method = $cgi->request_method();
+
+    # GET Requests
     if($method eq 'GET' and $path =~ m|/code/(\d+)|) {
         print "HTTP/1.0 $1\r\n\r\nrequest for response code $1\r\n";
     }
@@ -27,6 +29,13 @@ sub handle_request {
     elsif($method eq 'GET' and $path =~ m|/sleep/(\d+)|) {
         sleep($1);
         print "HTTP/1.0 200 OK\r\n\r\nsleeped $1 seconds";
+    }
+
+    # POST Requests
+    elsif($method eq 'POST' and $path =~ m|/post|) {
+        print "HTTP/1.0 200 OK\r\n\r\n";
+        print "got post request with the following cgi object:\n";
+        print Dumper($cgi);
     } else {
         print "HTTP/1.0 400 Bad Request\r\n\r\n";
         print "bad path: '$path'\r\n";

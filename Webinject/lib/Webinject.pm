@@ -330,20 +330,20 @@ sub _run_test_case {
     }
     $case->{'latency'} = $latency;
 
+    # verify result from http response
+    $self->_verify($response, $case);
+
     if($case->{verifypositivenext}) {
         $self->{'verifylater'} = $case->{'verifypositivenext'};
-        $self->_out(qq|Verify On Next Case: "$case->{verifypositivenext}" \n|);
+        $self->_out("Verify On Next Case: '".$case->{verifypositivenext}."' \n");
         push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext} };
     }
 
     if($case->{verifynegativenext}) {
         $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
-        $self->_out(qq|Verify Negative On Next Case: "$case->{verifynegativenext}" \n|);
+        $self->_out("Verify Negative On Next Case: '".$case->{verifynegativenext}."' \n");
         push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
     }
-
-    # verify result from http response
-    $self->_verify($response, $case);
 
     # write to http.log file
     $self->_httplog($request, $response, $case);
@@ -734,14 +734,12 @@ sub _http_defaults {
     my $case      = shift;
 
     # add an additional HTTP Header if specified
-    if($case->{addheader}) {
+    if($case->{'addheader'}) {
         # can add multiple headers with a pipe delimiter
-        my @addheaders = split( /\|/mx, $case->{addheader} );
-        foreach (@addheaders) {
-            $_ =~ m~(.*): (.*)~mx;
+        for my $addheader (split /\|/mx, $case->{'addheader'}) {
+            $addheader =~ m~(.*):\ (.*)~mx;
             $request->header( $1 => $2 );   # using HTTP::Headers Class
         }
-        $case->{addheader} = '';
     }
 
     # print $self->{'request'}->as_string; print "\n\n";
@@ -891,20 +889,19 @@ sub _verify {
     confess("no response") unless defined $response;
     confess("no case")     unless defined $case;
 
-    for (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
-        if ( $case->{$_} ) {
-            $self->_out(qq|Verify: "$case->{$_}" \n|);
-            push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "Verify: ".$case->{$_} };
-            my $regex = $case->{$_};
-            $regex =~ s/\ /\\ /gmx;
+    for my $key (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
+        if( $case->{$key} ) {
+            $self->_out("Verify: '".$case->{$key}."' \n");
+            push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key}, 'html' => "Verify: ".$case->{$key} };
+            my $regex = $self->_fix_regex($case->{$key});
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
-                push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Positive Verification</span>" };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Positive Verification</span>" };
                 $self->_out("Passed Positive Verification \n");
                 $case->{'passedcount'}++;
             }
             else {
-                push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Positive Verification</span>" };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Positive Verification</span>" };
                 $self->_out("Failed Positive Verification \n");
                 $case->{'failedcount'}++;
                 $self->{'result'}->{'iscritical'} = 1;
@@ -912,21 +909,20 @@ sub _verify {
         }
     }
 
-    for (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
-        if ( $case->{$_} ) {
-            $self->_out(qq|Verify Negative: "$case->{$_}" \n|);
-            push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "Verify Negative: ".$case->{$_} };
-            my $regex = $case->{$_};
-            $regex =~ s/\ /\\ /gmx;
+    for my $key (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
+        if( $case->{$key} ) {
+            $self->_out("Verify Negative: '".$case->{$key}."' \n");
+            push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key}, 'html' => "Verify Negative: ".$case->{$key} };
+            my $regex = $self->_fix_regex($case->{$key});
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
-                push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification</span>' };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification</span>' };
                 $self->_out("Failed Negative Verification \n");
                 $case->{'failedcount'}++;
                 $self->{'result'}->{'iscritical'} = 1;
             }
             else {
-                push @{$case->{'messages'}}, {'key' => $_.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification</span>' };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification</span>' };
                 $self->_out("Passed Negative Verification \n");
                 $case->{'passedcount'}++;
             }
@@ -934,11 +930,10 @@ sub _verify {
     }
 
     if($self->{'verifylater'}) {
-        my $regex = $self->{'verifylater'};
-        $regex =~ s/\ /\\ /gmx;
+        my $regex = $self->_fix_regex($self->{'verifylater'});
         # verify existence of string in response
         if($response->as_string() =~ m~$regex~simx ) {
-            push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'true', '<span class="pass">Passed Positive Verification (verification set in previous test case)</span>' };
+            push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed Positive Verification (verification set in previous test case)</span>' };
             $self->_out("Passed Positive Verification (verification set in previous test case) \n");
             $case->{'passedcount'}++;
         }
@@ -953,8 +948,7 @@ sub _verify {
     }
 
     if($self->{'verifylaterneg'}) {
-        my $regex = $self->{'verifylaterneg'};
-        $regex =~ s/\ /\\ /gmx;
+        my $regex = $self->_fix_regex($self->{'verifylaterneg'});
         # verify existence of string in response
         if($response->as_string() =~ m~$regex~simx) {
             push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span>' };
@@ -1595,6 +1589,18 @@ sub _plotit {
         }
     }
     return;
+}
+
+################################################################################
+# fix a user supplied regex to make it compliant with mx options
+sub _fix_regex {
+    my $self  = shift;
+    my $regex = shift;
+
+    $regex =~ s/\\\ / /mx;
+    $regex =~ s/\ /\\ /gmx;
+
+    return $regex;
 }
 
 ################################################################################
