@@ -147,7 +147,11 @@ sub new {
 
     for my $opt_key ( keys %options ) {
         if( exists $self->{'config'}->{$opt_key} ) {
-            $self->{'config'}->{$opt_key} = $options{$opt_key};
+            if($opt_key eq 'httpauth') {
+                $self->_set_http_auth($options{$opt_key});
+            } else {
+                $self->{'config'}->{$opt_key} = $options{$opt_key};
+            }
         }
         else {
             $self->_usage("ERROR: unknown option: ".$opt_key);
@@ -489,12 +493,7 @@ sub _get_useragent {
     }
 
     # don't follow redirects for GET's (POST's already don't follow, by default)
-    unless(defined $self->{'config'}->{'max_redirect'}) {
-        $useragent->max_redirect('0');
-    }
-    else {
-        $useragent->max_redirect($self->{'config'}->{'max_redirect'});
-    }
+    $useragent->max_redirect($self->{'config'}->{'max_redirect'});
 
     # add proxy support if it is set in config.xml
     if( $self->{'config'}->{'proxy'} ) {
@@ -505,12 +504,11 @@ sub _get_useragent {
     # corresponds to:
     # $useragent->credentials('servername:portnumber', 'realm-name', 'username' => 'password');
     if(scalar @{$self->{'config'}->{'httpauth'}}) {
-
         # add the credentials to the user agent here. The foreach gives the reference to the tuple ($elem), and we
         # deref $elem to get the array elements.
         for my $elem ( @{ $self->{'config'}->{'httpauth'} } ) {
             #print "adding credential: $elem->[0]:$elem->[1], $elem->[2], $elem->[3] => $elem->[4]\n";
-            $useragent->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
+            print $useragent->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
         }
     }
 
@@ -538,6 +536,7 @@ sub _set_defaults {
         'baseurl1'                  => '',
         'baseurl2'                  => '',
         'break_on_errors'           => 0,
+        'max_redirect'              => 0,
     };
     $self->{'exit_codes'}         = {
         'UNKNOWN'  => 3,
@@ -1166,18 +1165,8 @@ sub _read_config_xml {
 
         if (/<httpauth>/mx) {
 
-            #each time we see an <httpauth>, we set @authentry to be the
-            #array of values, then we use [] to get a reference to that array
-            #and push that reference onto @httpauth.
-            my @authentry;
             $_ =~ m~<httpauth>(.*)</httpauth>~mx;
-            @authentry = split( /:/mx, $1 );
-            if ( $#authentry != 4 ) {
-                $self->_usage("ERROR: httpauth should have 5 fields delimited by colons");
-            }
-            else {
-                push( @{ $self->{'config'}->{'httpauth'} }, [@authentry] );
-            }
+            $self->_set_http_auth($1);
 
             #print "\nhttpauth : @{$self->{'config'}->{'httpauth'}} \n\n";
         }
@@ -1189,6 +1178,31 @@ sub _read_config_xml {
             #print "\n$filename \n\n";
             push @{ $self->{'casefilelist'} }, $filename;         #add next filename we grab to end of array
         }
+    }
+
+    return;
+}
+
+################################################################################
+# parse and set http auth config
+sub _set_http_auth {
+    my $self       = shift;
+    my $confstring = shift;
+
+    #each time we see an <httpauth>, we set @authentry to be the
+    #array of values, then we use [] to get a reference to that array
+    #and push that reference onto @httpauth.
+
+    my @authentry = split( /:/mx, $confstring );
+    if( scalar @authentry != 5 ) {
+        $self->_usage("ERROR: httpauth should have 5 fields delimited by colons, got: ".$confstring);
+    }
+    else {
+        push( @{ $self->{'config'}->{'httpauth'} }, [@authentry] );
+    }
+    # basic authentication only works with redirects enabled
+    if($self->{'config'}->{'max_redirect'} == 0) {
+        $self->{'config'}->{'max_redirect'}++;
     }
 
     return;

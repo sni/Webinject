@@ -10,6 +10,7 @@ Release History:
 Version 1.51 - xxx
     - added EPN support for check_webinject
     - remove the long nagios output for non failed checks
+    - fixed http authentication
 
 Version 1.50 - Jul 29, 2010
     - changed layout to common cpan module style

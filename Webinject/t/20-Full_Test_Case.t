@@ -95,7 +95,5 @@ sub test_case_config {
     my $secondcase = $webinject->{'result'}->{'files'}->[0]->{'cases'}->[1];
     delete $secondcase->{'messages'};
     delete $secondcase->{'latency'};
-$Data::Dumper::Sortkeys = 1;
-print STDERR Dumper($secondcase);
     is_deeply($secondcase, $expected2, '20-full_test.xml - second expected case');
 }
