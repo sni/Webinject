@@ -1504,7 +1504,7 @@ sub _finaltasks {
                 $rc = $self->{'exit_codes'}->{'WARNING'};
             }
             elsif( $self->{'config'}->{globaltimeout} && $self->{'result'}->{'totalruntime'} > $self->{'config'}->{globaltimeout} ) {
-                print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached |$perfdata\n";
+                print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached$perfdata\n";
                 $rc = $self->{'exit_codes'}->{'WARNING'};
             }
             else {
