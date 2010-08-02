@@ -21,3 +21,14 @@ requires 'Tk::PNG'               => 0;
 
 auto_install;
 WriteAll;
+
+open(my $fh, '>>', 'Makefile') or die('cannot write to Makefile');
+print $fh <<EOT;
+webinjectgui.pl ::
+	echo '#!/usr/bin/env perl'  > ./webinjectgui.pl
+	echo '# nagios: +epn'      >> ./webinjectgui.pl
+	echo ''                    >> ./webinjectgui.pl
+	cat ../Webinject/lib/Webinject.pm lib/Webinject/Gui.pm ./bin/webinjectgui.pl | grep -v '^use Webinject' | grep -v '__END__' >> ./webinjectgui.pl
+	chmod 755 ./webinjectgui.pl
+EOT
+close($fh);

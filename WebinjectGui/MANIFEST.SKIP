@@ -1,0 +1,8 @@
+.gitignore
+MANIFEST.bak
+webinjectgui.pl
+http.log
+results.html
+results.xml
+Makefile
+META.yml
