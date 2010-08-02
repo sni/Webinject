@@ -32,5 +32,12 @@ check_webinject ::
 	echo ''                    >> ./check_webinject
 	cat ./lib/Webinject.pm ./bin/webinject.pl | grep -v '^use Webinject' | grep -v '__END__' | sed -e 's/my \$\$webinject = Webinject->new\(\);/my \$\$webinject = Webinject->new(reporttype => \\"nagios\\", timeout => 30, break_on_errors => 1);/' >> ./check_webinject
 	chmod 755 ./check_webinject
+
+webinject.pl ::
+	echo '#!/usr/bin/env perl'  > ./webinject.pl
+	echo '# nagios: +epn'      >> ./webinject.pl
+	echo ''                    >> ./webinject.pl
+	cat ./lib/Webinject.pm ./bin/webinject.pl | grep -v '^use Webinject' | grep -v '__END__' >> ./webinject.pl
+	chmod 755 ./webinject.pl
 EOT
 close($fh);

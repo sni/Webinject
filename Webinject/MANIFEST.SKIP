@@ -1,6 +1,7 @@
 .gitignore
 MANIFEST.bak
 check_webinject
+webinject.pl
 http.log
 results.html
 results.xml
