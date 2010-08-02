@@ -1133,8 +1133,9 @@ sub _read_config_xml {
     foreach (@configlines) {
 
         for my $key (
-            qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout
-            globaltimeout globalhttplog standaloneplot max_redirect/
+            qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout output_dir
+            globaltimeout globalhttplog standaloneplot max_redirect
+            useragent/
           )
         {
 
@@ -1154,14 +1155,6 @@ sub _read_config_xml {
             }
 
             #print "\nreporttype : $self->{'config'}->{'reporttype'} \n\n";
-        }
-
-        if (/<useragent>/mx) {
-            # http useragent that will show up in webserver logs
-            if(m~<useragent>(.*)</useragent>~mx) {
-                $self->{'config'}->{'useragent'} = $1;
-                # print "\nuseragent : $self->{'config'}->{'useragent'} \n\n";
-            }
         }
 
         if (/<httpauth>/mx) {
