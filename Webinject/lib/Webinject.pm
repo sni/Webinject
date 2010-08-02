@@ -492,7 +492,8 @@ sub _get_useragent {
         $useragent->agent($self->{'config'}->{'useragent'});
     }
 
-    # don't follow redirects for GET's (POST's already don't follow, by default)
+    # don't follow redirects unless set by config
+    push @{$useragent->requests_redirectable}, 'POST';
     $useragent->max_redirect($self->{'config'}->{'max_redirect'});
 
     # add proxy support if it is set in config.xml
