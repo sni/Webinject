@@ -4,5 +4,6 @@ check_webinject
 http.log
 results.html
 results.xml
-Makefile
+Makefile$
+Makefile.old$
 META.yml

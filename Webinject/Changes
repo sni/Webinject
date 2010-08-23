@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.52 - Aug 23, 2010
+    - fixed package (Makefile.PL) was missing
+
 Version 1.51 - Jul 30, 2010
     - added EPN support for check_webinject
     - remove the long nagios output for non failed checks
