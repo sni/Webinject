@@ -1,10 +1,8 @@
 .gitignore
 MANIFEST.bak
-check_webinject
-webinject.pl
+webinjectgui.pl
 http.log
 results.html
 results.xml
-Makefile$
-Makefile.old$
+Makefile
 META.yml

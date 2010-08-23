@@ -12,3 +12,4 @@ testcases.xml.*.tmp
 plot.log
 plot.plt
 plot.png
+webinjectgui.pl
