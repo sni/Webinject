@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.53';
+our $VERSION = '1.54';
 
 =head1 NAME
 
@@ -1209,8 +1209,6 @@ sub _processcasefile {
     # parse config file and grab values it sets
     my $self = shift;
 
-    undef $self->{'casefilelist'};    # empty the array of test case filenames
-
     if( ( $#ARGV + 1 ) < 1 ) {    #no command line args were passed
         unless( $self->{'casefilelist'}->[0] ) {
             if ( -e "testcases.xml" ) {
@@ -1659,7 +1657,7 @@ sub _usage {
     my $self = shift;
     my $text = shift;
 
-    print "\n".$text."\n\n" if defined $text;
+    print $text."\n\n" if defined $text;
 
     print <<EOB;
     Usage:
