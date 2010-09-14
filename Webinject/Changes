@@ -8,6 +8,7 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 Version 1.54 - Tue Sep 14 11:55:48 CEST 2010
+    - fixed problem with "Return code of 13 for check of service ... on host ... was out of bounds"
     - fixed problem with error output
     - fixed problem with specifying testcases in the config.xml
 

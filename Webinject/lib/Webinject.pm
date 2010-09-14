@@ -599,8 +599,9 @@ Starting WebInject Engine (v$Webinject::VERSION)...
 sub _write_result_html {
     my $self    = shift;
 
-    open( my $resultshtml, ">", $self->{'config'}->{'output_dir'}."results.html" )
-      or croak "\nERROR: Failed to open results.html file: $!\n\n";
+    my $file = $self->{'config'}->{'output_dir'}."results.html";
+    open( my $resultshtml, ">", $file )
+      or $self->_usage("ERROR: Failed to write ".$file.": ".$!);
 
     print $resultshtml
       qq|<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -670,8 +671,9 @@ Min Response Time: $self->{'result'}->{'minresponse'} seconds <br />
 sub _write_result_xml {
     my $self    = shift;
 
-    open( my $resultsxml, ">", $self->{'config'}->{'output_dir'}."results.xml" )
-      or croak "\nERROR: Failed to open results.xml file: $!\n\n";
+    my $file = $self->{'config'}->{'output_dir'}."results.xml";
+    open( my $resultsxml, ">", $file )
+      or $self->_usage("ERROR: Failed to write ".$file.": ".$!);
 
     print $resultsxml "<results>\n\n";
 
@@ -824,7 +826,7 @@ sub _httppost_xml {
 
     # read the xml file specified in the testcase
     $case->{postbody} =~ m~file=>(.*)~imx;
-    open( my $xmlbody, "<", $1 ) or croak "\nError: Failed to open text/xml file: $!\n\n";    # open file handle
+    open( my $xmlbody, "<", $1 ) or $self->_usage("ERROR: Failed to open text/xml file ".$1.": ".$!);    # open file handle
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
@@ -1098,13 +1100,13 @@ sub _read_config_xml {
     # if -c option was set on command line, use specified config file
     if(defined $config_file) {
         open( $config, '<', $config_file )
-          or croak "\nERROR: Failed to open ".$config_file." file: $!\n\n";
+          or $self->_usage("ERROR: Failed to open ".$config_file." file: ".$!);
         $self->{'config'}->{'exists'} = 1;   # flag we are going to use a config file
     }
     # if config.xml exists, read it
     elsif( -e "config.xml" ) {
         open( $config, '<', "config.xml" )
-          or croak "\nERROR: Failed to open config.xml file: $!\n\n";
+          or $self->_usage("ERROR: Failed to open config.xml file: ".$!);
         $self->{'config'}->{'exists'} = 1; # flag we are going to use a config file
     }
 
@@ -1263,7 +1265,7 @@ sub _convtestcases {
     my ( $fh, $tempfilename ) = tempfile();
     my $filename = $currentcasefile;
     open( my $xmltoconvert, '<', $filename )
-      or $self->_usage("ERROR: Failed to open test case file: ".$filename.": ".$!);
+      or $self->_usage("ERROR: Failed to read test case file: ".$filename.": ".$!);
     # read the file into an array
     @xmltoconvert = <$xmltoconvert>;
 
@@ -1284,7 +1286,7 @@ sub _convtestcases {
 
     # open file handle to temp file
     open( $xmltoconvert, '>', $tempfilename )
-      or croak("ERROR: Failed to open temp file for writing: $!\n");
+      or $self->_usage("ERROR: Failed to write ".$tempfilename.": ".$!);
     print $xmltoconvert @xmltoconvert;  # overwrite file with converted array
     close($xmltoconvert);
     return $tempfilename;
@@ -1356,8 +1358,9 @@ sub _httplog {
     }
 
     if($output ne '') {
-        open( my $httplogfile, ">>", $self->{'config'}->{'output_dir'}."http.log" )
-          or croak("\nERROR: Failed to open http.log file: $!\n");
+        my $file = $self->{'config'}->{'output_dir'}."http.log";
+        open( my $httplogfile, ">>", $file )
+          or $self->_usage("ERROR: Failed to write ".$file.": ".$!);
         print $httplogfile $output;
         print $httplogfile "\n************************* LOG SEPARATOR *************************\n\n\n";
         close($httplogfile);
@@ -1401,13 +1404,15 @@ sub _plotlog {
         # used to clear the graph when requested
         if( $self->{'switches'}->{'plotclear'} eq 'yes' ) {
             # open in clobber mode so log gets truncated
-            open( $plotlog, '>', $self->{'config'}->{'output_dir'}."plot.log" )
-              or croak("ERROR: Failed to open file plot.log: $!\n");
+            my $file = $self->{'config'}->{'output_dir'}."plot.log";
+            open( $plotlog, '>', $file )
+              or $self->_usage("ERROR: Failed to write ".$file.": ".$!);
             $self->{'switches'}->{'plotclear'} = 'no';    # reset the value
         }
         else {
-            open( $plotlog, '>>', $self->{'config'}->{'output_dir'}."plot.log" )
-              or croak "ERROR: Failed to open file plot.log: $!\n";  #open in append mode
+            my $file = $self->{'config'}->{'output_dir'}."plot.log";
+            open( $plotlog, '>>', $file )
+              or $self->_usage("ERROR: Failed to write ".$file.": ".$!);  #open in append mode
         }
 
         printf $plotlog "%s %2.4f\n", $time, $value;
@@ -1425,8 +1430,9 @@ sub _plotcfg {
     if(   ( $self->{'gui'} and $self->{'monitorenabledchkbx'} ne 'monitor_off')
        or (!$self->{'gui'} and $self->{'config'}->{'standaloneplot'} eq 'on')
     ) {
-        open( my $gnuplotplt, ">", $self->{'config'}->{'output_dir'}."plot.plt" )
-          or croak "Could not open file\n";
+        my $file = $self->{'config'}->{'output_dir'}."plot.plt";
+        open( my $gnuplotplt, ">", $file )
+          or _usage("ERROR: Could not open ".$file.": ".$!);
         print $gnuplotplt qq|
 set term png
 set output \"$self->{'config'}->{'output_dir'}plot.png\"
