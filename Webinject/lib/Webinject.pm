@@ -856,9 +856,9 @@ sub _httppost_xml {
         # print "bad xml\n";
         # we suppress most logging when running in a plugin mode
         if($self->{'config'}->{'reporttype'} eq 'standard') {
-            push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed XML Parser: ".$ex."</span>" };
+            push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed XML parser on response: ".$ex."</span>" };
         }
-        $self->_out("Failed XML Parser: $ex \n");
+        $self->_out("Failed XML parser on response: $ex \n");
         $case->{'failedcount'}++;
         $self->{'result'}->{'iscritical'} = 1;
     };    # <-- remember the semicolon
