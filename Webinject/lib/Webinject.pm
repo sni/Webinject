@@ -776,14 +776,14 @@ sub _httppost {
     my $case        = shift;
 
     if($case->{posttype} ) {
-        if($case->{posttype} =~ m~application/x-www-form-urlencoded~mx) {
+        if($case->{posttype} =~ m~application/x\-www\-form\-urlencoded~mx) {
             return $self->_httppost_form_urlencoded($useragent, $case);
         }
-        elsif($case->{posttype} =~ m~multipart/form-data~mx) {
+        elsif($case->{posttype} =~ m~multipart/form\-data~mx) {
             return $self->_httppost_form_data($useragent, $case);
         }
         elsif(   ($case->{posttype} =~ m~text/xml~mx)
-              or ($case->{posttype} =~ m~application/soap+xml~mx)
+              or ($case->{posttype} =~ m~application/soap\+xml~mx)
              )
         {
             return $self->_httppost_xml($useragent, $case);
