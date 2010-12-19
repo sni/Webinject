@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.54';
+our $VERSION = '1.55';
 
 =head1 NAME
 
@@ -209,7 +209,9 @@ sub engine {
 
         my $tempfile = $self->_convtestcases($currentcasefile);
 
-        my $xmltestcases = XMLin( $tempfile, VarAttr => 'varname' );    # slurp test case file to parse (and specify variables tag)
+        my $xmltestcases = XMLin( $tempfile,
+                                  varattr   => 'varname',
+                                  variables => $self->{'config'} );    # slurp test case file to parse (and specify variables tag)
         # fix case if there is only one case
         if( defined $xmltestcases->{'case'}->{'id'} ) {
             my $tmpcase = $xmltestcases->{'case'};
@@ -843,7 +845,7 @@ sub _httppost_xml {
         $xmlparser->parse($response->content);
 
         # print "good xml\n";
-        push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'true', '<span class="pass">Passed XML Parser (content is well-formed)</span>' };
+        push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'true', 'html' => '<span class="pass">Passed XML Parser (content is well-formed)</span>' };
         $self->_out("Passed XML Parser (content is well-formed) \n");
         $case->{'passedcount'}++;
 

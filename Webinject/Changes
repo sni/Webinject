@@ -7,7 +7,8 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
-Version 1.55 - ...
+Version 1.55 - Sun Dec 19 11:39:30 CET 2010
+    - fixed problem with xml post checks (thanks Frédéric Gicquel)
     - fixed problem with escaping form types
 
 Version 1.54 - Tue Sep 14 11:55:48 CEST 2010
@@ -57,7 +58,7 @@ Version 1.40 - Dec 6, 2005
     - More detail added to XML output
     - Code refactoring
 
-    
+
 Version 1.35 - April 4, 2005
     - New command line option (-o) to specify location for writing output files (http.log, results.html, and results.xml)
     - Nagios plugin performance data support
@@ -78,14 +79,14 @@ Version 1.33 - Jan 26, 2005
     - Nagios Plugin compatibility
     - Support for multipart/form-data encoded POSTs (file uploads)
     - Updated results.html output so it is valid XHTML
-  
+
 Version 1.32 - Jan 14, 2005
     - Bugfix for erroneous dummy test case printing in GUI status
     - Bugfix for warning that appeared when running GUI with Perl in -w mode
-    
+
 Version 1.31 - Jan 11, 2005
     - Bugfix for errors and broken status bar in GUI
-    
+
 Version 1.30 - Jan 07, 2005
     - HTTP Basic Authentication support
     - No longer forced to have test cases in strict incremental numbered order
@@ -162,5 +163,5 @@ Version 0.90 - Feb 19, 2004
     - Contains SSL/TLS support
     - Perl/Tk GUI
     - Automatic cookie handling
-    
+
 ---------------------------------
