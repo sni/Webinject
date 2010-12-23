@@ -57,7 +57,7 @@ sub test_case_01 {
     my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 1, '01-response_codes.xml - fail count');
-    is($rc, 0, '01-response_codes.xml - return code');
+    is($rc, 1, '01-response_codes.xml - return code');
 }
 
 ##################################################
@@ -93,7 +93,7 @@ sub test_case_04 {
     my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 5, '04-repeated_tests.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 5, '04-repeated_tests.xml - fail count');
-    is($rc, 0, '04-repeated_tests.xml - return code');
+    is($rc, 1, '04-repeated_tests.xml - return code');
 }
 
 ##################################################
@@ -109,7 +109,7 @@ sub test_case_05 {
         my $rc = $webinject->engine();
         is($webinject->{'result'}->{'totalpassedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - passed count');
         is($webinject->{'result'}->{'totalfailedcount'}, 1, 'reporttype: '.$type.' 05-report_types.xml - fail count');
-        is($rc, 0, '05-report_types.xml - return code') if $type ne 'nagios';
+        is($rc, 1, '05-report_types.xml - return code') if $type ne 'nagios';
         is($rc, 2, '05-report_types.xml - return code') if $type eq 'nagios';
     }
 }
@@ -150,7 +150,7 @@ sub test_case_07 {
     my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 1, '01-response_codes.xml - fail count');
-    is($rc, 0, '01-response_codes.xml - return code');
+    is($rc, 1, '01-response_codes.xml - return code');
 }
 
 
@@ -162,6 +162,6 @@ sub test_case_08 {
     my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 1, '01-response_codes.xml - fail count');
-    is($rc, 0, '01-response_codes.xml - return code');
+    is($rc, 1, '01-response_codes.xml - return code');
 }
 

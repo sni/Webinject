@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.56 - Sun...
+    - webinject now exits with rc = 1 in case of failed tests ( not in reportmode nagios )
+
 Version 1.55 - Sun Dec 19 11:39:30 CET 2010
     - fixed problem with xml post checks (thanks Frédéric Gicquel)
     - fixed problem with escaping form types

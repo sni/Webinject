@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.55';
+our $VERSION = '1.56';
 
 =head1 NAME
 
@@ -1522,11 +1522,9 @@ sub _finaltasks {
         {    #report results in MRTG format
             if( $self->{'result'}->{'totalcasesfailedcount'} > 0 ) {
                 print "$self->{'result'}->{'totalruntime'}\n$self->{'result'}->{'totalruntime'}\n\nWebInject CRITICAL - $self->{'result'}->{'returnmessage'} \n";
-                return 0;
             }
             else {
                 print "$self->{'result'}->{'totalruntime'}\n$self->{'result'}->{'totalruntime'}\n\nWebInject OK - All tests passed successfully in $self->{'result'}->{'totalruntime'} seconds \n";
-                return 0;
             }
         }
 
@@ -1546,6 +1544,8 @@ sub _finaltasks {
         }
 
     }
+
+    return 1 if $self->{'result'}->{'totalcasesfailedcount'} > 0;
     return 0;
 }
 
