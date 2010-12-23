@@ -15,7 +15,7 @@ if($ENV{TEST_AUTHOR}) {
         plan skip_all => 'HTTP::Server::Simple::CGI required';
     }
     else{
-        plan tests => 38;
+        plan tests => 41;
     }
 }
 else{
@@ -40,6 +40,7 @@ test_case_04();
 test_case_05();
 test_case_06();
 test_case_07();
+test_case_08();
 
 
 
@@ -145,6 +146,18 @@ sub test_case_06 {
 # Test Case 7 / File 01
 sub test_case_07 {
     @ARGV = ("-s", "baseurl=http://localhost:58080", $Bin."/data/01-response_codes.xml");
+    my $webinject = Webinject->new();
+    my $rc = $webinject->engine();
+    is($webinject->{'result'}->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 1, '01-response_codes.xml - fail count');
+    is($rc, 0, '01-response_codes.xml - return code');
+}
+
+
+##################################################
+# Test Case 8 / File 08
+sub test_case_08 {
+    @ARGV = ("-s", "baseurl=http://localhost:58080", "-s", "code1=200", "-s", "code_500=500", $Bin."/data/08-custom_var.xml");
     my $webinject = Webinject->new();
     my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 1, '01-response_codes.xml - passed count');
