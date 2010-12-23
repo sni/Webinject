@@ -224,7 +224,7 @@ sub engine {
         if ( -e $tempfile ) { unlink $tempfile; }
 
         my $repeat = 1;
-        if(defined $xmltestcases->{repeat}) {
+        if(defined $xmltestcases->{repeat} and $xmltestcases->{repeat} > 0) {
             $repeat = $xmltestcases->{repeat};
         }
 
