@@ -8,6 +8,7 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 Version 1.56 - Sun...
+    - added support for verifypositive|negative1-9999
     - webinject now exits with rc = 1 in case of failed tests ( not in reportmode nagios )
 
 Version 1.55 - Sun Dec 19 11:39:30 CET 2010

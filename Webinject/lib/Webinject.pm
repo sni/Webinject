@@ -894,7 +894,8 @@ sub _verify {
     confess("no response") unless defined $response;
     confess("no case")     unless defined $case;
 
-    for my $key (qw/verifypositive verifypositive1 verifypositive2 verifypositive3/) {
+    for my $nr ('', 1..1000) {
+        my $key = "verifypositive".$nr;
         if( $case->{$key} ) {
             $self->_out("Verify: '".$case->{$key}."' \n");
             push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key}, 'html' => "Verify: ".$case->{$key} };
@@ -912,9 +913,13 @@ sub _verify {
                 $self->{'result'}->{'iscritical'} = 1;
             }
         }
+        elsif($nr ne '' and $nr > 5) {
+            last;
+        }
     }
 
-    for my $key (qw/verifynegative verifynegative1 verifynegative2 verifynegative3/) {
+    for my $nr ('', 1..1000) {
+        my $key = "verifynegative".$nr;
         if( $case->{$key} ) {
             $self->_out("Verify Negative: '".$case->{$key}."' \n");
             push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key}, 'html' => "Verify Negative: ".$case->{$key} };
@@ -931,6 +936,9 @@ sub _verify {
                 $self->_out("Passed Negative Verification \n");
                 $case->{'passedcount'}++;
             }
+        }
+        elsif($nr ne '' and $nr > 5) {
+            last;
         }
     }
 
