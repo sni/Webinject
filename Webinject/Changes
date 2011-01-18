@@ -9,6 +9,7 @@ Release History:
 
 Version 1.56 - Sun...
     - added support for verifypositive|negative1-9999
+    - fixed error message when trying to start with invalid test files
     - webinject now exits with rc = 1 in case of failed tests ( not in reportmode nagios )
 
 Version 1.55 - Sun Dec 19 11:39:30 CET 2010

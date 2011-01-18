@@ -1,6 +1,6 @@
 package Webinject;
 
-#    Copyright 2010 Sven Nierlein (nierlein@cpan.org)
+#    Copyright 2010.2011 Sven Nierlein (nierlein@cpan.org)
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
 #    This file is part of WebInject.
@@ -209,16 +209,23 @@ sub engine {
 
         my $tempfile = $self->_convtestcases($currentcasefile);
 
-        my $xmltestcases = XMLin( $tempfile,
+        my $xmltestcases;
+        eval {
+            $xmltestcases = XMLin( $tempfile,
                                   varattr   => 'varname',
                                   variables => $self->{'config'} );    # slurp test case file to parse (and specify variables tag)
+        };
+        if($@) {
+            my $error = $@;
+            $error =~ s/^\s*//mx;
+            $self->_usage("ERROR: reading xml test case ".$currentcasefile." failed: ".$error);
+        }
+
         # fix case if there is only one case
         if( defined $xmltestcases->{'case'}->{'id'} ) {
             my $tmpcase = $xmltestcases->{'case'};
             $xmltestcases->{'case'} = { $tmpcase->{'id'} => $tmpcase };
         }
-        #print Dumper($xmltestcases);  #for debug, dump hash of xml
-        #print keys %{$self->{'config'}->file};  #for debug, print keys from dereferenced hash
 
         #delete the temp file as soon as we are done reading it
         if ( -e $tempfile ) { unlink $tempfile; }
