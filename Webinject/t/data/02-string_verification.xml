@@ -1,6 +1,7 @@
 <testcases repeat="1">
 <case
     id                 = "1"
+    label              = "testlabel"
     description1       = "test string verification"
     method             = "get"
     url                = "{BASEURL}/teststring"

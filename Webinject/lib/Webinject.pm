@@ -255,7 +255,11 @@ sub engine {
                     $case->{$key} = $xmltestcases->{'case'}->{$testnum}->{$key};
                 }
 
-                $self->_out(qq|Test:  $currentcasefile - $testnum \n|);
+                my $label = '';
+                if(defined $case->{'label'}) {
+                    $label = $case->{'label'}." - ";
+                }
+                $self->_out(qq|Test: $label$currentcasefile - $testnum \n|);
 
                 $case = $self->_run_test_case($case, $useragent);
 
