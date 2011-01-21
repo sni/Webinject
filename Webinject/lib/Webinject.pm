@@ -522,7 +522,7 @@ sub _get_useragent {
         # deref $elem to get the array elements.
         for my $elem ( @{ $self->{'config'}->{'httpauth'} } ) {
             #print "adding credential: $elem->[0]:$elem->[1], $elem->[2], $elem->[3] => $elem->[4]\n";
-            print $useragent->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
+            $useragent->credentials( $elem->[0].":".$elem->[1], $elem->[2], $elem->[3] => $elem->[4] );
         }
     }
 
