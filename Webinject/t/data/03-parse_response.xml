@@ -6,7 +6,8 @@
     url                = "{BASEURL}/teststring"
     verifyresponsecode = "200"
     verifypositive     = "this is just a teststring"
-    parseresponse      = "HTTP | OK"
+    parseresponse      = "HTTP|OK"
+    parseresponse1     = "this is | a teststring"
 />
 <case
     id                 = "2"

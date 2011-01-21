@@ -7,7 +7,10 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
-Version 1.56 - Sun...
+Version 1.57 - Sat Jan 22 00:34:56 CET 2011
+    - fixed problem with regular expression using whitespace (thanks Olivier Legras)
+
+Version 1.56 - Thu Jan 20 18:31:06 CET 2011
     - added support for verifypositive|negative1-9999
     - added lable to test case output when supplied
     - fixed error message when trying to start with invalid test files

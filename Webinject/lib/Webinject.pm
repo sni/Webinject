@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.56';
+our $VERSION = '1.57';
 
 =head1 NAME
 
@@ -1082,29 +1082,31 @@ sub _parseresponse {
     my ( $resptoparse, @parseargs );
     my ( $leftboundary, $rightboundary, $escape );
 
-    for( qw/parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5/ ) {
+    for my $type ( qw/parseresponse parseresponse1 parseresponse2 parseresponse3 parseresponse4 parseresponse5/ ) {
 
-        next unless $case->{$_};
+        next unless $case->{$type};
 
-        @parseargs = split( /\|/mx, $case->{$_} );
+        @parseargs = split( /\|/mx, $case->{$type} );
 
         $leftboundary  = $parseargs[0];
         $rightboundary = $parseargs[1];
         $escape        = $parseargs[2];
 
         $resptoparse = $response->as_string;
+        ## no critic
         if ( $resptoparse =~ m~$leftboundary(.*?)$rightboundary~smx ) {
-            $self->{'parsedresult'}->{$_} = $1;
+            $self->{'parsedresult'}->{$type} = $1;
         }
+        ## use critic
 
         if ($escape) {
             if ( $escape eq 'escape' ) {
-                $self->{'parsedresult'}->{$_} =
-                  $self->_url_escape( $self->{'parsedresult'}->{$_} );
+                $self->{'parsedresult'}->{$type} =
+                  $self->_url_escape( $self->{'parsedresult'}->{$type} );
             }
         }
 
-        #print "\n\nParsed String: $self->{'parsedresult'}->{$_}\n\n";
+        #print "\n\nParsed String: $self->{'parsedresult'}->{$type}\n\n";
     }
     return;
 }
