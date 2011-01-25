@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.58 - Tue Jan 25 20:15:35 CET 2011
+    - really fixed problem with regular expression using whitespace (thanks Benoit Baron)
+
 Version 1.57 - Sat Jan 22 00:34:56 CET 2011
     - fixed problem with regular expression using whitespace (thanks Olivier Legras)
 

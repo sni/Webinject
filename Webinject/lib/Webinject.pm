@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.57';
+our $VERSION = '1.58';
 
 =head1 NAME
 
@@ -1094,7 +1094,7 @@ sub _parseresponse {
 
         $resptoparse = $response->as_string;
         ## no critic
-        if ( $resptoparse =~ m~$leftboundary(.*?)$rightboundary~smx ) {
+        if ( $resptoparse =~ m~$leftboundary(.*?)$rightboundary~s ) {
             $self->{'parsedresult'}->{$type} = $1;
         }
         ## use critic
