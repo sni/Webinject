@@ -1698,7 +1698,7 @@ sub _usage {
                 [-r|--report-type]
                 [-s key=value]
                 [testcase_file [XPath]]
-      webinject.pl --version|-v
+      $0 --version|-v
 EOB
     exit 3;
 }
