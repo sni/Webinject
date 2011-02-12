@@ -60,6 +60,8 @@ sub test_case_01 {
     is($result->{'latency'} > 2, 1, '01 - timeouts - latency');
     delete $result->{'messages'};
     delete $result->{'latency'};
+    delete $result->{'response'};
+    delete $result->{'request'};
     is_deeply($result, $expected, '01 - timeouts - result') or BAIL_OUT("expected: \n".Dumper($expected)."\nresult: \n".Dumper($result));
     is($webinject->{'result'}->{'iscritical'}, 0, '01 - timeouts - iscritical');
     is($webinject->{'result'}->{'iswarning'}, 0, '01 - timeouts - iswarning');
@@ -84,6 +86,8 @@ sub test_case_02 {
     is($result->{'latency'} > 2, 1, '02 - timeouts - latency');
     delete $result->{'messages'};
     delete $result->{'latency'};
+    delete $result->{'response'};
+    delete $result->{'request'};
     is_deeply($result, $expected, '02 - timeouts - result') or BAIL_OUT("expected: \n".Dumper($expected)."\nresult: \n".Dumper($result));
     is($webinject->{'result'}->{'iscritical'}, 0, '02 - timeouts - iscritical');
     is($webinject->{'result'}->{'iswarning'}, 1, '02 - timeouts - iswarning');
@@ -107,6 +111,8 @@ sub test_case_03 {
     is($result->{'latency'} > 1, 1, '03 - timeouts - latency');
     delete $result->{'messages'};
     delete $result->{'latency'};
+    delete $result->{'response'};
+    delete $result->{'request'};
     is_deeply($result, $expected, 'timeouts - result') or BAIL_OUT("expected: \n".Dumper($expected)."\nresult: \n".Dumper($result));
     is($webinject->{'result'}->{'iscritical'}, 1, '03 - timeouts - iscritical');
     is($webinject->{'result'}->{'iswarning'}, 0, '03 - timeouts - iswarning');

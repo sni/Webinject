@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.58';
+our $VERSION = '1.60';
 
 =head1 NAME
 
@@ -345,7 +345,9 @@ sub _run_test_case {
     else {
         ($latency,$request,$response) = $self->_httpget($useragent, $case);     # use "get" if no method is specified
     }
-    $case->{'latency'} = $latency;
+    $case->{'latency'}  = $latency;
+    $case->{'request'}  = $request->as_string();
+    $case->{'response'} = $response->as_string();
 
     # verify result from http response
     $self->_verify($response, $case);
@@ -505,14 +507,17 @@ sub _get_useragent {
         $useragent->agent($self->{'config'}->{'useragent'});
     }
 
+    # add proxy support if it is set in config.xml
+    if( $self->{'config'}->{'proxy'} ) {
+        my $proxy = $self->{'config'}->{'proxy'};
+        $proxy    =~ s/^http:\/\///mx;
+        $useragent->proxy([qw( http )], "http://".$proxy);
+        $ENV{'HTTPS_PROXY'} = "http://".$proxy;
+    }
+
     # don't follow redirects unless set by config
     push @{$useragent->requests_redirectable}, 'POST';
     $useragent->max_redirect($self->{'config'}->{'max_redirect'});
-
-    # add proxy support if it is set in config.xml
-    if( $self->{'config'}->{'proxy'} ) {
-        $useragent->proxy( [ 'http', 'https' ], $self->{'config'}->{proxy} );
-    }
 
     # add http basic authentication support
     # corresponds to:
@@ -552,6 +557,7 @@ sub _set_defaults {
         'break_on_errors'           => 0,
         'max_redirect'              => 0,
         'globalhttplog'             => 'no',
+        'proxy'                     => '',
     };
     $self->{'exit_codes'}         = {
         'UNKNOWN'  => 3,

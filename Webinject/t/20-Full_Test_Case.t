@@ -81,6 +81,8 @@ sub test_case_config {
     my $firstcase = $webinject->{'result'}->{'files'}->[0]->{'cases'}->[0];
     delete $firstcase->{'messages'};
     delete $firstcase->{'latency'};
+    delete $firstcase->{'response'};
+    delete $firstcase->{'request'};
     is_deeply($firstcase, $expected, '20-full_test.xml - first expected case');
 
     my $expected2 =  {
@@ -95,5 +97,7 @@ sub test_case_config {
     my $secondcase = $webinject->{'result'}->{'files'}->[0]->{'cases'}->[1];
     delete $secondcase->{'messages'};
     delete $secondcase->{'latency'};
+    delete $secondcase->{'response'};
+    delete $secondcase->{'request'};
     is_deeply($secondcase, $expected2, '20-full_test.xml - second expected case');
 }
