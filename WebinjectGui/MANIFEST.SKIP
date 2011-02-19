@@ -1,8 +1,12 @@
+blib
 .gitignore
 MANIFEST.bak
-webinjectgui.pl
 http.log
 results.html
 results.xml
 Makefile
 META.yml
+plot.log
+plot.plt
+plot.png
+.*.gz

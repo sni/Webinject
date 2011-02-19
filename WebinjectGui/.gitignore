@@ -3,7 +3,6 @@ inc
 META.yml
 blib
 pm_to_blib
-MANIFEST
 Makefile.old
 http.log
 results.html
@@ -13,3 +12,4 @@ plot.log
 plot.plt
 plot.png
 webinjectgui.pl
+*.gz

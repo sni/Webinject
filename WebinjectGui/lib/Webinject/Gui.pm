@@ -26,11 +26,11 @@ use Tk::NoteBook;
 use Tk::PNG;
 use base qw/Webinject/;
 
-our $VERSION = '1.50';
+our $VERSION = '1.52';
 
 =head1 NAME
 
-Webinject-Gui - Gui part of Webinject
+Webinject::Gui - Gui part of Webinject
 
 =head1 SYNOPSIS
 

@@ -19,6 +19,8 @@ requires 'Tk::ProgressBar::Mac'  => 0;
 requires 'Tk::NoteBook'          => 0;
 requires 'Tk::PNG'               => 0;
 
+install_script 'bin/webinjectgui.pl';
+
 auto_install;
 WriteAll;
 
