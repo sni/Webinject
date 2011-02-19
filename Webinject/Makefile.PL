@@ -21,6 +21,8 @@ requires 'XML::Parser'             => 0;
 requires 'Error'                   => 0;
 requires 'File::Temp'              => 0;
 
+install_script 'bin/webinject.pl';
+
 auto_install;
 WriteAll;
 

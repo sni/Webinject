@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.62 - Sat Feb 19 16:24:56 CET 2011
+    - fixed cpan package
+
 Version 1.60 - Sat Feb 12 15:10:09 CET 2011
     - fixed ssl proxy support
     - added tests for proxy support
