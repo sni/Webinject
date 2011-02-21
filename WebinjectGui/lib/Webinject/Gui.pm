@@ -26,7 +26,7 @@ use Tk::NoteBook;
 use Tk::PNG;
 use base qw/Webinject/;
 
-our $VERSION = '1.54';
+our $VERSION = '1.56';
 
 =head1 NAME
 

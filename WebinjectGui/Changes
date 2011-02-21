@@ -6,6 +6,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.56 - Feb 21, 2011
+    - fixed cpan package
+
 Version 1.54 - Feb 21, 2011
     - fixed cpan package
 

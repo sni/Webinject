@@ -4,7 +4,6 @@ MANIFEST.bak
 http.log
 results.html
 results.xml
-META.yml
 Makefile$
 plot.log
 plot.plt
