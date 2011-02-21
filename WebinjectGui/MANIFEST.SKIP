@@ -4,8 +4,8 @@ MANIFEST.bak
 http.log
 results.html
 results.xml
-Makefile
 META.yml
+Makefile$
 plot.log
 plot.plt
 plot.png
