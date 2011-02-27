@@ -7,6 +7,10 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.64 - Sun Feb 27 18:37:16 CET 2011
+    - fixed file upload
+    - fixed some warnings
+
 Version 1.62 - Sat Feb 19 16:24:56 CET 2011
     - fixed cpan package
 

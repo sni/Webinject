@@ -31,7 +31,7 @@ for my $key (qw/http_proxy https_proxy HTTP_PROXY HTTPS_PROXY/) {
 
 ##################################################
 # start our test cases
-my $webinject = Webinject->new("proxy" => $ENV{'TEST_PROXY'});
+$webinject = Webinject->new("proxy" => $ENV{'TEST_PROXY'});
 test_case($webinject, 'http://www.google.de');
 test_case($webinject, 'https://encrypted.google.com/');
 

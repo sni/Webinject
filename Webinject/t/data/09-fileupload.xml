@@ -1,0 +1,13 @@
+<testcases repeat="1">
+<case
+    id="1"
+    description1="sample File upload test - POST"
+    description2="verify file upload"
+    method="post"
+    url="http://cgi-lib.berkeley.edu/ex/fup.cgi"
+    postbody="( upfile => ['t/data/fileup1.txt'], note => 'Testing
+upload...' )"
+    posttype="multipart/form-data"
+    verifypositive="Testing upload..."
+/>
+</testcases>

@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.62';
+our $VERSION = '1.64';
 
 =head1 NAME
 
@@ -219,6 +219,10 @@ sub engine {
             my $error = $@;
             $error =~ s/^\s*//mx;
             $self->_usage("ERROR: reading xml test case ".$currentcasefile." failed: ".$error);
+        }
+
+        unless( defined $xmltestcases->{case} ) {
+            $self->_usage("ERROR: no test cases defined!");
         }
 
         # fix case if there is only one case
@@ -458,7 +462,7 @@ sub _run_test_case {
     if(!defined $self->{'result'}->{'minresponse'} or $latency < $self->{'result'}->{'minresponse'} ) {
         $self->{'result'}->{'minresponse'} = $latency; # set min response time
     }
-                # keep total of response times for calculating avg
+    # keep total of response times for calculating avg
     $self->{'result'}->{'totalresponse'} = ( $self->{'result'}->{'totalresponse'} + $latency );
     # avg response rounded to thousandths
     $self->{'result'}->{'avgresponse'} = ( int( 1000 * ( $self->{'result'}->{'totalresponse'} / $self->{'result'}->{'totalruncount'} ) ) / 1000 );
@@ -891,12 +895,15 @@ sub _httppost_form_data {
     my $self      = shift;
     my $useragent = shift;
     my $case      = shift;
+    my %myContent_;
+    ## no critic
+    eval "\%myContent_ = $case->{postbody}";
+    ## use critic
 
     $self->_out("POST Request: ".$case->{url}."\n");
-    my $request = new HTTP::Request('POST', $case->{url},
-                                    Content_Type => $case->{posttype},
-                                    Content      => $case->{postbody},
-    );
+    my $request = POST($case->{url},
+                       Content_Type => $case->{posttype},
+                       Content      => \%myContent_);
 
     return $self->_http_defaults($request, $useragent, $case);
 }
