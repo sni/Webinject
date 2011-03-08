@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.64';
+our $VERSION = '1.66';
 
 =head1 NAME
 
@@ -1676,7 +1676,11 @@ sub _getoptions {
     $self->_read_config_xml($opt_configfile);
     for my $set (@sets) {
         my ( $key, $val ) = split /=/mx, $set, 2;
-        $self->{'config'}->{ lc $key } = $val;
+        if($key eq 'httpauth') {
+            $self->_set_http_auth($val);
+        } else {
+            $self->{'config'}->{ lc $key } = $val;
+        }
     }
     return;
 }
