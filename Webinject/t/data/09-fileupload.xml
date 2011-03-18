@@ -10,4 +10,17 @@ upload...' )"
     posttype="multipart/form-data"
     verifypositive="Testing upload..."
 />
+
+<case
+    id="2"
+    description1="sample File upload test - POST"
+    description2="verify file upload"
+    method="post"
+    url="http://cgi-lib.berkeley.edu/ex/fup.cgi"
+    postbody="( upfile => ['t/data/fileup2.png'], note => 'Testing
+upload...' )"
+    posttype="multipart/form-data"
+    verifypositive="Testing upload..."
+/>
+
 </testcases>

@@ -173,7 +173,7 @@ sub test_case_09 {
     @ARGV = ($Bin."/data/09-fileupload.xml");
     my $webinject = Webinject->new();
     my $rc = $webinject->engine();
-    is($webinject->{'result'}->{'totalpassedcount'}, 2, '09-fileupload.xml - passed count');
+    is($webinject->{'result'}->{'totalpassedcount'}, 4, '09-fileupload.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 0, '09-fileupload.xml - fail count');
     is($rc, 0, '09-fileupload.xml - return code');
 }
