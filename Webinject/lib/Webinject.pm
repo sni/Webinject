@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.66';
+our $VERSION = '1.67';
 
 =head1 NAME
 
@@ -323,6 +323,8 @@ sub _run_test_case {
 
     for my $key (keys %{$case}) {
         $case->{$key} = $self->_convertbackxml($case->{$key}, $timestamp);
+        next if $key eq 'errormessage';
+        $case->{$key} = $self->_convertbackxmlresult($case->{$key}, $timestamp);
     }
 
     if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
@@ -382,6 +384,12 @@ sub _run_test_case {
     }
 
     $self->_parseresponse($response, $case);        # grab string from response to send later
+
+    # make parsed results available in the errormessage
+    for my $key (keys %{$case}) {
+        next unless $key eq 'errormessage';
+        $case->{$key} = $self->_convertbackxmlresult($case->{$key}, $timestamp);
+    }
 
     if($self->{'result'}->{'iscritical'}) {                # if any verification fails, test case is considered a failure
         push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
@@ -1339,12 +1347,18 @@ sub _convertbackxml {
     $string =~ s~{BASEURL}~$self->{'config'}->{baseurl}~gmx;
     $string =~ s~{BASEURL1}~$self->{'config'}->{baseurl1}~gmx;
     $string =~ s~{BASEURL2}~$self->{'config'}->{baseurl2}~gmx;
-    $string =~ s~{PARSEDRESULT}~$self->{'parsedresult'}->{parseresponse}~gmx;
-    $string =~ s~{PARSEDRESULT1}~$self->{'parsedresult'}->{parseresponse1}~gmx;
-    $string =~ s~{PARSEDRESULT2}~$self->{'parsedresult'}->{parseresponse2}~gmx;
-    $string =~ s~{PARSEDRESULT3}~$self->{'parsedresult'}->{parseresponse3}~gmx;
-    $string =~ s~{PARSEDRESULT4}~$self->{'parsedresult'}->{parseresponse4}~gmx;
-    $string =~ s~{PARSEDRESULT5}~$self->{'parsedresult'}->{parseresponse5}~gmx;
+    return $string;
+}
+
+################################################################################
+# converts replaced xml with parsed result
+sub _convertbackxmlresult {
+    my ( $self, $string, $timestamp ) = @_;
+    return unless defined $string;
+    $string =~ s~{PARSEDRESULT}~$self->{'parsedresult'}->{parseresponse}~gmx   if defined $self->{'parsedresult'}->{parseresponse};
+    for my $x (1..5) {
+        $string =~ s~{PARSEDRESULT$x}~$self->{'parsedresult'}->{parseresponse$x}~gmx if defined $self->{'parsedresult'}->{"parseresponse$x"};
+    }
     return $string;
 }
 

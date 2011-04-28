@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.67 - Thu Apr 28 16:52:29 CEST 2011
+    - make parsed respones available in the errormessage
+
 Version 1.66 - Tue Mar  8 19:18:04 CET 2011
     - fixed setting httpauth with -s
 
