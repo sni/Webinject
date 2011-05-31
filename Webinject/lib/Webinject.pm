@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.67';
+our $VERSION = '1.68';
 
 =head1 NAME
 
@@ -1119,6 +1119,12 @@ sub _parseresponse {
             $self->{'parsedresult'}->{$type} = $1;
         }
         ## use critic
+        else {
+            push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary</span>" };
+            $self->_out("Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary\n");
+            $case->{'failedcount'}++;
+            $self->{'result'}->{'iscritical'} = 1;
+        }
 
         if ($escape) {
             if ( $escape eq 'escape' ) {
