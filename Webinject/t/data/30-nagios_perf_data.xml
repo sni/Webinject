@@ -1,0 +1,31 @@
+<testcases repeat="1">
+<case
+    id                 = "1"
+    description1       = "test response code 500"
+    method             = "get"
+    url                = "{BASEURL}/code/500"
+    verifyresponsecode = "200"
+/>
+<case
+    id                 = "2"
+    description1       = "test response code 500"
+    method             = "get"
+    url                = "{BASEURL}/code/500"
+    verifyresponsecode = "200"
+/>
+<case
+    id                 = "3"
+    label              = "testlabel"
+    description1       = "test response code 500"
+    method             = "get"
+    url                = "{BASEURL}/code/500"
+    verifyresponsecode = "200"
+/>
+<case
+    id                 = "4"
+    description1       = "test response code 500"
+    method             = "get"
+    url                = "{BASEURL}/code/500"
+    verifyresponsecode = "200"
+/>
+</testcases>

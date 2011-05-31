@@ -77,7 +77,7 @@ sub test_case_config {
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     my $rc = $webinject->engine();
-    is($rc, 0, '07-config_options.xml - return code');
+    is($rc, 1, '07-config_options.xml - return code');
     my $firstcase = $webinject->{'result'}->{'files'}->[0]->{'cases'}->[0];
     delete $firstcase->{'messages'};
     delete $firstcase->{'latency'};

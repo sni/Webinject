@@ -1124,7 +1124,7 @@ sub _parseresponse {
         ## use critic
         else {
             push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary</span>" };
-            $self->_out("Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary\n");
+            $self->_out("Failed Parseresult, cannot find $leftboundary(*)$rightboundary\n");
             $self->{'result'}->{'iswarning'} = 1;
         }
 
@@ -1540,14 +1540,22 @@ sub _finaltasks {
             if(defined $self->{'config'}->{globaltimeout}) {
                 $crit = $self->{'config'}->{globaltimeout};
             }
+            my $lastid = 0;
             my $perfdata = '|time='.$self->{'result'}->{'totalruntime'}.';0;'.$crit.';0;0';
             for my $file (@{$self->{'result'}->{'files'}}) {
                 for my $case (@{$file->{'cases'}}) {
-                    my $warn = $case->{'warning'}  || 0;
-                    my $crit = $case->{'critical'} || 0;
-                    my $label = $case->{'label'}    || 'case'.$case->{'id'};
+                    my $warn   = $case->{'warning'}  || 0;
+                    my $crit   = $case->{'critical'} || 0;
+                    my $label  = $case->{'label'}    || 'case'.$case->{'id'};
                     $perfdata .= ' '.$label.'='.$case->{'latency'}.';'.$warn.';'.$crit.';0;0';
+                    $lastid = $case->{'id'};
                 }
+            }
+            # report performance data for missed cases too
+            for my $nr (1..($self->{'result'}->{'casecount'} - $self->{'result'}->{'totalruncount'})) {
+                $lastid++;
+                my $label  = 'case'.$lastid;
+                $perfdata .= ' '.$label.'=0;0;0;0;0';
             }
 
             my $rc;
@@ -1570,6 +1578,7 @@ sub _finaltasks {
             if($self->{'result'}->{'iscritical'} or $self->{'result'}->{'iswarning'}) {
                 print $self->{'out'};
             }
+            $self->{'result'}->{'perfdata'} = $perfdata;
             return $rc;
         }
 
