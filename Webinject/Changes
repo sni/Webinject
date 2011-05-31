@@ -8,7 +8,7 @@ For information and documentation, visit the website at http://www.webinject.org
 Release History:
 
 Version 1.68 - Tue May 31 14:25:35 CEST 2011
-    - test case will fail if parsed result does not match
+    - add warning if parsed result does not match
     - made overwriting default options in check_webinject possible
 
 Version 1.67 - Thu Apr 28 16:52:29 CEST 2011

@@ -1125,8 +1125,7 @@ sub _parseresponse {
         else {
             push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary</span>" };
             $self->_out("Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary\n");
-            $case->{'failedcount'}++;
-            $self->{'result'}->{'iscritical'} = 1;
+            $self->{'result'}->{'iswarning'} = 1;
         }
 
         if ($escape) {
