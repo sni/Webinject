@@ -158,6 +158,9 @@ sub new {
         }
     }
 
+    # get command line options
+    $self->_getoptions();
+
     return $self;
 }
 
@@ -570,6 +573,7 @@ sub _set_defaults {
         'max_redirect'              => 0,
         'globalhttplog'             => 'no',
         'proxy'                     => '',
+        'timeout'                   => 180,
     };
     $self->{'exit_codes'}         = {
         'UNKNOWN'  => 3,
@@ -583,7 +587,6 @@ sub _set_defaults {
     };
     $self->{'out'}                = '';
     $self->_reset_result();
-    $self->_getoptions(); # get command line options
     return;
 }
 
