@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.69 - ...
+    - better error message when LWP::protocol::https is missing
+
 Version 1.68 - Tue May 31 14:25:35 CEST 2011
     - add warning if parsed result does not match
     - made overwriting default options in check_webinject possible

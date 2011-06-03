@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.68';
+our $VERSION = '1.69';
 
 =head1 NAME
 
@@ -1054,7 +1054,7 @@ sub _verify {
             {
                 push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed - No Response</span>' };
                 push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed - No Response' };
-                $self->_out("Failed - No Response \n");   #($1$2) is HTTP response code
+                $self->_out("Failed - No valid HTTP response:\n".$response->as_string());
             }
             $case->{'failedcount'}++;
             $self->{'result'}->{'iscritical'} = 1;
