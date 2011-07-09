@@ -73,11 +73,13 @@ sub test_case_config {
           'verifyresponsecode'  => 200,
           'passedcount'         => 8,
           'failedcount'         => 0,
+          'iswarning'           => 1,
+          'iscritical'          => 0,
     };
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     my $rc = $webinject->engine();
-    is($rc, 1, '07-config_options.xml - return code');
+    is($rc, 1, '07-config_options.xml - return code') or diag(Dumper($webinject));
     my $firstcase = $webinject->{'result'}->{'files'}->[0]->{'cases'}->[0];
     delete $firstcase->{'messages'};
     delete $firstcase->{'latency'};
@@ -92,7 +94,9 @@ sub test_case_config {
           'method'             => 'get',
           'passedcount'        => 3,
           'url'                => 'http://localhost:58080/badpath',
-          'verifyresponsecode' => 400
+          'verifyresponsecode' => 400,
+          'iswarning'          => 0,
+          'iscritical'         => 0,
         };
     my $secondcase = $webinject->{'result'}->{'files'}->[0]->{'cases'}->[1];
     delete $secondcase->{'messages'};

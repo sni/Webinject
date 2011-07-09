@@ -55,6 +55,8 @@ sub test_case_01 {
         'passedcount' => 1,
         'failedcount' => 0,
         'url'         => 'http://localhost:58080/sleep/2',
+        'iswarning'   => 0,
+        'iscritical'  => 0,
     };
     my $result = $webinject->_run_test_case($case);
     is($result->{'latency'} > 2, 1, '01 - timeouts - latency');
@@ -81,6 +83,8 @@ sub test_case_02 {
         'failedcount' => 1,
         'url'         => 'http://localhost:58080/sleep/2',
         'warning'     => 1,
+        'iswarning'   => 1,
+        'iscritical'  => 0,
     };
     my $result = $webinject->_run_test_case($case);
     is($result->{'latency'} > 2, 1, '02 - timeouts - latency');
@@ -106,6 +110,8 @@ sub test_case_03 {
         'passedcount' => 0,
         'failedcount' => 1,
         'url'         => 'http://localhost:58080/sleep/5',
+        'iswarning'   => 0,
+        'iscritical'  => 1,
     };
     my $result = $webinject->_run_test_case($case);
     is($result->{'latency'} > 1, 1, '03 - timeouts - latency');

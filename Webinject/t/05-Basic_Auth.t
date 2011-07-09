@@ -59,6 +59,8 @@ sub test_case_01 {
         'logresponse'         => 'yes',
         'logrequest'          => 'yes',
         'verifyresponsecode'  => 200,
+        'iswarning'           => 0,
+        'iscritical'          => 0,
     };
     my $result = $webinject->_run_test_case($case);
     is($result->{'latency'} < 1, 1, '01 - auth - latency');

@@ -312,6 +312,8 @@ sub _run_test_case {
     $case->{'id'}          = 1 unless defined $case->{'id'};
     $case->{'passedcount'} = 0;
     $case->{'failedcount'} = 0;
+    $case->{'iswarning'}   = 0;
+    $case->{'iscritical'}  = 0;
     $case->{'messages'}    = [];
 
     $useragent = $self->_get_useragent() unless defined $useragent;
@@ -334,7 +336,7 @@ sub _run_test_case {
 
     for(qw/description1 description2/) {
         next unless defined $case->{$_};
-        $self->_out(qq|$case->{$_} \n|);
+        $self->_out(qq|Desc: $case->{$_}\n|);
         push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => $case->{$_} };
     }
     push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
@@ -394,7 +396,11 @@ sub _run_test_case {
         $case->{$key} = $self->_convertbackxmlresult($case->{$key}, $timestamp);
     }
 
-    if($self->{'result'}->{'iscritical'}) {                # if any verification fails, test case is considered a failure
+    # if any verification fails, test case is considered a failure
+    if($case->{'iscritical'}) {
+        # end result will be also critical
+        $self->{'result'}->{'iscritical'} = 1;
+
         push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
         if( $case->{errormessage} ) {       # Add defined error message to the output
             push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>" };
@@ -411,15 +417,19 @@ sub _run_test_case {
             }
             else {
                 $self->{'result'}->{'returnmessage'} = "Test case number ".$case->{'id'}." failed";
+                if(defined $case->{'label'}) {
+                    $self->{'result'}->{'returnmessage'} = "Test case ".$case->{'label'}." (#".$case->{'id'}.") failed";
+                }
             }
-
-            #print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
         }
         if( $self->{'gui'} ) {
             $self->_gui_status_failed();
         }
     }
-    elsif($self->{'result'}->{'iswarning'}) {
+    elsif($case->{'iswarning'}) {
+        # end result will be also warning
+        $self->{'result'}->{'iswarning'} = 1;
+
         push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
         if( $case->{errormessage} ) {       # Add defined error message to the output
             push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE WARNED : ".$case->{errormessage}."</span></b>" };
@@ -437,9 +447,11 @@ sub _run_test_case {
             }
             else {
                 $self->{'result'}->{'returnmessage'} = "Test case number ".$case->{'id'}." warned";
+                if(defined $case->{'label'}) {
+                    $self->{'result'}->{'returnmessage'} = "Test case ".$case->{'label'}." (#".$case->{'id'}.") warned";
+                }
             }
 
-            # print "\nReturn Message : $self->{'result'}->{'returnmessage'}\n"
         }
         if( $self->{'gui'} ) {
             $self->_gui_status_failed();
@@ -464,22 +476,26 @@ sub _run_test_case {
     $self->{'result'}->{'totalruncount'}++;
 
     if( $self->{'gui'} ) {
-        $self->_gui_statusbar();    #update the statusbar
+        # update the statusbar
+        $self->_gui_statusbar();
     }
 
     if( $latency > $self->{'result'}->{'maxresponse'} ) {
-        $self->{'result'}->{'maxresponse'} = $latency; # set max response time
+        # set max response time
+        $self->{'result'}->{'maxresponse'} = $latency;
     }
     if(!defined $self->{'result'}->{'minresponse'} or $latency < $self->{'result'}->{'minresponse'} ) {
-        $self->{'result'}->{'minresponse'} = $latency; # set min response time
+        # set min response time
+        $self->{'result'}->{'minresponse'} = $latency;
     }
     # keep total of response times for calculating avg
     $self->{'result'}->{'totalresponse'} = ( $self->{'result'}->{'totalresponse'} + $latency );
-    # avg response rounded to thousandths
+    # avg response rounded to thousands
     $self->{'result'}->{'avgresponse'} = ( int( 1000 * ( $self->{'result'}->{'totalresponse'} / $self->{'result'}->{'totalruncount'} ) ) / 1000 );
 
     if( $self->{'gui'} ) {
-        $self->_gui_updatemonstats(); # update timers and counts in monitor tab
+        # update timers and counts in monitor tab
+        $self->_gui_updatemonstats();
     }
 
 
@@ -491,7 +507,7 @@ sub _run_test_case {
     $self->{'result'}->{'totalpassedcount'} += $case->{'passedcount'};
     $self->{'result'}->{'totalfailedcount'} += $case->{'failedcount'};
 
-    if($self->{'result'}->{'iscritical'} or $self->{'result'}->{'iswarning'}) {
+    if($case->{'iscritical'} or $case->{'iswarning'}) {
         $self->{'result'}->{'totalcasesfailedcount'}++;
     } else {
         $self->{'result'}->{'totalcasespassedcount'}++;
@@ -620,11 +636,12 @@ sub _reset_result {
 sub _writeinitialstdout {
     my $self = shift;
 
-    $self->_out(qq|
+    if($self->{'config'}->{'reporttype'} ne 'nagios') {
+        $self->_out(qq|
 Starting WebInject Engine (v$Webinject::VERSION)...
-
--------------------------------------------------------
 |);
+    }
+    $self->_out("-------------------------------------------------------\n");
     return;
 }
 
@@ -749,10 +766,15 @@ sub _write_result_xml {
 sub _writefinalstdout {
     my $self = shift;
 
-    $self->_out(qq|
+    if($self->{'config'}->{'reporttype'} ne 'nagios') {
+        $self->_out(qq|
 Start Time: $self->{'config'}->{'currentdatetime'}
 Total Run Time: $self->{'result'}->{'totalruntime'} seconds
 
+|);
+    }
+
+    $self->_out(qq|
 Test Cases Run: $self->{'result'}->{'totalruncount'}
 Test Cases Passed: $self->{'result'}->{'totalcasespassedcount'}
 Test Cases Failed: $self->{'result'}->{'totalcasesfailedcount'}
@@ -894,7 +916,7 @@ sub _httppost_xml {
         }
         $self->_out("Failed XML parser on response: $ex \n");
         $case->{'failedcount'}++;
-        $self->{'result'}->{'iscritical'} = 1;
+        $case->{'iscritical'} = 1;
     };    # <-- remember the semicolon
 
     return($latency,$request,$response);
@@ -945,7 +967,7 @@ sub _verify {
                 push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Positive Verification</span>" };
                 $self->_out("Failed Positive Verification \n");
                 $case->{'failedcount'}++;
-                $self->{'result'}->{'iscritical'} = 1;
+                $case->{'iscritical'} = 1;
             }
         }
         elsif($nr ne '' and $nr > 5) {
@@ -964,7 +986,7 @@ sub _verify {
                 push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification</span>' };
                 $self->_out("Failed Negative Verification \n");
                 $case->{'failedcount'}++;
-                $self->{'result'}->{'iscritical'} = 1;
+                $case->{'iscritical'} = 1;
             }
             else {
                 push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification</span>' };
@@ -989,7 +1011,7 @@ sub _verify {
             push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'false', 'html' => '<span class="fail">Failed Positive Verification (verification set in previous test case)</span>' };
             $self->_out("Failed Positive Verification (verification set in previous test case) \n");
             $case->{'failedcount'}++;
-            $self->{'result'}->{'iscritical'} = 1;
+            $case->{'iscritical'} = 1;
         }
         # set to null after verification
         delete $self->{'verifylater'};
@@ -1002,7 +1024,7 @@ sub _verify {
             push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span>' };
             $self->_out("Failed Negative Verification (negative verification set in previous test case) \n");
             $case->{'failedcount'}++;
-            $self->{'result'}->{'iscritical'} = 1;
+            $case->{'iscritical'} = 1;
         }
         else {
             push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span>' };
@@ -1029,7 +1051,7 @@ sub _verify {
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')' };
             $self->_out(qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|);
             $case->{'failedcount'}++;
-            $self->{'result'}->{'iscritical'} = 1;
+            $case->{'iscritical'} = 1;
         }
     }
     else {
@@ -1057,7 +1079,7 @@ sub _verify {
                 $self->_out("Failed - No valid HTTP response:\n".$response->as_string());
             }
             $case->{'failedcount'}++;
-            $self->{'result'}->{'iscritical'} = 1;
+            $case->{'iscritical'} = 1;
         }
     }
 
@@ -1068,7 +1090,7 @@ sub _verify {
             push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Warning Threshold</span>" };
             $self->_out("Failed Warning Threshold \n");
             $case->{'failedcount'}++;
-            $self->{'result'}->{'iswarning'} = 1;
+            $case->{'iswarning'} = 1;
         }
         else {
             $self->_out("Passed Warning Threshold \n");
@@ -1084,7 +1106,7 @@ sub _verify {
             push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Critical Threshold</span>" };
             $self->_out("Failed Critical Threshold \n");
             $case->{'failedcount'}++;
-            $self->{'result'}->{'iscritical'} = 1;
+            $case->{'iscritical'} = 1;
         }
         else {
             $self->_out("Passed Critical Threshold \n");
@@ -1125,7 +1147,7 @@ sub _parseresponse {
         else {
             push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary</span>" };
             $self->_out("Failed Parseresult, cannot find $leftboundary(*)$rightboundary\n");
-            $self->{'result'}->{'iswarning'} = 1;
+            $case->{'iswarning'} = 1;
         }
 
         if ($escape) {
@@ -1320,17 +1342,26 @@ sub _convtestcases {
       or $self->_usage("ERROR: Failed to read test case file: ".$filename.": ".$!);
     # read the file into an array
     @xmltoconvert = <$xmltoconvert>;
-
-    foreach (@xmltoconvert) {
+    my $ids = {};
+    for my $line (@xmltoconvert) {
 
         # convert escaped chars and certain reserved chars to temporary values that the parser can handle
         # these are converted back later in processing
-        s/&/{AMPERSAND}/gmx;
-        s/\\</{LESSTHAN}/gmx;
+        $line =~ s/&/{AMPERSAND}/gmx;
+        $line =~ s/\\</{LESSTHAN}/gmx;
 
         # count cases while we are here
-        if ( $_ =~ /<case/mx ) {        #count test cases based on '<case' tag
+        if ( $line =~ /<case/mx ) {
             $self->{'result'}->{'casecount'}++;
+        }
+
+        # verify id is only use once per file
+        if ( $line =~ /^\s*id\s*=\s*\"*(\d+)\"*/mx ) {
+            if(defined $ids->{$1}) {
+                $self->{'result'}->{'iswarning'} = 1;
+                $self->_out("Warning: case id $1 is used more than once!\n");
+            }
+            $ids->{$1} = 1;
         }
     }
 
@@ -1410,7 +1441,7 @@ sub _httplog {
     }
 
     # global http log setting - onfail mode
-    if($self->{'config'}->{'globalhttplog'} && $self->{'config'}->{'globalhttplog'} =~ /onfail/mxi && $self->{'result'}->{'iscritical'}) {
+    if($self->{'config'}->{'globalhttplog'} && $self->{'config'}->{'globalhttplog'} =~ /onfail/mxi && $case->{'iscritical'}) {
         $output .= $request->as_string."\n\n";
         $output .= $response->as_string."\n\n";
     }
