@@ -10,6 +10,7 @@ Release History:
 Version 1.69 - ...
     - better error message when LWP::protocol::https is missing
     - read break_on_errors setting from config file too
+    - added reportmode 'nagios2'
     - fixed display of passed testcases
     - cleaner output for nagios report type
 

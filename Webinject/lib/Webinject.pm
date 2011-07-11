@@ -64,7 +64,7 @@ Creates an C<Webinject> object.
 
 =item reporttype
 
-possible values are 'standard', 'nagios', 'mrtg' or 'external:'
+possible values are 'standard', 'nagios', 'nagios2', 'mrtg' or 'external:'
 
 =item nooutput
 
@@ -636,7 +636,7 @@ sub _reset_result {
 sub _writeinitialstdout {
     my $self = shift;
 
-    if($self->{'config'}->{'reporttype'} ne 'nagios') {
+    if($self->{'config'}->{'reporttype'} !~ /^nagios/mx) {
         $self->_out(qq|
 Starting WebInject Engine (v$Webinject::VERSION)...
 |);
@@ -766,7 +766,7 @@ sub _write_result_xml {
 sub _writefinalstdout {
     my $self = shift;
 
-    if($self->{'config'}->{'reporttype'} ne 'nagios') {
+    if($self->{'config'}->{'reporttype'} !~ /^nagios/mx) {
         $self->_out(qq|
 Start Time: $self->{'config'}->{'currentdatetime'}
 Total Run Time: $self->{'result'}->{'totalruntime'} seconds
@@ -1564,7 +1564,7 @@ sub _finaltasks {
     if($self->{'config'}->{'reporttype'} ne 'standard') {
         # return value is set which corresponds to a monitoring program
         # Nagios plugin compatibility
-        if($self->{'config'}->{'reporttype'} eq 'nagios') {
+        if($self->{'config'}->{'reporttype'} =~ /^nagios/mx) {
             # nagios perf data has following format
             # 'label'=value[UOM];[warn];[crit];[min];[max]
             my $crit = 0;
@@ -1589,26 +1589,33 @@ sub _finaltasks {
                 $perfdata .= ' '.$label.'=0;0;0;0;0';
             }
 
-            my $rc;
+            my($rc,$message);
             if($self->{'result'}->{'iscritical'}) {
-                print "WebInject CRITICAL - $self->{'result'}->{'returnmessage'}$perfdata\n";
-                $rc = $self->{'exit_codes'}->{'CRITICAL'};
+                $message = "WebInject CRITICAL - ".$self->{'result'}->{'returnmessage'};
+                $rc      = $self->{'exit_codes'}->{'CRITICAL'};
             }
             elsif($self->{'result'}->{'iswarning'}) {
-                print "WebInject WARNING - $self->{'result'}->{'returnmessage'}$perfdata\n";
-                $rc = $self->{'exit_codes'}->{'WARNING'};
+                $message = "WebInject WARNING - ".$self->{'result'}->{'returnmessage'};
+                $rc      = $self->{'exit_codes'}->{'WARNING'};
             }
             elsif( $self->{'config'}->{globaltimeout} && $self->{'result'}->{'totalruntime'} > $self->{'config'}->{globaltimeout} ) {
-                print "WebInject WARNING - All tests passed successfully but global timeout ($self->{'config'}->{globaltimeout} seconds) has been reached$perfdata\n";
-                $rc = $self->{'exit_codes'}->{'WARNING'};
+                $message = "WebInject WARNING - All tests passed successfully but global timeout (".$self->{'config'}->{globaltimeout}." seconds) has been reached";
+                $rc      = $self->{'exit_codes'}->{'WARNING'};
             }
             else {
-                print "WebInject OK - All tests passed successfully in $self->{'result'}->{'totalruntime'} seconds$perfdata\n";
-                $rc = $self->{'exit_codes'}->{'OK'};
+                $message = "WebInject OK - All tests passed successfully in ".$self->{'result'}->{'totalruntime'}." seconds";
+                $rc      = $self->{'exit_codes'}->{'OK'};
             }
+
             if($self->{'result'}->{'iscritical'} or $self->{'result'}->{'iswarning'}) {
-                print $self->{'out'};
+                $message .= "\n".$self->{'out'};
+                $message =~ s/^\-+$//mx;
             }
+            if($self->{'config'}->{'reporttype'} eq 'nagios2') {
+                $message =~ s/\n/<br>/mxg;
+            }
+            print $message.$perfdata."\n";
+
             $self->{'result'}->{'perfdata'} = $perfdata;
             return $rc;
         }
@@ -1636,7 +1643,7 @@ sub _finaltasks {
         }
 
         else {
-            $self->_usage("ERROR: only 'nagios', 'mrtg', 'external', or 'standard' are supported reporttype values");
+            $self->_usage("ERROR: only 'nagios', 'nagios2', 'mrtg', 'external', or 'standard' are supported reporttype values");
         }
 
     }
@@ -1752,7 +1759,7 @@ sub _getoptions {
 sub _out {
     my $self = shift;
     my $text = shift;
-    if($self->{'config'}->{'reporttype'} ne 'nagios' and !$self->{'config'}->{'nooutput'}) {
+    if($self->{'config'}->{'reporttype'} !~ /^nagios/mx and !$self->{'config'}->{'nooutput'}) {
         print $text;
     }
     $self->{'out'} .= $text;
