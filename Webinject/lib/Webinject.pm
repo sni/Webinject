@@ -1212,7 +1212,7 @@ sub _read_config_xml {
         for my $key (
             qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout output_dir
             globaltimeout globalhttplog standaloneplot max_redirect
-            useragent/
+            break_on_errors useragent/
           )
         {
 
