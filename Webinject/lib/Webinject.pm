@@ -402,13 +402,36 @@ sub _run_test_case {
         $self->{'result'}->{'iscritical'} = 1;
 
         push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
-        if( $case->{errormessage} ) {       # Add defined error message to the output
-            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>" };
-            $self->_out(qq|TEST CASE FAILED : $case->{errormessage}\n|);
+        if( $self->{'result'}->{'returnmessage'} ) {       # Add returnmessage to the output
+            my $prefix = "case #".$case->{'id'}.": ";
+            if(defined $case->{'label'}) {
+                $prefix = $case->{'label'}." (case #".$case->{'id'}."): ";
+            }
+            $self->{'result'}->{'returnmessage'} = $prefix.$self->{'result'}->{'returnmessage'};
+            my $message = $self->{'result'}->{'returnmessage'};
+            $message    = $message.' - '.$case->{errormessage} if defined $case->{errormessage};
+            push @{$case->{'messages'}}, {
+                'key'   => 'result-message',
+                'value' => $message,
+                'html'  => "<b><span class=\"fail\">TEST CASE FAILED : ".$message."</span></b>"
+            };
+            $self->_out("TEST CASE FAILED : ".$message."\n");
         }
         # print regular error output
+        elsif ( $case->{errormessage} ) {       # Add defined error message to the output
+            push @{$case->{'messages'}}, {
+                'key'   => 'result-message',
+                'value' => $case->{errormessage},
+                'html'  => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>"
+            };
+            $self->_out(qq|TEST CASE FAILED : $case->{errormessage}\n|);
+        }
         else {
-            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE FAILED', 'html' => "<b><span class=\"fail\">TEST CASE FAILED</span></b>" };
+            push @{$case->{'messages'}}, {
+                'key'   => 'result-message',
+                'value' => 'TEST CASE FAILED',
+                'html'  => "<b><span class=\"fail\">TEST CASE FAILED</span></b>"
+            };
             $self->_out(qq|TEST CASE FAILED\n|);
         }
         unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
@@ -951,6 +974,73 @@ sub _verify {
     confess("no response") unless defined $response;
     confess("no case")     unless defined $case;
 
+    if( $case->{verifyresponsecode} ) {
+        $self->_out(qq|Verify Response Code: "$case->{verifyresponsecode}" \n|);
+        push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode}, 'html' => "Verify Response Code: ".$case->{verifyresponsecode} };
+
+        # verify returned HTTP response code matches verifyresponsecode set in test case
+        if ( $case->{verifyresponsecode} == $response->code() ) {
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification </span>' };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification' };
+            $self->_out(qq|Passed HTTP Response Code Verification \n|);
+            $case->{'passedcount'}++;
+        }
+        else {
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')</span>' };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')' };
+            $self->_out(qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|);
+            $case->{'failedcount'}++;
+            $case->{'iscritical'} = 1;
+
+            if($self->{'config'}->{'break_on_errors'}) {
+                $self->{'result'}->{'returnmessage'} = 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')';
+                return;
+            }
+        }
+    }
+    else {
+        # verify http response code is in the 100-399 range
+        if($response->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx ) {     # verify existance of string in response
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification (not in error range)</span>' };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification (not in error range)' };
+            $self->_out(qq|Passed HTTP Response Code Verification (not in error range) \n|);
+
+            # succesful response codes: 100-399
+            $case->{'passedcount'}++;
+        }
+        else {
+            $response->as_string() =~ /(HTTP\/1.)(.*)/mxi;
+            if($1) {    #this is true if an HTTP response returned
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification ('.$1.$2.')</span>' };
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification ('.$1.$2.')' };
+                $self->_out("Failed HTTP Response Code Verification ($1$2) \n");    #($1$2) is HTTP response code
+
+                $case->{'failedcount'}++;
+                $case->{'iscritical'} = 1;
+
+                if($self->{'config'}->{'break_on_errors'}) {
+                    $self->{'result'}->{'returnmessage'} = 'Failed HTTP Response Code Verification ('.$1.$2.')';
+                    return;
+                }
+            }
+            #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
+            else
+            {
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed - No Response</span>' };
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed - No Response' };
+                $self->_out("Failed - No valid HTTP response:\n".$response->as_string());
+
+                $case->{'failedcount'}++;
+                $case->{'iscritical'} = 1;
+
+                if($self->{'config'}->{'break_on_errors'}) {
+                    $self->{'result'}->{'returnmessage'} = 'Failed - No valid HTTP response: '.$response->as_string();
+                    return;
+                }
+            }
+        }
+    }
+
     for my $nr ('', 1..1000) {
         my $key = "verifypositive".$nr;
         if( $case->{$key} ) {
@@ -968,6 +1058,11 @@ sub _verify {
                 $self->_out("Failed Positive Verification \n");
                 $case->{'failedcount'}++;
                 $case->{'iscritical'} = 1;
+
+                if($self->{'config'}->{'break_on_errors'}) {
+                    $self->{'result'}->{'returnmessage'} = 'Failed Positive Verification, can not find a string matching regex: '.$regex;
+                    return;
+                }
             }
         }
         elsif($nr ne '' and $nr > 5) {
@@ -987,6 +1082,11 @@ sub _verify {
                 $self->_out("Failed Negative Verification \n");
                 $case->{'failedcount'}++;
                 $case->{'iscritical'} = 1;
+
+                if($self->{'config'}->{'break_on_errors'}) {
+                    $self->{'result'}->{'returnmessage'} = 'Failed Negative Verification, found regex matched string: '.$regex;
+                    return;
+                }
             }
             else {
                 push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification</span>' };
@@ -1012,6 +1112,11 @@ sub _verify {
             $self->_out("Failed Positive Verification (verification set in previous test case) \n");
             $case->{'failedcount'}++;
             $case->{'iscritical'} = 1;
+
+            if($self->{'config'}->{'break_on_errors'}) {
+                $self->{'result'}->{'returnmessage'} = 'Failed Positive Verification (verification set in previous test case), can not find a string matching regex: '.$regex;
+                return;
+            }
         }
         # set to null after verification
         delete $self->{'verifylater'};
@@ -1025,6 +1130,11 @@ sub _verify {
             $self->_out("Failed Negative Verification (negative verification set in previous test case) \n");
             $case->{'failedcount'}++;
             $case->{'iscritical'} = 1;
+
+            if($self->{'config'}->{'break_on_errors'}) {
+                $self->{'result'}->{'returnmessage'} = 'Failed Negative Verification (negative verification set in previous test case), found regex matched string: '.$regex;
+                return;
+            }
         }
         else {
             push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span>' };
@@ -1033,54 +1143,6 @@ sub _verify {
         }
         # set to null after verification
         delete $self->{'verifylaterneg'};
-    }
-
-    if( $case->{verifyresponsecode} ) {
-        $self->_out(qq|Verify Response Code: "$case->{verifyresponsecode}" \n|);
-        push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode}, 'html' => "Verify Response Code: ".$case->{verifyresponsecode} };
-
-        # verify returned HTTP response code matches verifyresponsecode set in test case
-        if ( $case->{verifyresponsecode} == $response->code() ) {
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification </span>' };
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification' };
-            $self->_out(qq|Passed HTTP Response Code Verification \n|);
-            $case->{'passedcount'}++;
-        }
-        else {
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')</span>' };
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')' };
-            $self->_out(qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|);
-            $case->{'failedcount'}++;
-            $case->{'iscritical'} = 1;
-        }
-    }
-    else {
-        # verify http response code is in the 100-399 range
-        if($response->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx ) {     # verify existance of string in response
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification (not in error range)</span>' };
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification (not in error range)' };
-            $self->_out(qq|Passed HTTP Response Code Verification (not in error range) \n|);
-
-            # succesful response codes: 100-399
-            $case->{'passedcount'}++;
-        }
-        else {
-            $response->as_string() =~ /(HTTP\/1.)(.*)/mxi;
-            if($1) {    #this is true if an HTTP response returned
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification ('.$1.$2.')</span>' };
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification ('.$1.$2.')' };
-                $self->_out("Failed HTTP Response Code Verification ($1$2) \n");    #($1$2) is HTTP response code
-            }
-            #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
-            else
-            {
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed - No Response</span>' };
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed - No Response' };
-                $self->_out("Failed - No valid HTTP response:\n".$response->as_string());
-            }
-            $case->{'failedcount'}++;
-            $case->{'iscritical'} = 1;
-        }
     }
 
     if($case->{'warning'}) {
