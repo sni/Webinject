@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.69';
+our $VERSION = '1.70';
 
 =head1 NAME
 
@@ -1411,6 +1411,10 @@ sub _convtestcases {
         # these are converted back later in processing
         $line =~ s/&/{AMPERSAND}/gmx;
         $line =~ s/\\</{LESSTHAN}/gmx;
+
+        # convert variables to lowercase
+        $line =~ s/(\$\{[\w\.]+\})/\L$1\E/gmx;
+        $line =~ s/(varname=('|").*?('|"))/\L$1\E/gmx;
 
         # count cases while we are here
         if ( $line =~ /<case/mx ) {

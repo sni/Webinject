@@ -158,7 +158,7 @@ sub test_case_07 {
 ##################################################
 # Test Case 8 / File 08
 sub test_case_08 {
-    @ARGV = ("-s", "baseurl=http://localhost:58080", "-s", "code1=200", "-s", "code_500=500", $Bin."/data/08-custom_var.xml");
+    @ARGV = ("-s", "baseurl=http://localhost:58080", "-s", "code1=200", "-s", "code_500=500", "-s", "method=get", $Bin."/data/08-custom_var.xml");
     my $webinject = Webinject->new();
     my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 1, '08-custom_var.xml - passed count');

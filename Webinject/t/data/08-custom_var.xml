@@ -9,7 +9,7 @@
 <case
     id                 = "2"
     description1       = "test response code 500"
-    method             = "get"
+    method             = "${metHOD}"
     url                = "${BASEURL}/code/${code_500}"
     verifyresponsecode = "${code1}"
 />
