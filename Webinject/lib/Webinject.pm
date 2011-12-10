@@ -1869,6 +1869,7 @@ EOB
       warning        = "5"
       critical       = "15"
       label          = "testpage"
+      errormessage   = "got error: {PARSERESPONSE}"
     />
   </testcases>
 

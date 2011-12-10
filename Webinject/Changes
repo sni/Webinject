@@ -7,7 +7,7 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
-Version 1.70 - ...
+Version 1.70 - Sat Dec 10 12:40:03 CET 2011
     - variables with -s varname= are now case-insensitive
 
 Version 1.69 - Tue Jul 12 10:25:17 CEST 2011
