@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.71 - Tue Jan  3 09:38:27 CET 2012
+    - fixed nagios epn support or check_webinject
+
 Version 1.70 - Sat Dec 10 12:40:03 CET 2011
     - variables with -s varname= are now case-insensitive
 
