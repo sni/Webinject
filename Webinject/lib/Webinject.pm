@@ -1460,9 +1460,9 @@ sub _convertbackxml {
 sub _convertbackxmlresult {
     my ( $self, $string, $timestamp ) = @_;
     return unless defined $string;
-    $string =~ s~{PARSEDRESULT}~$self->{'parsedresult'}->{parseresponse}~gmx   if defined $self->{'parsedresult'}->{parseresponse};
+    $string =~ s~\{PARSEDRESULT\}~$self->{'parsedresult'}->{'parseresponse'}~gmx if defined $self->{'parsedresult'}->{'parseresponse'};
     for my $x (1..5) {
-        $string =~ s~{PARSEDRESULT$x}~$self->{'parsedresult'}->{parseresponse$x}~gmx if defined $self->{'parsedresult'}->{"parseresponse$x"};
+        $string =~ s~\{PARSEDRESULT$x\}~$self->{'parsedresult'}->{"parseresponse$x"}~gmx if defined $self->{'parsedresult'}->{"parseresponse$x"};
     }
     return $string;
 }

@@ -12,8 +12,9 @@
 <case
     id                 = "2"
     description1       = "test negative string verification"
-    method             = "get"
-    url                = "{BASEURL}/teststring"
+    method             = "post"
+    url                = "{BASEURL}/post"
+    postbody           = "RelayState={PARSEDRESULT}&SAMLResponse {PARSEDRESULT1}"
     verifyresponsecode = "200"
 />
 </testcases>
