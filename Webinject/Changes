@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.72 - Thu Feb  2 19:15:50 CET 2012
+    - fixed using parsed results
+
 Version 1.71 - Tue Jan  3 09:38:27 CET 2012
     - fixed nagios epn support or check_webinject
 

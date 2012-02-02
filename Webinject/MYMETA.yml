@@ -1,0 +1,38 @@
+---
+abstract: 'Perl Module for testing web services'
+author:
+  - 'Corey Goldberg, <corey@goldb.org>'
+build_requires:
+  ExtUtils::MakeMaker: 6.42
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
+dynamic_config: 0
+generated_by: 'Module::Install version 1.01, CPAN::Meta::Converter version 2.112150'
+license: unknown
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Webinject
+no_index:
+  directory:
+    - examples
+    - inc
+    - t
+requires:
+  Crypt::SSLeay: 0
+  Error: 0
+  File::Temp: 0
+  Getopt::Long: 0
+  HTTP::Cookies: 0
+  HTTP::Request::Common: 0
+  LWP: 0
+  Time::HiRes: 0
+  XML::Parser: 0
+  XML::Simple: 0
+  perl: 5.006
+resources:
+  bugtracker: http://github.com/sni/Webinject/issues
+  homepage: http://www.webinject.org
+  license: http://opensource.org/licenses/gpl-2.0.php
+  repository: http://github.com/sni/Webinject
+version: 1.71
