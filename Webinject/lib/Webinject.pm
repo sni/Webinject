@@ -944,7 +944,7 @@ sub _httppost_xml {
     my $xmlparser = new XML::Parser;
     # see if the XML parses properly
     try {
-        $xmlparser->parse($response->content);
+        $xmlparser->parse($response->decoded_content);
 
         # print "good xml\n";
         push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'true', 'html' => '<span class="pass">Passed XML Parser (content is well-formed)</span>' };
