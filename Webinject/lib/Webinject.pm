@@ -1,6 +1,6 @@
 package Webinject;
 
-#    Copyright 2010.2011 Sven Nierlein (nierlein@cpan.org)
+#    Copyright 2010-2012 Sven Nierlein (nierlein@cpan.org)
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
 #    This file is part of WebInject.
@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.72';
+our $VERSION = '1.74';
 
 =head1 NAME
 

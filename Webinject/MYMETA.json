@@ -4,7 +4,7 @@
       "Corey Goldberg, <corey@goldb.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Module::Install version 1.01, CPAN::Meta::Converter version 2.112150",
+   "generated_by" : "Module::Install version 1.06, CPAN::Meta::Converter version 2.112150",
    "license" : [
       "unknown"
    ],
@@ -23,12 +23,12 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : "6.42"
+            "ExtUtils::MakeMaker" : "6.59"
          }
       },
       "configure" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : "6.42"
+            "ExtUtils::MakeMaker" : "6.59"
          }
       },
       "runtime" : {
@@ -60,5 +60,5 @@
          "url" : "http://github.com/sni/Webinject"
       }
    },
-   "version" : "1.71"
+   "version" : "1.74"
 }
