@@ -334,12 +334,21 @@ sub _run_test_case {
 
     if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
 
+    push @{$case->{'messages'}}, { 'html' => "<td>" }; # HTML: open table column
     for(qw/description1 description2/) {
         next unless defined $case->{$_};
         $self->_out(qq|Desc: $case->{$_}\n|);
-        push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => $case->{$_} };
+        push @{$case->{'messages'}}, {'key' => $_, 'value' => $case->{$_}, 'html' => "<b>$case->{$_}</b><br />" };
     }
-    push @{$case->{'messages'}}, { 'html' => "" }; # add empty line in html output
+    my $method;
+    if (defined $case->{method}) {
+        $method = uc($case->{method});
+    } else {
+        $method = "GET";
+    }
+    push @{$case->{'messages'}}, { 'html' => qq|<small>$method <a href="$case->{url}">$case->{url}</a> </small><br />\n| };
+
+    push @{$case->{'messages'}}, { 'html' => "</td><td>" }; # HTML: next column
 
     my($latency,$request,$response);
     if($case->{method}){
@@ -366,13 +375,13 @@ sub _run_test_case {
     if($case->{verifypositivenext}) {
         $self->{'verifylater'} = $case->{'verifypositivenext'};
         $self->_out("Verify On Next Case: '".$case->{verifypositivenext}."' \n");
-        push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext} };
+        push @{$case->{'messages'}}, {'key' => 'verifypositivenext', 'value' => $case->{verifypositivenext}, 'html' => "Verify On Next Case: ".$case->{verifypositivenext}."<br />" };
     }
 
     if($case->{verifynegativenext}) {
         $self->{'verifylaterneg'} = $case->{'verifynegativenext'};
         $self->_out("Verify Negative On Next Case: '".$case->{verifynegativenext}."' \n");
-        push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext} };
+        push @{$case->{'messages'}}, {'key' => 'verifynegativenext', 'value' => $case->{verifynegativenext}, 'html' => "Verify Negative On Next Case: ".$case->{verifynegativenext}."<br />" };
     }
 
     # write to http.log file
@@ -396,6 +405,7 @@ sub _run_test_case {
         $case->{$key} = $self->_convertbackxmlresult($case->{$key}, $timestamp);
     }
 
+    push @{$case->{'messages'}}, { 'html' => "</td><td>\n" }; # HTML: next column
     # if any verification fails, test case is considered a failure
     if($case->{'iscritical'}) {
         # end result will be also critical
@@ -413,7 +423,7 @@ sub _run_test_case {
             push @{$case->{'messages'}}, {
                 'key'   => 'result-message',
                 'value' => $message,
-                'html'  => "<b><span class=\"fail\">TEST CASE FAILED : ".$message."</span></b>"
+                'html'  => "<b><span class=\"fail\">FAILED :</span> ".$message."</b>"
             };
             $self->_out("TEST CASE FAILED : ".$message."\n");
         }
@@ -422,7 +432,7 @@ sub _run_test_case {
             push @{$case->{'messages'}}, {
                 'key'   => 'result-message',
                 'value' => $case->{errormessage},
-                'html'  => "<b><span class=\"fail\">TEST CASE FAILED : ".$case->{errormessage}."</span></b>"
+                'html'  => "<b><span class=\"fail\">FAILED :</span> ".$case->{errormessage}."</b>"
             };
             $self->_out(qq|TEST CASE FAILED : $case->{errormessage}\n|);
         }
@@ -430,7 +440,7 @@ sub _run_test_case {
             push @{$case->{'messages'}}, {
                 'key'   => 'result-message',
                 'value' => 'TEST CASE FAILED',
-                'html'  => "<b><span class=\"fail\">TEST CASE FAILED</span></b>"
+                'html'  => "<b><span class=\"fail\">FAILED</span></b>"
             };
             $self->_out(qq|TEST CASE FAILED\n|);
         }
@@ -455,13 +465,13 @@ sub _run_test_case {
 
         push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
         if( $case->{errormessage} ) {       # Add defined error message to the output
-            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">TEST CASE WARNED : ".$case->{errormessage}."</span></b>" };
+            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">WARNED :</span> ".$case->{errormessage}."</b>" };
             $self->_out(qq|TEST CASE WARNED : $case->{errormessage}\n|);
         }
         # print regular error output
         else {
             # we suppress most logging when running in a plugin mode
-            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">TEST CASE WARNED</span></b>" };
+            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">WARNED</span></b>" };
             $self->_out(qq|TEST CASE WARNED\n|);
         }
         unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
@@ -483,7 +493,11 @@ sub _run_test_case {
     else {
         $self->_out(qq|TEST CASE PASSED\n|);
         push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'true' };
-        push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE PASSED', 'html' => "<b><span class=\"pass\">TEST CASE PASSED</span></b>" };
+        push @{$case->{'messages'}}, {
+            'key' => 'result-message',
+            'value' => 'TEST CASE PASSED',
+            'html' => "<b><span class=\"pass\">PASSED</span></b>"
+        };
         if( $self->{'gui'} ) {
             $self->_gui_status_passed();
         }
@@ -493,7 +507,10 @@ sub _run_test_case {
 
     $self->_out(qq|Response Time = $latency sec \n|);
     $self->_out(qq|------------------------------------------------------- \n|);
-    push @{$case->{'messages'}}, {'key' => 'responsetime', 'value' => $latency, 'html' => "Response Time = ".$latency." sec <br />\n<br />\n-------------------------------------------------------" };
+    push @{$case->{'messages'}}, {
+        'key' => 'responsetime',
+        'value' => $latency,
+        'html' => "<br />".$latency." sec </td>\n" };
 
     $self->{'result'}->{'runcount'}++;
     $self->{'result'}->{'totalruncount'}++;
@@ -692,6 +709,9 @@ sub _write_result_html {
             font-family: Verdana, Arial, Helvetica, sans-serif;
             font-size: 10px;
         }
+        table, td {
+            border:  solid #ddd 1px;
+        }
         .pass {
             color: green;
         }
@@ -701,22 +721,27 @@ sub _write_result_html {
     </style>
 </head>
 <body>
-<hr />
--------------------------------------------------------<br />
+<table>
+<tr>
+<th>Test</th>
+<th>Description<br />Request URL</th>
+<th>Results</th>
+<th>Summary<br />Response Time</th>
+</tr>
 |;
     for my $file (@{$self->{'result'}->{'files'}}) {
         for my $case (@{$file->{'cases'}}) {
-            print $resultshtml qq|<b>Test:  $file->{'name'} - $case->{'id'} </b><br />\n|;
+            print $resultshtml qq|<tr><td>$file->{'name'}<br /><b>$case->{'id'} </b></td>\n|;
             for my $message (@{$case->{'messages'}}) {
                 next unless defined $message->{'html'};
-                print $resultshtml $message->{'html'}."<br />\n";
+                print $resultshtml $message->{'html'} . "\n";
             }
-            print $resultshtml "\n";
+            print $resultshtml "</tr>\n";
         }
     }
 
     print $resultshtml qq|
-<br /><hr /><br />
+</table>
 <b>
 Start Time: $self->{'config'}->{'currentdatetime'} <br />
 Total Run Time: $self->{'result'}->{'totalruntime'} seconds <br />
@@ -935,7 +960,7 @@ sub _httppost_xml {
         # print "bad xml\n";
         # we suppress most logging when running in a plugin mode
         if($self->{'config'}->{'reporttype'} eq 'standard') {
-            push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed XML parser on response: ".$ex."</span>" };
+            push @{$case->{'messages'}}, {'key' => 'verifyxml-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed XML parser on response:</span> ".$ex };
         }
         $self->_out("Failed XML parser on response: $ex \n");
         $case->{'failedcount'}++;
@@ -976,17 +1001,17 @@ sub _verify {
 
     if( $case->{verifyresponsecode} ) {
         $self->_out(qq|Verify Response Code: "$case->{verifyresponsecode}" \n|);
-        push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode}, 'html' => "Verify Response Code: ".$case->{verifyresponsecode} };
+        push @{$case->{'messages'}}, {'key' => 'verifyresponsecode', 'value' => $case->{verifyresponsecode} };
 
         # verify returned HTTP response code matches verifyresponsecode set in test case
         if ( $case->{verifyresponsecode} == $response->code() ) {
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification </span>' };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code:</span> '.$case->{verifyresponsecode} };
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification' };
             $self->_out(qq|Passed HTTP Response Code Verification \n|);
             $case->{'passedcount'}++;
         }
         else {
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')</span>' };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code:</span> received '.$response->code().', expecting '.$case->{verifyresponsecode} };
             push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')' };
             $self->_out(qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|);
             $case->{'failedcount'}++;
@@ -1040,21 +1065,22 @@ sub _verify {
             }
         }
     }
+    push @{$case->{'messages'}}, { 'html' => '<br />' };
 
     for my $nr ('', 1..1000) {
         my $key = "verifypositive".$nr;
         if( $case->{$key} ) {
             $self->_out("Verify: '".$case->{$key}."' \n");
-            push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key}, 'html' => "Verify: ".$case->{$key} };
+            push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key} };
             my $regex = $self->_fix_regex($case->{$key});
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Positive Verification</span>" };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed:</span> ".$case->{$key} };
                 $self->_out("Passed Positive Verification \n");
                 $case->{'passedcount'}++;
             }
             else {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Positive Verification</span>" };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed:</span> ".$case->{$key} };
                 $self->_out("Failed Positive Verification \n");
                 $case->{'failedcount'}++;
                 $case->{'iscritical'} = 1;
@@ -1064,6 +1090,7 @@ sub _verify {
                     return;
                 }
             }
+            push @{$case->{'messages'}}, { 'html' => '<br />' };
         }
         elsif($nr ne '' and $nr > 5) {
             last;
@@ -1074,11 +1101,11 @@ sub _verify {
         my $key = "verifynegative".$nr;
         if( $case->{$key} ) {
             $self->_out("Verify Negative: '".$case->{$key}."' \n");
-            push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key}, 'html' => "Verify Negative: ".$case->{$key} };
+            push @{$case->{'messages'}}, {'key' => $key, 'value' => $case->{$key} };
             my $regex = $self->_fix_regex($case->{$key});
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification</span>' };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative:</span> '.$case->{$key} };
                 $self->_out("Failed Negative Verification \n");
                 $case->{'failedcount'}++;
                 $case->{'iscritical'} = 1;
@@ -1089,10 +1116,11 @@ sub _verify {
                 }
             }
             else {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification</span>' };
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative:</span> '.$case->{$key} };
                 $self->_out("Passed Negative Verification \n");
                 $case->{'passedcount'}++;
             }
+            push @{$case->{'messages'}}, { 'html' => '<br />' };
         }
         elsif($nr ne '' and $nr > 5) {
             last;
@@ -1118,6 +1146,7 @@ sub _verify {
                 return;
             }
         }
+        push @{$case->{'messages'}}, { 'html' => '<br />' };
         # set to null after verification
         delete $self->{'verifylater'};
     }
@@ -1141,38 +1170,40 @@ sub _verify {
             $self->_out("Passed Negative Verification (negative verification set in previous test case) \n");
             $case->{'passedcount'}++;
         }
+        push @{$case->{'messages'}}, { 'html' => '<br />' };
         # set to null after verification
         delete $self->{'verifylaterneg'};
     }
 
     if($case->{'warning'}) {
         $self->_out("Verify Warning Threshold: ".$case->{'warning'}."\n");
-        push @{$case->{'messages'}}, {'key' => "Warning Threshold", 'value' => $case->{''}, 'html' => "Verify Warning Threshold: ".$case->{'warning'} };
+        push @{$case->{'messages'}}, {'key' => "Warning Threshold", 'value' => $case->{''} };
         if($case->{'latency'} > $case->{'warning'}) {
-            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Warning Threshold</span>" };
+            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Warning Threshold:</span> ".$case->{'warning'} };
             $self->_out("Failed Warning Threshold \n");
             $case->{'failedcount'}++;
             $case->{'iswarning'} = 1;
         }
         else {
             $self->_out("Passed Warning Threshold \n");
-            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Warning Threshold</span>" };
+            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Warning Threshold:</span> ".$case->{'warning'} };
             $case->{'passedcount'}++;
         }
+        push @{$case->{'messages'}}, { 'html' => '<br />' };
     }
 
     if($case->{'critical'}) {
         $self->_out("Verify Critical Threshold: ".$case->{'critical'}."\n");
-        push @{$case->{'messages'}}, {'key' => "Critical Threshold", 'value' => $case->{''}, 'html' => "Verify Critical Threshold: ".$case->{'critical'} };
+        push @{$case->{'messages'}}, {'key' => "Critical Threshold", 'value' => $case->{''} };
         if($case->{'latency'} > $case->{'critical'}) {
-            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Critical Threshold</span>" };
+            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Critical Threshold:</span> ".$case->{'critical'} };
             $self->_out("Failed Critical Threshold \n");
             $case->{'failedcount'}++;
             $case->{'iscritical'} = 1;
         }
         else {
             $self->_out("Passed Critical Threshold \n");
-            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Critical Threshold</span>" };
+            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed Critical Threshold:</span> ".$case->{'critical'} };
             $case->{'passedcount'}++;
         }
     }
@@ -1207,7 +1238,7 @@ sub _parseresponse {
         }
         ## use critic
         else {
-            push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find $leftboundary(.*?)$rightboundary</span>" };
+            push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find</span> $leftboundary(.*?)$rightboundary" };
             $self->_out("Failed Parseresult, cannot find $leftboundary(*)$rightboundary\n");
             $case->{'iswarning'} = 1;
         }
