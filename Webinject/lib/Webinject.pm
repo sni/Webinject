@@ -561,7 +561,7 @@ sub _get_useragent {
     my $self = shift;
 
     # construct LWP object
-    my $useragent  = LWP::UserAgent->new;
+    my $useragent  = LWP::UserAgent->new(keep_alive=>1);
 
     # store cookies in our LWP object
     my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
