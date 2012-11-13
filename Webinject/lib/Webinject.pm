@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.74';
+our $VERSION = '1.76';
 
 =head1 NAME
 
@@ -309,12 +309,13 @@ sub _run_test_case {
 
     confess("no testcase!") unless defined $case;
 
-    $case->{'id'}          = 1 unless defined $case->{'id'};
-    $case->{'passedcount'} = 0;
-    $case->{'failedcount'} = 0;
-    $case->{'iswarning'}   = 0;
-    $case->{'iscritical'}  = 0;
-    $case->{'messages'}    = [];
+    # set some defaults
+    $case->{'id'}           = 1 unless defined $case->{'id'};
+    $case->{'passedcount'}  = 0;
+    $case->{'failedcount'}  = 0;
+    $case->{'iswarning'}    = 0;
+    $case->{'iscritical'}   = 0;
+    $case->{'messages'}     = [];
 
     $useragent = $self->_get_useragent() unless defined $useragent;
 
@@ -1237,7 +1238,7 @@ sub _parseresponse {
             $self->{'parsedresult'}->{$type} = $1;
         }
         ## use critic
-        else {
+        elsif(!defined $case->{'parsewarning'} or $case->{'parsewarning'}) {
             push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find</span> $leftboundary(.*?)$rightboundary" };
             $self->_out("Failed Parseresult, cannot find $leftboundary(*)$rightboundary\n");
             $case->{'iswarning'} = 1;

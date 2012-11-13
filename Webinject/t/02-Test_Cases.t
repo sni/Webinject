@@ -15,7 +15,7 @@ if($ENV{TEST_AUTHOR}) {
         plan skip_all => 'HTTP::Server::Simple::CGI required';
     }
     else{
-        plan tests => 44;
+        plan tests => 50;
     }
 }
 else{
@@ -35,7 +35,9 @@ TestWebServer->start_webserver();
 # start our test cases
 test_case_01();
 test_case_02();
-test_case_03();
+test_case_03_1();
+test_case_03_2();
+test_case_03_3();
 test_case_04();
 test_case_05();
 test_case_06();
@@ -74,14 +76,38 @@ sub test_case_02 {
 }
 
 ##################################################
-# Test File 03
-sub test_case_03 {
+# Test File 03 - 1
+sub test_case_03_1 {
     @ARGV = ($Bin."/data/03-parse_response.xml");
     my $webinject = Webinject->new();
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     my $rc = $webinject->engine();
     is($webinject->{'result'}->{'totalpassedcount'}, 3, '03-parse_response.xml - passed count');
     is($webinject->{'result'}->{'totalfailedcount'}, 0, '03-parse_response.xml - fail count');
+    is($rc, 0, '03-parse_response.xml - return code');
+}
+
+##################################################
+# Test File 03 - 2
+sub test_case_03_2 {
+    @ARGV = ($Bin."/data/03-parse_response2.xml");
+    my $webinject = Webinject->new();
+    $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
+    my $rc = $webinject->engine();
+    is($webinject->{'result'}->{'totalpassedcount'}, 1, '03-parse_response2.xml - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 0, '03-parse_response2.xml - fail count');
+    is($rc, 1, '03-parse_response.xml - return code');
+}
+
+##################################################
+# Test File 03 - 3
+sub test_case_03_3 {
+    @ARGV = ($Bin."/data/03-parse_response3.xml");
+    my $webinject = Webinject->new();
+    $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
+    my $rc = $webinject->engine();
+    is($webinject->{'result'}->{'totalpassedcount'}, 1, '03-parse_response2.xml - passed count');
+    is($webinject->{'result'}->{'totalfailedcount'}, 0, '03-parse_response2.xml - fail count');
     is($rc, 0, '03-parse_response.xml - return code');
 }
 

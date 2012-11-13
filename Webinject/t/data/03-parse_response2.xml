@@ -1,0 +1,10 @@
+<testcases repeat="1">
+<case
+    id                 = "1"
+    description1       = "test parse response warning"
+    method             = "get"
+    url                = "{BASEURL}/teststring"
+    verifyresponsecode = "200"
+    parseresponse      = "HTTP|NOTFOUND"
+/>
+</testcases>
