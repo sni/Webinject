@@ -119,7 +119,7 @@ sub test_case_03 {
     delete $result->{'latency'};
     delete $result->{'response'};
     delete $result->{'request'};
-    is_deeply($result, $expected, 'timeouts - result') or BAIL_OUT("expected: \n".Dumper($expected)."\nresult: \n".Dumper($result));
+    is_deeply($result, $expected, 'timeouts - result') or diag("expected: \n".Dumper($expected)."\nresult: \n".Dumper($result));
     is($webinject->{'result'}->{'iscritical'}, 1, '03 - timeouts - iscritical');
     is($webinject->{'result'}->{'iswarning'}, 0, '03 - timeouts - iswarning');
 }
