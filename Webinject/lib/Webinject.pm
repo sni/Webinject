@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.76';
+our $VERSION = '1.78';
 
 =head1 NAME
 
@@ -330,7 +330,7 @@ sub _run_test_case {
     for my $key (keys %{$case}) {
         $case->{$key} = $self->_convertbackxml($case->{$key}, $timestamp);
         next if $key eq 'errormessage';
-        $case->{$key} = $self->_convertbackxmlresult($case->{$key}, $timestamp);
+        $case->{$key} = $self->_convertbackxmlresult($case->{$key});
     }
 
     if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
@@ -403,7 +403,7 @@ sub _run_test_case {
     # make parsed results available in the errormessage
     for my $key (keys %{$case}) {
         next unless $key eq 'errormessage';
-        $case->{$key} = $self->_convertbackxmlresult($case->{$key}, $timestamp);
+        $case->{$key} = $self->_convertbackxmlresult($case->{$key});
     }
 
     push @{$case->{'messages'}}, { 'html' => "</td><td>\n" }; # HTML: next column
@@ -935,10 +935,13 @@ sub _httppost_xml {
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
+    # Get the XML input file to use PARSEDRESULT and substitute the contents
+    my $content = $self->_convertbackxmlresult(join( " ", @xmlbody ));
+
     $self->_out("POST Request: ".$case->{url}."\n");
     $request = new HTTP::Request( 'POST', $case->{url} );
     $request->content_type($case->{posttype});
-    $request->content( join( " ", @xmlbody ) );    # load the contents of the file into the request body
+    $request->content( $content );    # load the contents of the file into the request body
 
     ($latency,$request,$response) = $self->_http_defaults($request, $useragent, $case);
 
@@ -1490,7 +1493,7 @@ sub _convertbackxml {
 ################################################################################
 # converts replaced xml with parsed result
 sub _convertbackxmlresult {
-    my ( $self, $string, $timestamp ) = @_;
+    my ( $self, $string) = @_;
     return unless defined $string;
     $string =~ s~\{PARSEDRESULT\}~$self->{'parsedresult'}->{'parseresponse'}~gmx if defined $self->{'parsedresult'}->{'parseresponse'};
     for my $x (1..5) {

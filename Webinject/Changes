@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.78 - Thu Jan  3 22:49:56 CET 2013
+    - replace parsedresult in xml input file
+
 Version 1.76 - Tue Nov 13 12:46:14 CET 2012
     - added new case option parsewarning
 
