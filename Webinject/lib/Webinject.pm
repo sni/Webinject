@@ -1,5 +1,6 @@
 package Webinject;
 
+#    Copyright 2013-2014 Vincent Palluel (vincent.palluel@gmail.com)
 #    Copyright 2010-2012 Sven Nierlein (nierlein@cpan.org)
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
@@ -97,7 +98,11 @@ Output directory where all logfiles will go to. Defaults to current directory.
 
 =item globalhttplog
 
-Can be 'yes' or 'onfail'. Will log the http request and response to a http.log file.
+Can be 'yes' or 'onfail'. Will log the http request and response to http.log or custom log file.
+
+=item httplogfile
+
+Override default http.log (custom log file).
 
 =item httpauth
 
@@ -188,20 +193,25 @@ sub engine {
 
     $self->_processcasefile();
 
-    my $useragent = $self->_get_useragent();
-
     # write opening tags for STDOUT.
     $self->_writeinitialstdout();
 
     # create the gnuplot config file
     $self->_plotcfg();
 
+    # return handle and name of temporary cookie file.
+    my($fh, $cookietempfilename)=tempfile(undef, UNLINK => 1);
+    if ( -e $cookietempfilename ) { unlink $cookietempfilename; }
+    $self->{'cookie'} = $cookietempfilename;
+
     # timer for entire test run
     my $startruntimer = time();
 
     # process test case files named in config
+    my $currentcasefilenumber=0;
     for my $currentcasefile ( @{ $self->{'casefilelist'} } ) {
         #print "\n$currentcasefile\n\n";
+        $currentcasefilenumber++;
 
         my $resultfile = {
             'name'  => $currentcasefile,
@@ -242,8 +252,6 @@ sub engine {
             $repeat = $xmltestcases->{repeat};
         }
 
-        my $useragent = $self->_get_useragent();
-
         for my $run_nr (1 .. $repeat) {
 
             # process cases in sorted order
@@ -268,7 +276,7 @@ sub engine {
                 }
                 $self->_out(qq|Test: $label$currentcasefile - $testnum \n|);
 
-                $case = $self->_run_test_case($case, $useragent);
+                $case = $self->_run_test_case($case, $currentcasefilenumber);
 
                 push @{$resultfile->{'cases'}}, $case;
 
@@ -305,7 +313,7 @@ sub engine {
 ################################################################################
 # runs a single test case
 sub _run_test_case {
-    my($self,$case,$useragent) =@_;
+    my($self,$case,$currentcasefilenumber) =@_;
 
     confess("no testcase!") unless defined $case;
 
@@ -317,7 +325,12 @@ sub _run_test_case {
     $case->{'iscritical'}   = 0;
     $case->{'messages'}     = [];
 
-    $useragent = $self->_get_useragent() unless defined $useragent;
+    my($useragent,$proxy);
+    $proxy = $self->{'config'}->{'proxy'} if($self->{'config'}->{'proxy'});
+    $proxy = $case->{'proxy'} if($case->{'proxy'});
+    $proxy = undef if(defined $proxy && $proxy eq "no_proxy");
+
+    $useragent = $self->_get_useragent($proxy) unless defined $useragent;
 
     # don't do this if monitor is disabled in gui
     if($self->{'gui'} and $self->{'monitorenabledchkbx'} ne 'monitor_off') {
@@ -416,89 +429,65 @@ sub _run_test_case {
     }
 
     push @{$case->{'messages'}}, { 'html' => "</td><td>\n" }; # HTML: next column
+    
     # if any verification fails, test case is considered a failure
-    if($case->{'iscritical'}) {
-        # end result will be also critical
-        $self->{'result'}->{'iscritical'} = 1;
+    if($case->{'iscritical'} or $case->{'iswarning'}) {
+     my $message; 
+     push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
 
-        push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
-        if( $self->{'result'}->{'returnmessage'} ) {       # Add returnmessage to the output
-            my $prefix = "case #".$case->{'id'}.": ";
-            if(defined $case->{'label'}) {
-                $prefix = $case->{'label'}." (case #".$case->{'id'}."): ";
-            }
-            $self->{'result'}->{'returnmessage'} = $prefix.$self->{'result'}->{'returnmessage'};
-            my $message = $self->{'result'}->{'returnmessage'};
-            $message    = $message.' - '.$case->{errormessage} if defined $case->{errormessage};
-            push @{$case->{'messages'}}, {
-                'key'   => 'result-message',
-                'value' => $message,
-                'html'  => "<b><span class=\"fail\">FAILED :</span> ".$message."</b>"
-            };
-            $self->_out("TEST CASE FAILED : ".$message."\n");
-        }
-        # print regular error output
-        elsif ( $case->{errormessage} ) {       # Add defined error message to the output
-            push @{$case->{'messages'}}, {
-                'key'   => 'result-message',
-                'value' => $case->{errormessage},
-                'html'  => "<b><span class=\"fail\">FAILED :</span> ".$case->{errormessage}."</b>"
-            };
-            $self->_out(qq|TEST CASE FAILED : $case->{errormessage}\n|);
-        }
-        else {
-            push @{$case->{'messages'}}, {
-                'key'   => 'result-message',
-                'value' => 'TEST CASE FAILED',
-                'html'  => "<b><span class=\"fail\">FAILED</span></b>"
-            };
-            $self->_out(qq|TEST CASE FAILED\n|);
-        }
-        unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
-            if( $case->{errormessage} ) {
-                $self->{'result'}->{'returnmessage'} = $case->{errormessage};
-            }
-            else {
-                $self->{'result'}->{'returnmessage'} = "Test case number ".$case->{'id'}." failed";
-                if(defined $case->{'label'}) {
-                    $self->{'result'}->{'returnmessage'} = "Test case ".$case->{'label'}." (#".$case->{'id'}.") failed";
-                }
-            }
-        }
-        if( $self->{'gui'} ) {
-            $self->_gui_status_failed();
-        }
-    }
-    elsif($case->{'iswarning'}) {
-        # end result will be also warning
-        $self->{'result'}->{'iswarning'} = 1;
+     if($case->{errormessage}){
+      chomp($case->{errormessage});
+      $case->{errormessage} =~ s/\s+/_/gmx;
+      $message=$case->{errormessage};
+     }
+     else{
+      if($self->{'result'}->{'returnmessage'}){
+       $message=$self->{'result'}->{'returnmessage'};
+      }
+      else{
+       # We should get there only for response times...
+       if($case->{'iscritical'}) {
+        $message="failed ($case->{'latency'})";
+       }
+       elsif($case->{'iswarning'}) {
+        $message="warned ($case->{'latency'})";
+       }
+       else{
+        $message="unknown_error";
+       } 
+      }
+     }
 
-        push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
-        if( $case->{errormessage} ) {       # Add defined error message to the output
-            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => $case->{errormessage}, 'html' => "<b><span class=\"fail\">WARNED :</span> ".$case->{errormessage}."</b>" };
-            $self->_out(qq|TEST CASE WARNED : $case->{errormessage}\n|);
-        }
-        # print regular error output
-        else {
-            # we suppress most logging when running in a plugin mode
-            push @{$case->{'messages'}}, {'key' => 'result-message', 'value' => 'TEST CASE WARNED', 'html' => "<b><span class=\"fail\">WARNED</span></b>" };
-            $self->_out(qq|TEST CASE WARNED\n|);
-        }
-        unless( $self->{'result'}->{'returnmessage'} ) { #(used for plugin compatibility) if it's the first error message, set it to variable
-            if( $case->{errormessage} ) {
-                $self->{'result'}->{'returnmessage'} = $case->{errormessage};
-            }
-            else {
-                $self->{'result'}->{'returnmessage'} = "Test case number ".$case->{'id'}." warned";
-                if(defined $case->{'label'}) {
-                    $self->{'result'}->{'returnmessage'} = "Test case ".$case->{'label'}." (#".$case->{'id'}.") warned";
-                }
-            }
+     my $messageprefix = defined $case->{'label'} ? "$case->{'label'}: " : "case".$case->{'id'}.": ";
 
-        }
-        if( $self->{'gui'} ) {
-            $self->_gui_status_failed();
-        }
+     my $outmessage; 
+     if($case->{'iscritical'}) {
+      $self->{'result'}->{'iscritical'} = 1;
+      $outmessage="TEST CASE FAILED";
+      push @{$case->{'messages'}}, {
+       'key'   => 'result-message',
+       'value' => $messageprefix.$message,
+       'html'  => "<b><span class=\"fail\">FAILED :</span> ".$messageprefix.$message."</b>"
+      };
+      $self->{'result'}->{'outputmessage'}{$currentcasefilenumber}{$case->{'id'}} = $messageprefix.$message;
+     }
+     elsif($case->{'iswarning'}) {
+      $self->{'result'}->{'iswarning'} = 1;
+      $outmessage="TEST CASE WARNED";
+      push @{$case->{'messages'}}, {
+       'key'   => 'result-message',
+       'value' => $messageprefix.$message,
+       'html'  => "<b><span class=\"fail\">WARNED :</span> ".$messageprefix.$message."</b>"
+      };
+      $self->{'result'}->{'outputmessage'}{$currentcasefilenumber}{$case->{'id'}} = $messageprefix.$message;
+     }
+
+     $self->_out("$outmessage : ".$messageprefix.$message."\n");
+
+     if($self->{'gui'}){
+      $self->_gui_status_failed();
+     }
+
     }
     else {
         $self->_out(qq|TEST CASE PASSED\n|);
@@ -569,15 +558,14 @@ sub _run_test_case {
 ################################################################################
 sub _get_useragent {
     my $self = shift;
+    my $proxy = shift;
 
     # construct LWP object
-    my $useragent  = LWP::UserAgent->new(keep_alive=>1);
+    my $useragent  = LWP::UserAgent->new;
 
     # store cookies in our LWP object
-    my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
-    unlink ($cookietempfilename);
     $useragent->cookie_jar(HTTP::Cookies->new(
-                                                 file     => $cookietempfilename,
+                                                 file     => $self->{'cookie'},
                                                  autosave => 1,
                                               ));
 
@@ -588,12 +576,25 @@ sub _get_useragent {
         $useragent->agent($self->{'config'}->{'useragent'});
     }
 
-    # add proxy support if it is set in config.xml
-    if( $self->{'config'}->{'proxy'} ) {
-        my $proxy = $self->{'config'}->{'proxy'};
-        $proxy    =~ s/^http:\/\///mx;
-        $useragent->proxy([qw( http )], "http://".$proxy);
-        $ENV{'HTTPS_PROXY'} = "http://".$proxy;
+    $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = "Net::SSL";
+    $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
+
+    # Add proxy support if defined.
+    if(defined $proxy){
+     $useragent->proxy([qw( http )], $proxy);
+     if($proxy =~ /http:\/\/([a-zA-Z0-9]+):([a-zA-Z0-9]+)\@(.*)/){
+      $ENV{'HTTPS_PROXY_USERNAME'} = $1;
+      $ENV{'HTTPS_PROXY_PASSWORD'} = $2;
+      $ENV{'HTTPS_PROXY'} = "http://".$3;
+     }
+     else{
+      $ENV{'HTTPS_PROXY'} = $proxy;
+     }
+    }
+    else{
+     delete $ENV{'HTTPS_PROXY_USERNAME'}if(defined $ENV{'HTTPS_PROXY_USERNAME'});
+     delete $ENV{'HTTPS_PROXY_PASSWORD'}if(defined $ENV{'HTTPS_PROXY_PASSWORD'});
+     delete $ENV{'HTTPS_PROXY'}if(defined $ENV{'HTTPS_PROXY'});
     }
 
     # don't follow redirects unless set by config
@@ -640,6 +641,7 @@ sub _set_defaults {
         'globalhttplog'             => 'no',
         'proxy'                     => '',
         'timeout'                   => 180,
+        'httplogfile'               => 'http.log',
     };
     $self->{'exit_codes'}         = {
         'UNKNOWN'  => 3,
@@ -890,7 +892,7 @@ sub _httppost {
     my $case        = shift;
 
     if($case->{posttype} ) {
-        if($case->{posttype} =~ m~application/x\-www\-form\-urlencoded~mx) {
+        if($case->{posttype} =~ m~application/x\-www\-form\-urlencoded~mx or $case->{posttype} =~ m~application/json~mx) {
             return $self->_httppost_form_urlencoded($useragent, $case);
         }
         elsif($case->{posttype} =~ m~multipart/form\-data~mx) {
@@ -903,7 +905,7 @@ sub _httppost {
             return $self->_httppost_xml($useragent, $case);
         }
         else {
-            $self->_usage('ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml"');
+            $self->_usage('ERROR: Bad Form Encoding Type, I only accept "application/x-www-form-urlencoded", "multipart/form-data", "text/xml", "application/soap+xml", "application/json"');
         }
     }
     else {
@@ -1011,6 +1013,8 @@ sub _verify {
 
     confess("no response") unless defined $response;
     confess("no case")     unless defined $case;
+    
+    $self->{'result'}->{'returnmessage'} = "";
 
     if( $case->{verifyresponsecode} ) {
         $self->_out(qq|Verify Response Code: "$case->{verifyresponsecode}" \n|);
@@ -1018,61 +1022,51 @@ sub _verify {
 
         # verify returned HTTP response code matches verifyresponsecode set in test case
         if ( $case->{verifyresponsecode} == $response->code() ) {
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code:</span> '.$case->{verifyresponsecode} };
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification' };
-            $self->_out(qq|Passed HTTP Response Code Verification \n|);
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed verifyresponsecode:</span> '.$case->{verifyresponsecode} };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed verifyresponsecode' };
+            $self->_out(qq|Passed verifyresponsecode \n|);
             $case->{'passedcount'}++;
         }
         else {
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code:</span> received '.$response->code().', expecting '.$case->{verifyresponsecode} };
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')' };
-            $self->_out(qq|Failed HTTP Response Code Verification (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|);
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">verifyresponsecode:</span> received '.$response->code().', expecting '.$case->{verifyresponsecode} };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'verifyresponsecode: received '.$response->code().', expecting '.$case->{verifyresponsecode}.'' };
+            $self->_out(qq|verifyresponsecode (received |.$response->code().qq|, expecting $case->{verifyresponsecode}) \n|);
             $case->{'failedcount'}++;
             $case->{'iscritical'} = 1;
-
+            $self->{'result'}->{'returnmessage'} = 'verifyresponsecode(received '.$response->code().', expecting '.$case->{verifyresponsecode}.')';
             if($self->{'config'}->{'break_on_errors'}) {
-                $self->{'result'}->{'returnmessage'} = 'Failed HTTP Response Code Verification (received '.$response->code().', expecting '.$case->{verifyresponsecode}.')';
                 return;
             }
         }
     }
     else {
         # verify http response code is in the 100-399 range
-        if($response->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx ) {     # verify existance of string in response
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">Passed HTTP Response Code Verification (not in error range)</span>' };
-            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Passed HTTP Response Code Verification (not in error range)' };
-            $self->_out(qq|Passed HTTP Response Code Verification (not in error range) \n|);
-
-            # succesful response codes: 100-399
+        if($response->as_string() =~ /HTTP\/1.(0|1)\ (1|2|3)/imx ) {
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'true', 'html' => '<span class="pass">HTTP Status Code OK</span>' };
+            push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'HTTP Status Code OK' };
+            $self->_out(qq|HTTP Status Code OK \n|);
             $case->{'passedcount'}++;
         }
         else {
-            $response->as_string() =~ /(HTTP\/1.)(.*)/mxi;
-            if($1) {    #this is true if an HTTP response returned
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed HTTP Response Code Verification ('.$1.$2.')</span>' };
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed HTTP Response Code Verification ('.$1.$2.')' };
-                $self->_out("Failed HTTP Response Code Verification ($1$2) \n");    #($1$2) is HTTP response code
-
-                $case->{'failedcount'}++;
-                $case->{'iscritical'} = 1;
-
+            $case->{'failedcount'}++;
+            $case->{'iscritical'} = 1;
+            if($response->as_string() =~ /(HTTP\/1.)(.*)/mxi){
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">HTTP Status Code error: ('.$1.$2.')</span>' };
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'HTTP Status Code error: ('.$1.$2.')' };
+                $self->_out("HTTP Status Code error: ($1$2) \n");    #($1$2) is HTTP response code
+                $self->{'result'}->{'returnmessage'} = 'HTTP Status Code error ('.$1.$2.')';
                 if($self->{'config'}->{'break_on_errors'}) {
-                    $self->{'result'}->{'returnmessage'} = 'Failed HTTP Response Code Verification ('.$1.$2.')';
                     return;
                 }
             }
             #no HTTP response returned.. could be error in connection, bad hostname/address, or can not connect to web server
             else
             {
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">Failed - No Response</span>' };
-                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'Failed - No Response' };
-                $self->_out("Failed - No valid HTTP response:\n".$response->as_string());
-
-                $case->{'failedcount'}++;
-                $case->{'iscritical'} = 1;
-
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-success', 'value' => 'false', 'html' => '<span class="fail">HTTP response error</span>' };
+                push @{$case->{'messages'}}, {'key' => 'verifyresponsecode-messages', 'value' => 'HTTP response error' };
+                $self->_out("HTTP response error:\n".$response->as_string());
+                $self->{'result'}->{'returnmessage'} = 'HTTP response error: '.$response->as_string();
                 if($self->{'config'}->{'break_on_errors'}) {
-                    $self->{'result'}->{'returnmessage'} = 'Failed - No valid HTTP response: '.$response->as_string();
                     return;
                 }
             }
@@ -1088,18 +1082,18 @@ sub _verify {
             my $regex = $self->_fix_regex($case->{$key});
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed:</span> ".$case->{$key} };
-                $self->_out("Passed Positive Verification \n");
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => "<span class=\"pass\">Passed verifypositive:</span> ".$case->{$key} };
+                $self->_out("Passed verifypositive \n");
                 $case->{'passedcount'}++;
             }
             else {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed:</span> ".$case->{$key} };
-                $self->_out("Failed Positive Verification \n");
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">verifypositive:</span> ".$case->{$key} };
+                $self->_out("verifypositive \n");
                 $case->{'failedcount'}++;
                 $case->{'iscritical'} = 1;
 
+                $self->{'result'}->{'returnmessage'} = 'verifypositive: '.$regex;
                 if($self->{'config'}->{'break_on_errors'}) {
-                    $self->{'result'}->{'returnmessage'} = 'Failed Positive Verification, can not find a string matching regex: '.$regex;
                     return;
                 }
             }
@@ -1118,19 +1112,19 @@ sub _verify {
             my $regex = $self->_fix_regex($case->{$key});
             # verify existence of string in response
             if( $response->as_string() =~ m~$regex~simx ) {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative:</span> '.$case->{$key} };
-                $self->_out("Failed Negative Verification \n");
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'false', 'html' => '<span class="fail">verifynegative:</span> '.$case->{$key} };
+                $self->_out("verifynegative \n");
                 $case->{'failedcount'}++;
                 $case->{'iscritical'} = 1;
 
+                $self->{'result'}->{'returnmessage'} = 'verifynegative: '.$regex;
                 if($self->{'config'}->{'break_on_errors'}) {
-                    $self->{'result'}->{'returnmessage'} = 'Failed Negative Verification, found regex matched string: '.$regex;
                     return;
                 }
             }
             else {
-                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative:</span> '.$case->{$key} };
-                $self->_out("Passed Negative Verification \n");
+                push @{$case->{'messages'}}, {'key' => $key.'-success', 'value' => 'true', 'html' => '<span class="pass">Passed verifynegative:</span> '.$case->{$key} };
+                $self->_out("Passed verifynegative \n");
                 $case->{'passedcount'}++;
             }
             push @{$case->{'messages'}}, { 'html' => '<br />' };
@@ -1144,18 +1138,18 @@ sub _verify {
         my $regex = $self->_fix_regex($self->{'verifylater'});
         # verify existence of string in response
         if($response->as_string() =~ m~$regex~simx ) {
-            push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed Positive Verification (verification set in previous test case)</span>' };
-            $self->_out("Passed Positive Verification (verification set in previous test case) \n");
+            push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed verifypositivenext:</span>' };
+            $self->_out("Passed verifypositivenext ");
             $case->{'passedcount'}++;
         }
         else {
-            push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'false', 'html' => '<span class="fail">Failed Positive Verification (verification set in previous test case)</span>' };
-            $self->_out("Failed Positive Verification (verification set in previous test case) \n");
+            push @{$case->{'messages'}}, {'key' => 'verifypositivenext-success', 'value' => 'false', 'html' => '<span class="fail">verifypositivenext:</span>' };
+            $self->_out("verifypositivenext \n");
             $case->{'failedcount'}++;
             $case->{'iscritical'} = 1;
-
+	
+            $self->{'result'}->{'returnmessage'} = 'verifypositivenext: '.$regex;
             if($self->{'config'}->{'break_on_errors'}) {
-                $self->{'result'}->{'returnmessage'} = 'Failed Positive Verification (verification set in previous test case), can not find a string matching regex: '.$regex;
                 return;
             }
         }
@@ -1168,19 +1162,19 @@ sub _verify {
         my $regex = $self->_fix_regex($self->{'verifylaterneg'});
         # verify existence of string in response
         if($response->as_string() =~ m~$regex~simx) {
-            push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'false', 'html' => '<span class="fail">Failed Negative Verification (negative verification set in previous test case)</span>' };
-            $self->_out("Failed Negative Verification (negative verification set in previous test case) \n");
+            push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'false', 'html' => '<span class="fail">verifynegativenext:</span>' };
+            $self->_out("verifynegativenext \n");
             $case->{'failedcount'}++;
             $case->{'iscritical'} = 1;
 
+            $self->{'result'}->{'returnmessage'} = 'verifynegativenext: '.$regex;
             if($self->{'config'}->{'break_on_errors'}) {
-                $self->{'result'}->{'returnmessage'} = 'Failed Negative Verification (negative verification set in previous test case), found regex matched string: '.$regex;
                 return;
             }
         }
         else {
-            push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed Negative Verification (negative verification set in previous test case)</span>' };
-            $self->_out("Passed Negative Verification (negative verification set in previous test case) \n");
+            push @{$case->{'messages'}}, {'key' => 'verifynegativenext-success', 'value' => 'true', 'html' => '<span class="pass">Passed verifynegativenext:</span>' };
+            $self->_out("Passed verifynegativenext \n");
             $case->{'passedcount'}++;
         }
         push @{$case->{'messages'}}, { 'html' => '<br />' };
@@ -1192,8 +1186,8 @@ sub _verify {
         $self->_out("Verify Warning Threshold: ".$case->{'warning'}."\n");
         push @{$case->{'messages'}}, {'key' => "Warning Threshold", 'value' => $case->{''} };
         if($case->{'latency'} > $case->{'warning'}) {
-            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Warning Threshold:</span> ".$case->{'warning'} };
-            $self->_out("Failed Warning Threshold \n");
+            push @{$case->{'messages'}}, {'key' => 'warning-success', 'value' => 'false', 'html' => "<span class=\"fail\">Warning Response Time:</span> ".$case->{'warning'} };
+            $self->_out("Warning Response Time\n");
             $case->{'failedcount'}++;
             $case->{'iswarning'} = 1;
         }
@@ -1209,8 +1203,8 @@ sub _verify {
         $self->_out("Verify Critical Threshold: ".$case->{'critical'}."\n");
         push @{$case->{'messages'}}, {'key' => "Critical Threshold", 'value' => $case->{''} };
         if($case->{'latency'} > $case->{'critical'}) {
-            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Critical Threshold:</span> ".$case->{'critical'} };
-            $self->_out("Failed Critical Threshold \n");
+            push @{$case->{'messages'}}, {'key' => 'critical-success', 'value' => 'false', 'html' => "<span class=\"fail\">Critical Response Time:</span> ".$case->{'critical'} };
+            $self->_out("Critical Response Time\n");
             $case->{'failedcount'}++;
             $case->{'iscritical'} = 1;
         }
@@ -1251,8 +1245,8 @@ sub _parseresponse {
         }
         ## use critic
         elsif(!defined $case->{'parsewarning'} or $case->{'parsewarning'}) {
-            push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Failed Parseresult, cannot find</span> $leftboundary(.*?)$rightboundary" };
-            $self->_out("Failed Parseresult, cannot find $leftboundary(*)$rightboundary\n");
+            push @{$case->{'messages'}}, {'key' => $type.'-success', 'value' => 'false', 'html' => "<span class=\"fail\">Parseresult failed</span> $leftboundary(.*?)$rightboundary" };
+            $self->_out("Parseresult failed $leftboundary(*)$rightboundary\n");
             $case->{'iswarning'} = 1;
         }
 
@@ -1318,7 +1312,7 @@ sub _read_config_xml {
         for my $key (
             qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout output_dir
             globaltimeout globalhttplog standaloneplot max_redirect
-            break_on_errors useragent/
+            break_on_errors useragent httplogfile/
           )
         {
 
@@ -1474,6 +1468,7 @@ sub _convtestcases {
             $ids->{$1} = 1;
         }
     }
+    #print Dumper($ids);
 
     close($xmltoconvert);
 
@@ -1557,7 +1552,7 @@ sub _httplog {
     }
 
     if($output ne '') {
-        my $file = $self->{'config'}->{'output_dir'}."http.log";
+        my $file = $self->{'config'}->{'output_dir'}.$self->{'config'}->{'httplogfile'};
         open( my $httplogfile, ">>", $file )
           or $self->_usage("ERROR: Failed to write ".$file.": ".$!);
         print $httplogfile $output;
@@ -1682,13 +1677,13 @@ sub _finaltasks {
                 $crit = $self->{'config'}->{globaltimeout};
             }
             my $lastid = 0;
-            my $perfdata = '|time='.$self->{'result'}->{'totalruntime'}.'s;0;'.$crit.';0;0';
+            my $perfdata = '|time='.$self->{'result'}->{'totalruntime'}.';0;'.$crit.';0;0';
             for my $file (@{$self->{'result'}->{'files'}}) {
                 for my $case (@{$file->{'cases'}}) {
                     my $warn   = $case->{'warning'}  || 0;
                     my $crit   = $case->{'critical'} || 0;
                     my $label  = $case->{'label'}    || 'case'.$case->{'id'};
-                    $perfdata .= ' '.$label.'='.$case->{'latency'}.'s;'.$warn.';'.$crit.';0;0';
+                    $perfdata .= ' '.$label.'='.$case->{'latency'}.';'.$warn.';'.$crit.';0;0';
                     $lastid = $case->{'id'};
                 }
             }
@@ -1696,16 +1691,26 @@ sub _finaltasks {
             for my $nr (1..($self->{'result'}->{'casecount'} - $self->{'result'}->{'totalruncount'})) {
                 $lastid++;
                 my $label  = 'case'.$lastid;
-                $perfdata .= ' '.$label.'=0s;0;0;0;0';
+                $perfdata .= ' '.$label.'=0;0;0;0;0';
             }
 
             my($rc,$message);
             if($self->{'result'}->{'iscritical'}) {
-                $message = "WebInject CRITICAL - ".$self->{'result'}->{'returnmessage'};
+                $message = "WebInject CRITICAL - ";
+                for my $casefilenumber ( sort keys $self->{'result'}->{'outputmessage'} ) {
+                 for my $caseid ( sort keys $self->{'result'}->{'outputmessage'}->{$casefilenumber} ) {
+                  $message.="$self->{'result'}->{'outputmessage'}->{$casefilenumber}->{$caseid} ";
+                 }
+                }
                 $rc      = $self->{'exit_codes'}->{'CRITICAL'};
             }
             elsif($self->{'result'}->{'iswarning'}) {
-                $message = "WebInject WARNING - ".$self->{'result'}->{'returnmessage'};
+                $message = "WebInject WARNING - ";
+                for my $casefilenumber ( sort keys $self->{'result'}->{'outputmessage'} ) {
+                 for my $caseid ( sort keys $self->{'result'}->{'outputmessage'}->{$casefilenumber} ) {
+                  $message.="$self->{'result'}->{'outputmessage'}->{$casefilenumber}->{$caseid} ";
+                 }
+                }
                 $rc      = $self->{'exit_codes'}->{'WARNING'};
             }
             elsif( $self->{'config'}->{globaltimeout} && $self->{'result'}->{'totalruntime'} > $self->{'config'}->{globaltimeout} ) {
