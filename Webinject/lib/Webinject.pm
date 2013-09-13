@@ -574,7 +574,9 @@ sub _get_useragent {
     my $useragent  = LWP::UserAgent->new(keep_alive=>1);
 
     # store cookies in our LWP object
-    my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
+    my $fh;
+    our $cookietempfilename;
+    ($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
     unlink ($cookietempfilename);
     $useragent->cookie_jar(HTTP::Cookies->new(
                                                  file     => $cookietempfilename,
@@ -1897,6 +1899,13 @@ sub _usage {
       $0 --version|-v
 EOB
     exit 3;
+}
+
+################################################################################
+# make sure we don't keep the cookie temp file
+END {
+    our $cookietempfilename;
+    unlink($cookietempfilename) if $cookietempfilename;
 }
 
 =head1 EXAMPLES
