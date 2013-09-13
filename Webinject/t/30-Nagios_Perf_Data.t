@@ -49,7 +49,7 @@ sub test_case_01 {
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     my $rc = $webinject->engine();
     is($rc, 2, '30-nagios_perf_data.xml - return code');
-    like($webinject->{'result'}->{'perfdata'}, '/time=([\d\.]+);0;0;0;0 case1=([\d\.]+);0;0;0;0 case2=([\d\.]+);0;0;0;0 testlabel=([\d\.]+);0;0;0;0 case4=([\d\.]+);0;0;0;0/', 'performance data');
+    like($webinject->{'result'}->{'perfdata'}, '/time=([\d\.]+)s;0;0;0;0 case1=([\d\.]+)s;0;0;0;0 case2=([\d\.]+)s;0;0;0;0 testlabel=([\d\.]+)s;0;0;0;0 case4=([\d\.]+)s;0;0;0;0/', 'performance data');
 }
 
 ##################################################
@@ -60,5 +60,5 @@ sub test_case_02 {
     $webinject->{'config'}->{'baseurl'} = 'http://localhost:58080';
     my $rc = $webinject->engine();
     is($rc, 2, '30-nagios_perf_data.xml - return code');
-    like($webinject->{'result'}->{'perfdata'}, '/time=([\d\.]+);0;0;0;0 case1=([\d\.]+);0;0;0;0 case2=0;0;0;0;0 case3=0;0;0;0;0 case4=0;0;0;0;0/', 'performance data');
+    like($webinject->{'result'}->{'perfdata'}, '/time=([\d\.]+)s;0;0;0;0 case1=([\d\.]+)s;0;0;0;0 case2=0s;0;0;0;0 case3=0s;0;0;0;0 case4=0s;0;0;0;0/', 'performance data');
 }
