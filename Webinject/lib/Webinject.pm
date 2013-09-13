@@ -431,63 +431,65 @@ sub _run_test_case {
     push @{$case->{'messages'}}, { 'html' => "</td><td>\n" }; # HTML: next column
     
     # if any verification fails, test case is considered a failure
-    if($case->{'iscritical'} or $case->{'iswarning'}) {
-     my $message; 
+    my $messageprefix = defined $case->{'label'} ? "$case->{'label'}: " : "case".$case->{'id'}.": ";
+    my $message;
+    if($case->{'iscritical'}) {
+     $self->{'result'}->{'iscritical'} = 1;
      push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
-
+      
      if($case->{errormessage}){
       chomp($case->{errormessage});
       $case->{errormessage} =~ s/\s+/_/gmx;
       $message=$case->{errormessage};
      }
+     if($self->{'result'}->{'returnmessage'}){
+      $message=$self->{'result'}->{'returnmessage'};
+     }
      else{
-      if($self->{'result'}->{'returnmessage'}){
-       $message=$self->{'result'}->{'returnmessage'};
-      }
-      else{
-       # We should get there only for response times...
-       if($case->{'iscritical'}) {
-        $message="failed ($case->{'latency'})";
-       }
-       elsif($case->{'iswarning'}) {
-        $message="warned ($case->{'latency'})";
-       }
-       else{
-        $message="unknown_error";
-       } 
-      }
+      $message="failed";
      }
-
-     my $messageprefix = defined $case->{'label'} ? "$case->{'label'}: " : "case".$case->{'id'}.": ";
-
-     my $outmessage; 
-     if($case->{'iscritical'}) {
-      $self->{'result'}->{'iscritical'} = 1;
-      $outmessage="TEST CASE FAILED";
-      push @{$case->{'messages'}}, {
-       'key'   => 'result-message',
-       'value' => $messageprefix.$message,
-       'html'  => "<b><span class=\"fail\">FAILED :</span> ".$messageprefix.$message."</b>"
-      };
-      $self->{'result'}->{'outputmessage'}{$currentcasefilenumber}{$case->{'id'}} = $messageprefix.$message;
-     }
-     elsif($case->{'iswarning'}) {
-      $self->{'result'}->{'iswarning'} = 1;
-      $outmessage="TEST CASE WARNED";
-      push @{$case->{'messages'}}, {
-       'key'   => 'result-message',
-       'value' => $messageprefix.$message,
-       'html'  => "<b><span class=\"fail\">WARNED :</span> ".$messageprefix.$message."</b>"
-      };
-      $self->{'result'}->{'outputmessage'}{$currentcasefilenumber}{$case->{'id'}} = $messageprefix.$message;
-     }
-
-     $self->_out("$outmessage : ".$messageprefix.$message."\n");
-
-     if($self->{'gui'}){
+ 
+     push @{$case->{'messages'}}, {
+      'key'   => 'result-message',
+      'value' => $messageprefix.$message,
+      'html'  => "<b><span class=\"fail\">FAILED :</span> ".$messageprefix.$message."</b>"
+     };
+     
+     $self->_out(qq|TEST CASE FAILED : $messageprefix.$message.\n|);
+     $self->{'result'}->{'outputmessage'}{$currentcasefilenumber}{$case->{'id'}} = $messageprefix.$message;
+     
+     if( $self->{'gui'} ) {
       $self->_gui_status_failed();
      }
+    }
+    elsif($case->{'iswarning'}) {
+     $self->{'result'}->{'iswarning'} = 1;
+     push @{$case->{'messages'}}, {'key' => 'success', 'value' => 'false' };
+      
+     if($case->{errormessage}){
+      chomp($case->{errormessage});
+      $case->{errormessage} =~ s/\s+/_/gmx;
+      $message=$case->{errormessage};
+     }
+     if($self->{'result'}->{'returnmessage'}){
+      $message=$self->{'result'}->{'returnmessage'};
+     }
+     else{
+      $message="warned";
+     }
 
+     push @{$case->{'messages'}}, {
+      'key'   => 'result-message',
+      'value' => $messageprefix.$message,
+      'html'  => "<b><span class=\"fail\">WARNED :</span> ".$messageprefix.$message."</b>"
+     };
+     
+     $self->_out(qq|TEST CASE WARNED : $messageprefix.$message.\n|);
+     $self->{'result'}->{'outputmessage'}{$currentcasefilenumber}{$case->{'id'}} = $messageprefix.$message;
+     
+     if( $self->{'gui'} ) {
+      $self->_gui_status_failed();
+     }
     }
     else {
         $self->_out(qq|TEST CASE PASSED\n|);
