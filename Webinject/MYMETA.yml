@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   ExtUtils::MakeMaker: 6.59
 dynamic_config: 0
-generated_by: 'Module::Install version 1.06, CPAN::Meta::Converter version 2.112150'
+generated_by: 'Module::Install version 1.06, CPAN::Meta::Converter version 2.131560'
 license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -35,4 +35,4 @@ resources:
   homepage: http://www.webinject.org
   license: http://opensource.org/licenses/gpl-2.0.php
   repository: http://github.com/sni/Webinject
-version: 1.76
+version: 1.80
