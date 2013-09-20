@@ -20,6 +20,7 @@ requires 'Crypt::SSLeay'           => 0;
 requires 'XML::Parser'             => 0;
 requires 'Error'                   => 0;
 requires 'File::Temp'              => 0;
+requires 'URI'                     => 0;
 
 install_script 'bin/webinject.pl';
 

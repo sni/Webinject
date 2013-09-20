@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use Carp;
 use LWP;
+use URI;
 use HTTP::Request::Common;
 use HTTP::Cookies;
 use XML::Simple;
@@ -333,6 +334,15 @@ sub _run_test_case {
         $case->{$key} = $self->_convertbackxmlresult($case->{$key});
     }
 
+    # replace host with realserverip in url and add http host header to useragent
+    if($self->{'config'}->{'realserverip'})
+    {
+        my($uri)=URI->new($case->{url});
+        my($host)=$uri->host();
+        $useragent->default_header('Host' => $uri->host());
+        $case->{url}=~s/$host/$self->{'config'}->{'realserverip'}/;
+    }
+
     if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
 
     push @{$case->{'messages'}}, { 'html' => "<td>" }; # HTML: open table column
@@ -634,6 +644,7 @@ sub _set_defaults {
         'reporttype'                => 'standard',
         'output_dir'                => './',
         'nooutput'                  => undef,
+        'realserverip'              => '',
         'baseurl'                   => '',
         'baseurl1'                  => '',
         'baseurl2'                  => '',
@@ -1318,7 +1329,7 @@ sub _read_config_xml {
     foreach (@configlines) {
 
         for my $key (
-            qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout output_dir
+            qw/realserverip baseurl baseurl1 baseurl2 gnuplot proxy timeout output_dir
             globaltimeout globalhttplog standaloneplot max_redirect
             break_on_errors useragent/
           )
@@ -1495,6 +1506,7 @@ sub _convertbackxml {
     $string =~ s~{AMPERSAND}~&~gmx;
     $string =~ s~{LESSTHAN}~<~gmx;
     $string =~ s~{TIMESTAMP}~$timestamp~gmx;
+    $string =~ s~{REALSERVERIP}~$self->{'config'}->{realserverip}~gmx;
     $string =~ s~{BASEURL}~$self->{'config'}->{baseurl}~gmx;
     $string =~ s~{BASEURL1}~$self->{'config'}->{baseurl1}~gmx;
     $string =~ s~{BASEURL2}~$self->{'config'}->{baseurl2}~gmx;
