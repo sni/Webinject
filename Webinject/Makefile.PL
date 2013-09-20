@@ -10,16 +10,18 @@ resources(
     'repository', => 'http://github.com/sni/Webinject',
 );
 
-requires 'LWP'                     => 0;
-requires 'XML::Simple'             => 0;
-requires 'HTTP::Request::Common'   => 0;
-requires 'HTTP::Cookies'           => 0;
-requires 'Time::HiRes'             => 0;
-requires 'Getopt::Long'            => 0;
-requires 'Crypt::SSLeay'           => 0;
-requires 'XML::Parser'             => 0;
-requires 'Error'                   => 0;
-requires 'File::Temp'              => 0;
+requires 'LWP'                          => 0;
+requires 'XML::Simple'                  => 0;
+requires 'HTTP::Request::Common'        => 0;
+requires 'HTTP::Cookies'                => 0;
+requires 'Time::HiRes'                  => 0;
+requires 'Getopt::Long'                 => 0;
+requires 'Crypt::SSLeay'                => 0;
+requires 'XML::Parser'                  => 0;
+requires 'Error'                        => 0;
+requires 'File::Temp'                   => 0;
+requires 'URI'                          => 0;
+requires 'LWP::UserAgent::DNS::Hosts'   => 0;
 
 install_script 'bin/webinject.pl';
 
