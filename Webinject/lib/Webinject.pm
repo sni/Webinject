@@ -20,6 +20,8 @@ use strict;
 use warnings;
 use Carp;
 use LWP;
+use LWP::UserAgent::DNS::Hosts;
+use URI;
 use HTTP::Request::Common;
 use HTTP::Cookies;
 use XML::Simple;
@@ -570,6 +572,14 @@ sub _run_test_case {
 sub _get_useragent {
     my $self = shift;
 
+    # optional temporary overwrite of hosts entry for baseurl
+    if($self->{'config'}->{'realserverip'})
+    {
+      my($uri)=URI->new($self->{'config'}->{'baseurl'});
+      LWP::UserAgent::DNS::Hosts->register_host($uri->host()=>$self->{'config'}->{'realserverip'});
+      LWP::UserAgent::DNS::Hosts->enable_override;
+    }
+
     # construct LWP object
     my $useragent  = LWP::UserAgent->new(keep_alive=>1);
 
@@ -634,6 +644,7 @@ sub _set_defaults {
         'reporttype'                => 'standard',
         'output_dir'                => './',
         'nooutput'                  => undef,
+        'realserverip'                    => '',
         'baseurl'                   => '',
         'baseurl1'                  => '',
         'baseurl2'                  => '',
@@ -1318,7 +1329,7 @@ sub _read_config_xml {
     foreach (@configlines) {
 
         for my $key (
-            qw/baseurl baseurl1 baseurl2 gnuplot proxy timeout output_dir
+            qw/realserverip baseurl baseurl1 baseurl2 gnuplot proxy timeout output_dir
             globaltimeout globalhttplog standaloneplot max_redirect
             break_on_errors useragent/
           )
@@ -1495,6 +1506,7 @@ sub _convertbackxml {
     $string =~ s~{AMPERSAND}~&~gmx;
     $string =~ s~{LESSTHAN}~<~gmx;
     $string =~ s~{TIMESTAMP}~$timestamp~gmx;
+    $string =~ s~{REALSERVERIP}~$self->{'config'}->{realserverip}~gmx;
     $string =~ s~{BASEURL}~$self->{'config'}->{baseurl}~gmx;
     $string =~ s~{BASEURL1}~$self->{'config'}->{baseurl1}~gmx;
     $string =~ s~{BASEURL2}~$self->{'config'}->{baseurl2}~gmx;

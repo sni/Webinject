@@ -40,7 +40,9 @@
             "HTTP::Cookies" : "0",
             "HTTP::Request::Common" : "0",
             "LWP" : "0",
+            "LWP::UserAgent::DNS::Hosts" : "0",
             "Time::HiRes" : "0",
+            "URI" : "0",
             "XML::Parser" : "0",
             "XML::Simple" : "0",
             "perl" : "5.006"
