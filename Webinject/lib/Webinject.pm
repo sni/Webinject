@@ -342,7 +342,7 @@ sub _run_test_case {
         my($uri)=URI->new($case->{url});
         my($host)=$uri->host();
         $useragent->default_header('Host' => $uri->host());
-        $case->{url}=~s/$host/$self->{'config'}->{'realserverip'}/;
+        $case->{url}=~s/\Q$host\E/$self->{'config'}->{'realserverip'}/mx;
     }
 
     if( $self->{'gui'} ) { $self->_gui_tc_descript($case); }
