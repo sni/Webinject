@@ -12,3 +12,5 @@ testcases.xml.*.tmp
 check_webinject
 webinject.pl
 MANIFEST.bak
+MYMETA.json
+MYMETA.yml
