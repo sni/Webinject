@@ -31,7 +31,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.80';
+our $VERSION = '1.82';
 
 =head1 NAME
 
@@ -297,6 +297,8 @@ sub engine {
     my $endruntimer = time();
     $self->{'result'}->{'totalruntime'} = ( int( 1000 * ( $endruntimer - $startruntimer ) ) / 1000 );    #elapsed time rounded to thousandths
 
+    # required to clean up cookie files
+    undef $useragent;
 
     # do return/cleanup tasks
     return $self->_finaltasks();
@@ -574,14 +576,13 @@ sub _get_useragent {
     my $useragent  = LWP::UserAgent->new(keep_alive=>1);
 
     # store cookies in our LWP object
-    my $fh;
-    our $cookietempfilename;
-    ($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
+    my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
     unlink ($cookietempfilename);
     $useragent->cookie_jar(HTTP::Cookies->new(
                                                  file     => $cookietempfilename,
                                                  autosave => 1,
                                               ));
+    push @{$self->{'tmpfiles'}}, $cookietempfilename;
 
     # http useragent that will show up in webserver logs
     unless(defined $self->{'config'}->{'useragent'}) {
@@ -642,6 +643,7 @@ sub _set_defaults {
         'globalhttplog'             => 'no',
         'proxy'                     => '',
         'timeout'                   => 180,
+        'tmpfiles'                  => [],
     };
     $self->{'exit_codes'}         = {
         'UNKNOWN'  => 3,
@@ -1445,6 +1447,7 @@ sub _convtestcases {
     my @xmltoconvert;
 
     my ( $fh, $tempfilename ) = tempfile();
+    push @{$self->{'tmpfiles'}}, $tempfilename;
     my $filename = $currentcasefile;
     open( my $xmltoconvert, '<', $filename )
       or $self->_usage("ERROR: Failed to read test case file: ".$filename.": ".$!);
@@ -1657,6 +1660,8 @@ plot \"$self->{'config'}->{'output_dir'}plot.log\" using 1:7 title \"Response Ti
 # do ending tasks
 sub _finaltasks {
     my $self        = shift;
+
+    $self->_clean_tmp_files();
 
     if ( $self->{'gui'} ) { $self->_gui_stop(); }
 
@@ -1902,10 +1907,13 @@ EOB
 }
 
 ################################################################################
-# make sure we don't keep the cookie temp file
-END {
-    our $cookietempfilename;
-    unlink($cookietempfilename) if $cookietempfilename;
+# remove any tmp files
+sub _clean_tmp_files {
+    my($self) = @_;
+    for my $tmpfile (@{$self->{'tmpfiles'}}) {
+        unlink($tmpfile);
+    }
+    return;
 }
 
 =head1 EXAMPLES
