@@ -247,7 +247,7 @@ sub engine {
             $repeat = $xmltestcases->{repeat};
         }
 
-        my $useragent = $self->_get_useragent();
+        my $useragent = $self->_get_useragent($xmltestcases->{case});
 
         for my $run_nr (1 .. $repeat) {
 
@@ -321,7 +321,7 @@ sub _run_test_case {
     $case->{'iscritical'}   = 0;
     $case->{'messages'}     = [];
 
-    $useragent = $self->_get_useragent() unless defined $useragent;
+    $useragent = $self->_get_useragent({1 => $case}) unless defined $useragent;
 
     # don't do this if monitor is disabled in gui
     if($self->{'gui'} and $self->{'monitorenabledchkbx'} ne 'monitor_off') {
@@ -581,10 +581,19 @@ sub _run_test_case {
 
 ################################################################################
 sub _get_useragent {
-    my($self) = @_;
+    my($self, $testcases) = @_;
 
-    # construct LWP object
-    my $useragent  = LWP::UserAgent->new(); # do not set keepalive here, it breaks ssl proxy support
+    # keepalive is required for ntml authentication but breaks
+    # https proxy support, so try determince which one we need
+    my $keepalive = 1;
+    if($testcases and $self->{'config'}->{'proxy'}) {
+        for my $nr (keys %{$testcases}) {
+            if($testcases->{$nr}->{'url'} =~ m/^https/gmx) {
+                $keepalive = 0;
+            }
+        }
+    }
+    my $useragent  = LWP::UserAgent->new(keep_alive=>$keepalive);
 
     # store cookies in our LWP object
     my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
