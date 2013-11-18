@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.86 - Mon Nov 18 12:10:07 CET 2013
+    - add support for ssl proxy and proxy auth
+
 Version 1.84 - Fri Nov  1 11:01:23 CET 2013
     - add realserver support (Klapwijk)
 

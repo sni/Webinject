@@ -25,6 +25,7 @@ use_ok('Webinject');
 my $webinject = Webinject->new();
 isa_ok($webinject, "Webinject", 'Object is a Webinject');
 
+# clean env
 for my $key (qw/http_proxy https_proxy HTTP_PROXY HTTPS_PROXY/) {
     delete($ENV{$key});
 }
@@ -50,17 +51,22 @@ sub test_case {
         'verifyresponsecode'  => 200,
         'verifypositive'      => 'Google',
         'url'                 => $url,
+        'warning'             => 30,
+        'critical'            => 30,
     };
     my $expected = {
         'id'                  => 1,
-        'passedcount'         => 2,
+        'passedcount'         => 4,
         'failedcount'         => 0,
         'url'                 => $case->{'url'},
         'logresponse'         => 'yes',
         'logrequest'          => 'yes',
         'verifyresponsecode'  => 200,
         'verifypositive'      => $case->{'verifypositive'},
-
+        'iscritical'          => 0,
+        'iswarning'           => 0,
+        'warning'             => 30,
+        'critical'            => 30,
     };
     my $result = $webinject->_run_test_case($case);
 

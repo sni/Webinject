@@ -92,6 +92,12 @@ Set maximum number of HTTP redirects. Default is 0.
 
 Sets a proxy which is then used for http and https requests.
 
+ ex.: http://proxy.company.net:3128
+
+with authentication:
+
+ ex.: http://user:password@proxy.company.net:3128
+
 =item output_dir
 
 Output directory where all logfiles will go to. Defaults to current directory.
@@ -188,8 +194,6 @@ sub engine {
     }
 
     $self->_processcasefile();
-
-    my $useragent = $self->_get_useragent();
 
     # write opening tags for STDOUT.
     $self->_writeinitialstdout();
@@ -297,9 +301,6 @@ sub engine {
 
     my $endruntimer = time();
     $self->{'result'}->{'totalruntime'} = ( int( 1000 * ( $endruntimer - $startruntimer ) ) / 1000 );    #elapsed time rounded to thousandths
-
-    # required to clean up cookie files
-    undef $useragent;
 
     # do return/cleanup tasks
     return $self->_finaltasks();
@@ -580,10 +581,10 @@ sub _run_test_case {
 
 ################################################################################
 sub _get_useragent {
-    my $self = shift;
+    my($self) = @_;
 
     # construct LWP object
-    my $useragent  = LWP::UserAgent->new(keep_alive=>1);
+    my $useragent  = LWP::UserAgent->new(); # do not set keepalive here, it breaks ssl proxy support
 
     # store cookies in our LWP object
     my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
@@ -603,10 +604,40 @@ sub _get_useragent {
 
     # add proxy support if it is set in config.xml
     if( $self->{'config'}->{'proxy'} ) {
+        # try IO::Socket::SSL first
+        eval {
+            require IO::Socket::SSL;
+            IO::Socket::SSL->import();
+        };
         my $proxy = $self->{'config'}->{'proxy'};
-        $proxy    =~ s/^http:\/\///mx;
-        $useragent->proxy([qw( http )], "http://".$proxy);
-        $ENV{'HTTPS_PROXY'} = "http://".$proxy;
+        $proxy    =~ s/^http(s|):\/\///mx;
+        # http just works
+        $useragent->proxy('http', 'http://'.$proxy);
+        # authentication?
+        my $proxyuser = '';
+        my $proxypass = '';
+        if($proxy =~ s/^(.*?):(.*?)@(.*)$/$3/gmx) {
+            $proxyuser = $1;
+            $proxypass = $2;
+        }
+        # ssl depends on which class we have
+        if($INC{'IO/Socket/SSL.pm'}) {
+            $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = "IO::Socket::SSL";
+            if($proxypass) {
+                $proxy = $proxyuser.':'.$proxypass.'@'.$proxy;
+            }
+            my $con_proxy = 'connect://'.$proxy;
+            $useragent->proxy('https', $con_proxy);
+        } else {
+            # ssl proxy only works this way, see http://community.activestate.com/forum-topic/lwp-https-requests-proxy
+            $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS}   = "Net::SSL";
+            $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME}      = 0;
+            $ENV{HTTPS_PROXY}                       = $proxy;
+            $ENV{HTTPS_PROXY_USERNAME}              = $proxyuser;
+            $ENV{HTTPS_PROXY_PASSWORD}              = $proxypass;
+            # env proxy breaks the ssl proxy above
+            #$useragent->env_proxy();
+        }
     }
 
     # don't follow redirects unless set by config
