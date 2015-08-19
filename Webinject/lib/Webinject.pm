@@ -32,7 +32,7 @@ use Error qw(:try);             # for web services verification (you may comment
 use Data::Dumper;               # dump hashes for debugging
 use File::Temp qw/ tempfile /;  # create temp files
 
-our $VERSION = '1.86';
+our $VERSION = '1.88';
 
 =head1 NAME
 
@@ -596,7 +596,7 @@ sub _get_useragent {
     my $useragent  = LWP::UserAgent->new(keep_alive=>$keepalive);
 
     # store cookies in our LWP object
-    my($fh, $cookietempfilename) = tempfile(undef, UNLINK => 1);
+    my($fh, $cookietempfilename) = tempfile();
     unlink ($cookietempfilename);
     $useragent->cookie_jar(HTTP::Cookies->new(
                                                  file     => $cookietempfilename,

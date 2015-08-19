@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.88 - Wed Aug 19 23:13:41 CEST 2015
+    - fix problem with tempfile in perl 5.20
+
 Version 1.86 - Mon Nov 18 16:57:42 CET 2013
     - add support for ssl proxy and proxy auth
 
