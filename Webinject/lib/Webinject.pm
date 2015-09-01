@@ -905,6 +905,19 @@ sub _http_defaults {
     my $useragent = shift;
     my $case      = shift;
 
+    # Add additional cookies to the cookie jar if specified
+    if($case->{'addcookie'}) {
+        my $cookie_jar = $useragent->cookie_jar();
+        # add cookies to the cookie jar
+        # can add multiple cookies with a pipe delimiter
+        for my $addcookie (split /\|/mx, $case->{'addcookie'}) {
+            my ($ck_version, $ck_key, $ck_val, $ck_path, $ck_domain, $ck_port, $ck_path_spec, $ck_secure, $ck_maxage, $ck_discard) = split(/,/, $addcookie);
+            $cookie_jar->set_cookie( $ck_version, $ck_key, $ck_val, $ck_path, $ck_domain, $ck_port, $ck_path_spec, $ck_secure, $ck_maxage, $ck_discard);
+        }
+        $cookie_jar->save();
+        $cookie_jar->add_cookie_header($request);
+    }
+
     # add an additional HTTP Header if specified
     if($case->{'addheader'}) {
         # can add multiple headers with a pipe delimiter
@@ -1968,9 +1981,43 @@ sub _clean_tmp_files {
     return;
 }
 
-=head1 EXAMPLES
+=head1 TEST CASES
 
-=head2 example test case
+=head2 Parameters
+
+=over
+
+=item addcookie
+
+When added to a test case, this adds a cookie to the cookie jar prior to the test case request being sent (i.e. the test case this is attached to will include any cookies specified in this parameter). This is useful for cases where a cookie is set outside of a Set-Cookie directive in the response header. This parameter takes a comma-delimited list of fields that configure the cookie; the fields for this parameter are a direct one-to-one correllation with the parameters to the HTTP::Cookies::set_cookie method. As well, multiple cookies can be defined by separating with a '|' character as with the addheader parameter.
+
+The comma-delimited list of fields are as follows.
+
+addcookie="version,name,value,path,domain,port,path_spec,secure,maxage,discard"
+
+version - Cookie-spec version number
+
+name - Cookie name.
+
+value - Cookie value.
+
+path - The URL path where the cookie is set.
+
+domain - The domain under which the cookie is set.
+
+port - The port on which the cookie is set.
+
+path_spec - Boolean. Set if the cookie is valid only under 'path' or the entire domain.
+
+secure - Boolean. If true (1), the cookie is only sent over secure connections
+
+maxage - The time in seconds the cookie is valid for.
+
+discard - Boolean. Do not send in future requests and destroy upon the next cookie jar save.
+
+=back
+
+=head1 EXAMPLE TEST CASE
 
   <testcases>
     <case
