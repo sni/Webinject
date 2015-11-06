@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use Carp;
 use LWP;
+use HTML::Entities;
 use URI;
 use HTTP::Request::Common;
 use HTTP::Cookies;
@@ -1328,6 +1329,10 @@ sub _parseresponse {
             if ( $escape eq 'escape' ) {
                 $self->{'parsedresult'}->{$type} =
                   $self->_url_escape( $self->{'parsedresult'}->{$type} );
+            }
+            if ( $escape eq 'decode' ) {
+                $self->{'parsedresult'}->{$type} =
+                  decode_entities( $self->{'parsedresult'}->{$type} );
             }
         }
 
