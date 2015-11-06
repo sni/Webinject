@@ -2020,7 +2020,36 @@ maxage - The time in seconds the cookie is valid for.
 
 discard - Boolean. Do not send in future requests and destroy upon the next cookie jar save.
 
+=item parseresponse
+
+Parse a string from the HTTP response for use in subsequent requests. This is mostly used for passing Session ID's, but 
+can be applied to any case where you need to pass a dynamically generated value. It takes the arguments in the format
+"leftboundary|rightboundary", and an optional third argument "leftboundary|rightboundary|escape|decode" when you want
+to force escaping of all non-alphanumeric characters (in case there is a wrong configuration of Apache server it will 
+push encoded HTML characters (&#47; = /,  &#58; = :,  ... ) to the Webinject and decode serve to translate them into normal characters. 
+See the "Session Handling and State Management - Parsing Response Data & Embedded Session ID's" section of this manual for details and examples on how to use this parameter.
+
+Note: You may need to prepend a backslash before certain reserved characters when parsing (sorry that is rather vague).
+
+Note: Newlines (\n) are also valid boundaries and are useful when you need to use the end of the line as a boundary.
+
+parseresponse1
+Additional parameter for response parsing.
+
+parseresponse2
+Additional parameter for response parsing.
+
+parseresponse3
+Additional parameter for response parsing.
+
+parseresponse4
+Additional parameter for response parsing.
+
+parseresponse5
+Additional parameter for response parsing. 
+
 =back
+
 
 =head1 EXAMPLE TEST CASE
 
