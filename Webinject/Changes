@@ -9,6 +9,7 @@ Release History:
 
 next:
     - add new addcookie test case attribute
+    - add readme file
 
 Version 1.88 - Wed Aug 19 23:13:41 CEST 2015
     - fix problem with tempfile in perl 5.20
