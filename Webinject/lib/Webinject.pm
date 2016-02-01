@@ -912,7 +912,7 @@ sub _http_defaults {
         # add cookies to the cookie jar
         # can add multiple cookies with a pipe delimiter
         for my $addcookie (split /\|/mx, $case->{'addcookie'}) {
-            my ($ck_version, $ck_key, $ck_val, $ck_path, $ck_domain, $ck_port, $ck_path_spec, $ck_secure, $ck_maxage, $ck_discard) = split(/,/, $addcookie);
+            my ($ck_version, $ck_key, $ck_val, $ck_path, $ck_domain, $ck_port, $ck_path_spec, $ck_secure, $ck_maxage, $ck_discard) = split(/,/mx, $addcookie);
             $cookie_jar->set_cookie( $ck_version, $ck_key, $ck_val, $ck_path, $ck_domain, $ck_port, $ck_path_spec, $ck_secure, $ck_maxage, $ck_discard);
         }
         $cookie_jar->save();
