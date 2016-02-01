@@ -24,6 +24,10 @@ requires 'URI'                     => 0;
 
 install_script 'bin/webinject.pl';
 
+if (!-f "README" || -M "lib/Webinject" < -M "README") {
+	readme_from 'lib/Webinject.pm';
+}
+
 auto_install;
 WriteAll;
 
