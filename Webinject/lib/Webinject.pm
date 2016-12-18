@@ -1594,7 +1594,7 @@ sub _url_escape {
     # LWP handles url encoding already, but use this to escape valid chars that LWP won't convert (like +)
     my @return;
     for my $val (@values) {
-        $val =~ s/[^-\w.,!~'()\/\ ]/uc sprintf "%%%02x", ord $&/egmx;
+        $val =~ s/[^-\w.,!~'()\/\ ]/uc sprintf "%%%02x", ord $&/egmx if defined $val;
         push @return, $val;
     }
     return wantarray ? @return : $return[0];
