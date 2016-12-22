@@ -7,6 +7,10 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.92 - Thu Dec 22 21:26:50 CET 2016
+    - Support application/json Content-Type (#22)
+    - Fix for uninitialized value $val (#21)
+
 Version 1.90 - Mon Feb  1 17:04:24 CET 2016
     - add new addcookie test case attribute
     - add readme file
