@@ -959,7 +959,10 @@ sub _httppost {
     my $case        = shift;
 
     if($case->{posttype} ) {
-        if($case->{posttype} =~ m~application/x\-www\-form\-urlencoded~mx) {
+        if(   ($case->{posttype} =~ m~application/x\-www\-form\-urlencoded~mx)
+           or ($case->{posttype} =~ m~application/json~mx)
+          )
+        {
             return $self->_httppost_form_urlencoded($useragent, $case);
         }
         elsif($case->{posttype} =~ m~multipart/form\-data~mx) {
