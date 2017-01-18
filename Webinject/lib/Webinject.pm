@@ -373,11 +373,14 @@ sub _run_test_case {
             if(lc $case->{method} eq "get") {
                 ($latency,$request,$response) = $self->_httpget($useragent, $case);
             }
+            elsif(lc $case->{method} eq "delete") {
+                ($latency,$request,$response) = $self->_httpdelete($useragent, $case);
+            }
             elsif(lc $case->{method} eq "post") {
                 ($latency,$request,$response) = $self->_httppost($useragent, $case);
             }
             else {
-                $self->_usage('ERROR: bad HTTP Request Method Type, you must use "get" or "post"');
+                $self->_usage('ERROR: bad HTTP Request Method Type, you must use "get", "delete" or "post"');
             }
         }
         else {
@@ -948,6 +951,18 @@ sub _httpget {
 
     $self->_out("GET Request: ".$case->{url}."\n");
     my $request = new HTTP::Request( 'GET', $case->{url} );
+    return $self->_http_defaults($request, $useragent, $case);
+}
+
+################################################################################
+# send http request and read response
+sub _httpdelete {
+    my $self      = shift;
+    my $useragent = shift;
+    my $case      = shift;
+
+    $self->_out("DELETE Request: ".$case->{url}."\n");
+    my $request = new HTTP::Request( 'DELETE', $case->{url} );
     return $self->_http_defaults($request, $useragent, $case);
 }
 
