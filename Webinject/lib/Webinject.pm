@@ -1,5 +1,5 @@
 package Webinject;
-CHECK { $Dbg::DEBUG_LEVEL = 0; Dbg->trace_subs(__PACKAGE__); }
+#CHECK { $Dbg::DEBUG_LEVEL = 0; Dbg->trace_subs(__PACKAGE__); }
 
 #    Copyright 2010-2012 Sven Nierlein (nierlein@cpan.org)
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
@@ -219,7 +219,7 @@ sub engine {
                                   // File::Spec->rel2abs(dirname($0))
                                   // File::Spec->rel2abs(dirname(__FILE__));
         
-        __dbg { "Current case file base dir: $currentcasefilebasedir" };
+        #__dbg { "Current case file base dir: $currentcasefilebasedir" };
         
         my $resultfile = {
             'name'  => $currentcasefile,
@@ -1044,7 +1044,7 @@ sub _httppost_xml {
     if (!(File::Spec->file_name_is_absolute($postbodyfile)) && length $case->{'testdir'}) {
         $postbodyfile = File::Spec->rel2abs($postbodyfile, $case->{'testdir'});
     }
-    __dbg { "Current postbody file: $postbodyfile" };
+    #__dbg { "Current postbody file: $postbodyfile" };
     open( my $xmlbody, "<", $postbodyfile ) 
       or $self->_usage("ERROR: Failed to open text/xml file $1 (resolved to $postbodyfile): $!");    # open file handle
       
@@ -1449,7 +1449,7 @@ sub _read_config_xml {
                 $self->{'config'}->{$key} = $1;
 
                 #print "\n$_ : $self->{'config'}->{$_} \n\n";
-                __dbg { $_, "--> $key = $1" } 2;
+                #__dbg { $_, "--> $key = $1" } 2;
             }
         }
 
