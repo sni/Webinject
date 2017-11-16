@@ -82,6 +82,10 @@ execute all tests regardless of the previous case.
 
 Default timeout is 180seconds. Timeout starts again for every testcase.
 
+=item globaltimeout
+
+Default timeout is 180seconds. Time allowed to run all tests of file.
+
 =item useragent
 
 Set the useragent used in HTTP requests. Default is 'Webinject'.
@@ -717,6 +721,7 @@ sub _set_defaults {
         'globalhttplog'             => 'no',
         'proxy'                     => '',
         'timeout'                   => 180,
+        'globaltimeout'             => 180,
         'tmpfiles'                  => [],
         'postbodybasedir'           => undef
     };
@@ -1975,6 +1980,7 @@ sub _getoptions {
         'n|no-output'     => \$self->{'config'}->{'nooutput'},
         'r|report-type=s' => \$self->{'config'}->{'reporttype'},
         't|timeout=i'     => \$self->{'config'}->{'timeout'},
+        'T|globaltimeout=i'=> \$self->{'config'}->{'globaltimeout'},
         's=s'             => \@sets,
     );
     if(!$opt_rc or $opt_help) {
@@ -2023,6 +2029,7 @@ sub _usage {
                 [-o|--output output_location]
                 [-n|--no-output]
                 [-t|--timeout]
+                [-T|--globaltimeout]
                 [-r|--report-type]
                 [-s key=value]
                 [testcase_file [XPath]]
