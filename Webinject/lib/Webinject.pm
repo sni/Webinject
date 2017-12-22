@@ -1,4 +1,5 @@
 package Webinject;
+
 #    Copyright 2010-2012 Sven Nierlein (nierlein@cpan.org)
 #    Copyright 2004-2006 Corey Goldberg (corey@goldb.org)
 #
@@ -399,11 +400,11 @@ sub _run_test_case {
             elsif(lc $case->{method} eq "delete") {
                 ($latency,$request,$response) = $self->_httpdelete($useragent, $case);
             }
-            elsif(lc $case->{method} eq "post") {
+            elsif(lc $case->{method} eq "post") or lc $case->{method} eq "put") {
                 ($latency,$request,$response) = $self->_httppost($useragent, $case);
             }
             else {
-                $self->_usage('ERROR: bad HTTP Request Method Type, you must use "get", "delete" or "post"');
+                $self->_usage('ERROR: bad HTTP Request Method Type, you must use "get", "delete", "put" or "post"');
             }
         }
         else {
@@ -1008,7 +1009,7 @@ sub _httppost {
         elsif($case->{posttype} =~ m~multipart/form\-data~mx) {
             return $self->_httppost_form_data($useragent, $case);
         }
-        elsif(   ($case->{posttype} =~ m~text/xml~mx)
+        elsif(   ($case->{posttype} =~ m~text|application/xml~mx)
               or ($case->{posttype} =~ m~application/soap\+xml~mx)
              )
         {
@@ -1064,9 +1065,10 @@ sub _httppost_xml {
 
     # Get the XML input file to use PARSEDRESULT and substitute the contents
     my $content = $self->_convertbackxmlresult(join( " ", @xmlbody ));
+    my $METHOD = uc($case->{method});
 
-    $self->_out("POST Request: ".$case->{url}."\n");
-    $request = new HTTP::Request( 'POST', $case->{url} );
+    $self->_out("$METHOD Request: ".$case->{url}."\n");
+    $request = new HTTP::Request( $METHOD, $case->{url} );
     $request->content_type($case->{posttype});
     $request->content( $content );    # load the contents of the file into the request body
 
