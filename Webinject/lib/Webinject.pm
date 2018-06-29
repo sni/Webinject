@@ -400,7 +400,7 @@ sub _run_test_case {
             elsif(lc $case->{method} eq "delete") {
                 ($latency,$request,$response) = $self->_httpdelete($useragent, $case);
             }
-            elsif(lc $case->{method} eq "post") or lc $case->{method} eq "put") {
+            elsif((lc $case->{method} eq "post") or (lc $case->{method} eq "put")) {
                 ($latency,$request,$response) = $self->_httppost($useragent, $case);
             }
             else {
