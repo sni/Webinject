@@ -36,7 +36,7 @@ use File::Temp qw/ tempfile /;  # create temp files
 use File::Basename;
 use File::Spec;
 
-our $VERSION = '1.96';
+our $VERSION = '1.96_2';
 
 =head1 NAME
 
