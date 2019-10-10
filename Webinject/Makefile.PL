@@ -29,7 +29,6 @@ if (!-f "README" || -M "lib/Webinject" < -M "README") {
     readme_from('lib/Webinject.pm');
 }
 
-auto_install;
 WriteAll;
 
 open(my $fh, '>>', 'Makefile') or die('cannot write to Makefile');
