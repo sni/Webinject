@@ -2,6 +2,7 @@ use inc::Module::Install;
 
 name 'Webinject';
 all_from 'lib/Webinject.pm';
+license 'gpl_2';
 
 resources(
     'homepage',   => 'http://www.webinject.org',
