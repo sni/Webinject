@@ -27,7 +27,8 @@ use HTTP::Cookies;
 use XML::Simple;
 use Time::HiRes 'time', 'sleep';
 use Getopt::Long;
-use Crypt::SSLeay;              # for SSL/HTTPS (you may comment this out if you don't need it)
+use Net::SSLeay;                # for SSL/HTTPS
+use IO::Socket::SSL;            # for SSL/HTTPS
 use XML::Parser;                # for web services verification (you may comment this out if aren't doing XML verifications for web services)
 use Error qw(:try);             # for web services verification (you may comment this out if aren't doing XML verifications for web services)
 use Data::Dumper;               # dump hashes for debugging
@@ -147,13 +148,13 @@ Defines the path to your gnuplot binary.
 =item postbodybasedir
 
 Path to a directory from which all relative test case postbody directives
-are based.  
+are based.
 
-When test cases include a "postbody" directive with a "file=>..." 
-value, and that value is a relative location, Webinject will prepend this 
+When test cases include a "postbody" directive with a "file=>..."
+value, and that value is a relative location, Webinject will prepend this
 directory path.
 
-If not supplied, the directory containing the current test case file is 
+If not supplied, the directory containing the current test case file is
 prepended to any relative "file=>" values.
 
 =back
@@ -232,7 +233,7 @@ sub engine {
                                   // File::Spec->rel2abs(dirname($currentcasefile))
                                   // File::Spec->rel2abs(dirname($0))
                                   // File::Spec->rel2abs(dirname(__FILE__));
-        
+
         my $resultfile = {
             'name'  => $currentcasefile,
             'cases' => [],
@@ -641,11 +642,6 @@ sub _get_useragent {
 
     # add proxy support if it is set in config.xml
     if( $self->{'config'}->{'proxy'} ) {
-        # try IO::Socket::SSL first
-        eval {
-            require IO::Socket::SSL;
-            IO::Socket::SSL->import();
-        };
         my $proxy = $self->{'config'}->{'proxy'};
         $proxy    =~ s/^http(s|):\/\///mx;
         # http just works
@@ -657,24 +653,12 @@ sub _get_useragent {
             $proxyuser = $1;
             $proxypass = $2;
         }
-        # ssl depends on which class we have
-        if($INC{'IO/Socket/SSL.pm'}) {
-            $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = "IO::Socket::SSL";
-            if($proxypass) {
-                $proxy = $proxyuser.':'.$proxypass.'@'.$proxy;
-            }
-            my $con_proxy = 'connect://'.$proxy;
-            $useragent->proxy('https', $con_proxy);
-        } else {
-            # ssl proxy only works this way, see http://community.activestate.com/forum-topic/lwp-https-requests-proxy
-            $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS}   = "Net::SSL";
-            $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME}      = 0;
-            $ENV{HTTPS_PROXY}                       = $proxy;
-            $ENV{HTTPS_PROXY_USERNAME}              = $proxyuser;
-            $ENV{HTTPS_PROXY_PASSWORD}              = $proxypass;
-            # env proxy breaks the ssl proxy above
-            #$useragent->env_proxy();
+        $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = "IO::Socket::SSL";
+        if($proxypass) {
+            $proxy = $proxyuser.':'.$proxypass.'@'.$proxy;
         }
+        my $con_proxy = 'connect://'.$proxy;
+        $useragent->proxy('https', $con_proxy);
     }
 
     # don't follow redirects unless set by config
@@ -1057,9 +1041,9 @@ sub _httppost_xml {
     if (!(File::Spec->file_name_is_absolute($postbodyfile)) && length $case->{'testdir'}) {
         $postbodyfile = File::Spec->rel2abs($postbodyfile, $case->{'testdir'});
     }
-    open( my $xmlbody, "<", $postbodyfile ) 
+    open( my $xmlbody, "<", $postbodyfile )
       or $self->_usage("ERROR: Failed to open text/xml file $1 (resolved to $postbodyfile): $!");    # open file handle
-      
+
     my @xmlbody = <$xmlbody>;    # read the file into an array
     close($xmlbody);
 
@@ -2086,11 +2070,11 @@ discard - Boolean. Do not send in future requests and destroy upon the next cook
 
 =item parseresponse
 
-Parse a string from the HTTP response for use in subsequent requests. This is mostly used for passing Session ID's, but 
+Parse a string from the HTTP response for use in subsequent requests. This is mostly used for passing Session ID's, but
 can be applied to any case where you need to pass a dynamically generated value. It takes the arguments in the format
 "leftboundary|rightboundary", and an optional third argument "leftboundary|rightboundary|escape|decode" when you want
-to force escaping of all non-alphanumeric characters (in case there is a wrong configuration of Apache server it will 
-push encoded HTML characters (&#47; = /,  &#58; = :,  ... ) to the Webinject and decode serve to translate them into normal characters. 
+to force escaping of all non-alphanumeric characters (in case there is a wrong configuration of Apache server it will
+push encoded HTML characters (&#47; = /,  &#58; = :,  ... ) to the Webinject and decode serve to translate them into normal characters.
 See the "Session Handling and State Management - Parsing Response Data & Embedded Session ID's" section of this manual for details and examples on how to use this parameter.
 
 Note: You may need to prepend a backslash before certain reserved characters when parsing (sorry that is rather vague).
@@ -2110,7 +2094,7 @@ parseresponse4
 Additional parameter for response parsing.
 
 parseresponse5
-Additional parameter for response parsing. 
+Additional parameter for response parsing.
 
 =back
 
