@@ -7,6 +7,9 @@ For information and documentation, visit the website at http://www.webinject.org
 ---------------------------------
 Release History:
 
+Version 1.96 - Thu 10 Oct 2019 09:16:08 AM CEST
+    - migrate to Net::SSLeay and IO::Socket::SSL
+
 Version 1.94 - Tue Jul 25 11:26:20 CEST 2017
     - Use relative path handling for postbody files (#27)
     - Add support for DELETE (#23)
