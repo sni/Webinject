@@ -13,3 +13,33 @@ WebInject can be used as a complete test framework that is controlled
 by the WebInject User Interface (GUI). Optionally, it can be used as a
 standalone test runner (text/console application) which can be
 integrated and called from other test frameworks or applications. 
+
+Installation
+
+We need to install a few prerequisite Perl modules for the test runner:
+
+ Module::Install
+ Module::Install::ReadmeFromPod
+ LWP::Protocol::https
+ XML::Simple
+ XML::Parser
+
+These can either be installed via CPAN or from your favourite package
+manager. For example, on Fedora Linux:
+
+ dnf install perl-Module-Install perl-Module-Install-ReadmeFromPod \
+     perl-libwww-perl perl-LWP-Protocol-https perl-XML-Simple \
+     perl-XML-Parser
+
+For Debian based systems:
+
+ apt install libmodule-install-perl libmodule-install-readmefrompod-perl \
+     libwww-perl liblwp-protocol-https-perl libxml-simple-perl \
+     libxml-parser-perl
+
+With those in place, the test runner can be installed:
+
+ cd Webinject
+ perl Makefile.PL
+ make
+ sudo make install
